@@ -685,7 +685,7 @@ function commitChain(){
       if(over>0){S.shieldPts+=over;while(S.shieldPts>=S.shieldNeed){S.shieldPts-=S.shieldNeed;S.shieldNeed=Math.round(S.shieldNeed*1.25)+10;S.pending.push('shield');}}
       msgs.push(`防御+${used}`+(over?`（超過${over}は盾ポイントへ）`:''));flash('bAr');}
     else if(g==='potion'&&S.cls==='vampire'){const a=Math.round(n*mult);addGold(a);msgs.push(`🧪は口に合わない → 💰+${a}`);flash('bGd');}
-    else if(g==='potion'){const heal=Math.round(n*S.healPer*mult),h=Math.min(heal,S.maxHp-S.hp),cl=S.cls==='cleric',sell=Math.floor((heal-h)/(cl?3:4))*(hasR('urn')?2:1);S.hp+=h;if(sell){if(cl){gainXp(sell);flash('bXp');}else{addGold(sell);flash('bGd');}}msgs.push(`HP+${h}`+(sell?`（余り→${cl?'✨経験値':'💰'}+${sell}）`:''));flash('bHp');}
+    else if(g==='potion'){const heal=Math.round(n*S.healPer*mult),h=Math.min(heal,S.maxHp-S.hp),_hl=h>0&&S.run&&(S.run.heal=1),cl=S.cls==='cleric',sell=Math.floor((heal-h)/(cl?3:4))*(hasR('urn')?2:1);S.hp+=h;if(sell){if(cl){gainXp(sell);flash('bXp');}else{addGold(sell);flash('bGd');}}msgs.push(`HP+${h}`+(sell?`（余り→${cl?'✨経験値':'💰'}+${sell}）`:''));flash('bHp');}
     else if(g==='coin'){const a=Math.round(n*S.goldPer*mult);addGold(a);msgs.push(`お金+${a}`);flash('bGd');}
     };
     if(g==='mix'){const cnt={};cells.forEach(p=>{const t=tileAt(p).t;cnt[t]=(cnt[t]||0)+1;});const ty=Object.keys(cnt).length;if(ty>1){mult*=MIXLOSS;msgs.push('⚗️ 調合');}for(const k of ['shield','potion','coin'])if(cnt[k])eff(k,cnt[k]);}else eff(g,cells.length);
@@ -730,6 +730,7 @@ function useSkill(i){
     case 'bless':{S.bless=3;msg='祝福：3ターン チェーンが3つ長い扱いに';break;}
     case 'execute':{let k=0,xp=0;eachEnemy((t,r,c)=>{if(!t.boss&&t.hp<=execLine(t)){fx.push([r,c]);remove.add(r*N+c);k++;xp+=xpOf(t);}});S.kills+=k;xp=Math.round(xp*1.5);if(xp)gainXp(xp);msg=k?`処刑：${k}体撃破（経験値1.5倍）`:'処刑：対象なし';break;}
   }
+  if(S.run)S.run.sk=(S.run.sk||0)+1;
   sk.cur=hasR('hourglass')?Math.max(2,Math.round(sk.cd*.85)):sk.cd;{const dr=vampDrain(S.kills-kb);if(dr)msg+=' ／ '+dr;}sfx('skill');skillFx(sk.id,fx,S.kills-kb);
   if(!TUT){achStat('skills');achKills([...remove].map(i=>S.board[(i/N)|0][i%N]).filter(isEnemy));
     if(sk.id==='thunder'&&S.kills-kb>=3)unlock('thunder3');if(sk.id==='freeze'&&S.board.flat().some(e=>isEnemy(e)&&kindOf(e)==='dragon'))unlock('s_frzdragon');}
@@ -978,16 +979,16 @@ function showTitle(){setTimeout(titleAnim,50);checkUnlocks();clearTimeout(pendTi
 function startGame(){inGame=true;if(!TUT){const h=new Date().getHours();if(h<4)setTimeout(()=>unlock('s_night'),1500);}if(!TUT&&S&&S.turn===0)setTimeout(()=>{if(inGame&&!TUT&&S.turn===0)showBanner('B1F',zoneAt(1).name,'目指すは地下100F。元凶は、その奥に。');},1300);ensureAudio();if(AU.on.bgm)bgmStart();$('title').classList.add('hidden');chain=[];$('log').textContent='';layout();updateAll();showNextPending();}
 function gameOver(){
   if(GIVEUP&&S.turn===0)unlock('s_coward');if(!GIVEUP&&floorOf()===100)unlock('s_almost');achState();
-  recordRun();achRunEnd();achSave();const isNew=recordBest();deleteSave();inGame=false;bgmStop();sfx('over');
+  recordRun();const nc=unlockBase();S._newCls=nc;achRunEnd();achSave();const isNew=recordBest();deleteSave();inGame=false;bgmStop();sfx('over');
   showGameOver(isNew);
 }
 function showGameOver(isNew){
   openModal(`<div class="big" style="text-align:center">💀</div><h2>力尽きた…</h2>
   <p style="text-align:center;font-size:15px"><span style="color:#a99fae;font-size:13px">${NM()}（${(CLASSES[S.cls]||CLASSES.warrior).n}）${S.curse?`・呪いLv${S.curse}`:''}${S.relics&&S.relics.length?`・${relicsHtml()}`:''}</span><br>B${floorOf()}F「${floorOf()%20===0?bossFloorName(floorOf()):zoneAt(floorOf()).name}」で倒れた<br>${S.turn}ターン ／ 撃破${S.kills} ／ Lv${S.level} ／ 最長${S.maxChain||0}チェーン</p>
-  <p style="text-align:center">${isNew?'🏆 最深記録を更新！':`最深記録：B${best.floor||1}F`}</p>${heldAchHtml()}
+  <p style="text-align:center">${isNew?'🏆 最深記録を更新！':`最深記録：B${best.floor||1}F`}</p>${S._newCls?`<div class="rwd">🆕 ${CLASSES[S._newCls].ic} ${CLASSES[S._newCls].n}が 仲間になった</div>`:''}${heldAchHtml()}
   <button class="opt" id="g1" style="text-align:center">もう一度</button><button class="opt" id="g2" style="text-align:center">🏠 タイトルへ</button>
   <button class="opt" id="g3" style="text-align:center;font-size:13px">📝 この結果をメモ用にコピー</button>`);copyBtn('g3',runReportText);
-  $('g1').onclick=()=>{closeModal();newState();startGame();saveGame();};
+  $('g1').onclick=()=>pickClass(c=>newAdventure(c),()=>showTitle());
   $('g2').onclick=()=>{closeModal();showTitle();};
 }
 $('btnCont').onclick=()=>{if(!anySave())return;const f=[0,1,2].filter(i=>slotJson(i));if(f.length===1){loadSlot(f[0]);return;}showSlots('load',loadSlot);};
@@ -1788,8 +1789,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshA
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='1.2.1';
+const VERSION='1.2.2';
 const CHANGELOG=[
+  {v:'1.2.2',d:'2026-11-19',items:['最初は戦士だけで始まり、冒険を終えるたびに仲間が増えるようにしました（3回で4職業そろいます）','ヴァンパイアとゾンビの条件を見直し、手に入りやすくしました']},
   {v:'1.2.1',d:'2026-11-19',items:['隠し職業の手に入り方を変えました。世界の元凶を倒すたびに、まだ持っていない隠し職業が1つ手に入ります（3回目の冒険から）']},
   {v:'1.2.0',d:'2026-11-19',items:['パズルに集中できるよう、村・手記・扉をなくして作りをすっきりさせました','4つの職業を最初から選べるようになりました','タイトル画面に「🏆 実績」を追加し、実績・魔物図鑑・戦績をまとめました','盤面の色は「設定」から選べます']},
   {v:'1.1.3',d:'2026-11-19',items:['戻るボタンを画面の下にまとめ、片手で押しやすくしました','設定・メニュー・遊び方・セーブの画面を、アイコン中心に見やすくしました']},
@@ -1898,7 +1900,7 @@ function noteMet(k){if(TUT||UNL.met[k])return;UNL.met[k]=1;unlSave();const D=EK[
 function noteKills(list){if(TUT||!list.length)return;for(const t of list){const k=kindOf(t);UNL.kills[k]=(UNL.kills[k]||0)+1;UNL.met[k]=1;if(S){S.kk=S.kk||{};S.kk[k]=(S.kk[k]||0)+1;const D=EK[k]||{};if(D.dh||D.dg||D.dx||D.sp||D.db||D.fz)(S._dq=S._dq||[]).push(k);}}unlSave();checkClassKills();}
 function unlockClass(k){if(UNL.got['h_'+k])return false;UNL.got['h_'+k]=Date.now();unlSave();const c=CLASSES[k];
   achToast({ic:c.ic,n:`隠し職業「${c.n}」`,d:c.hidden===2?`隠し職業 ${h2Got()} / ${H2().length}（あと${H2().length-h2Got()}種類）`:'次の冒険から選べるようになった',secret:0,custom:'隠し職業が解放された'});return true;}
-function checkClassKills(){if(!S||TUT||!S.kk)return;for(const k in CLASSES){const c=CLASSES[k];if(c.kill&&(S.kk[c.kill[0]]||0)>=c.kill[1]&&(S.floor||1)>=(c.floor||0))unlockClass(k);}}
+function checkClassKills(){if(!S||TUT||!S.kk)return;for(const k in CLASSES){const c=CLASSES[k];if(c.kill&&h2Ready()&&(S.kk[c.kill[0]]||0)>=c.kill[1]&&(S.floor||1)>=(c.floor||0))unlockClass(k);}}
 const H2=()=>Object.keys(CLASSES).filter(k=>CLASSES[k].hidden===2),h2Got=()=>H2().filter(k=>UNL.got['h_'+k]).length;
 /* 隠し職業：基本の職業がすべてそろい、3回目以降の冒険なら、元凶を倒すたびに1つもらえる */
 const h2Ready=()=>MAIN_CLS.every(classOk)&&playsN()>=3;
@@ -1933,9 +1935,9 @@ const CLASSES={
   mage:{ic:'🔮',n:'魔術師',d:'古い術を受け継ぐ、線の細い学者。',fx:'最初から🔥火球を習得・スキルの再使用ターン25%短縮・最大HP40',stage:'s3'},
   cleric:{ic:'📿',n:'僧侶',d:'祈りで傷を癒やしてきた、穏やかな巡礼者。',fx:'🧪の回復量3（通常2）・回復の余りは経験値に・基礎攻撃力が伸びやすく（+7）、剣は伸びにくい（+1）',stage:'s2'},
   vampire:{ic:'🧛',n:'ヴァンパイア',hidden:1,d:'血の渇きに導かれ、地の底へ還る夜の貴族。',fx:'🧪では回復できない（💰に変わる）・敵を倒すたびに血を吸ってHP回復（レベルで増加）・最大HP46',
-    kill:['vampire',1],floor:95,cond:()=>false},
+    kill:['vampire',1],floor:50,cond:()=>false},
   zombie:{ic:'🧟',n:'ゾンビ',hidden:1,d:'何度倒れても、なぜか起き上がってくる者。',fx:'最大HP74だが防具は使えない（🛡️は傷をふさいでHP回復）・🧪の回復量1・冒険中に一度だけ蘇る',
-    kill:['zombie',20],floor:90,cond:()=>false},
+    kill:['zombie',20],floor:50,cond:()=>false},
   hunter:{ic:'🏹',n:'狩人',hidden:2,d:'獲物の最後の一匹を、決して逃さない射手。',fx:'チェーンの最後につないだ敵に2倍ダメージ・最初から🎯狙撃を習得・最大HP45',cond:()=>false},
   dragoon:{ic:'🐉',n:'竜騎士',hidden:2,d:'竜の背で戦った、一撃に全てを懸ける騎士。',fx:'5つ以上のチェーンは倍率がさらに伸びる・4つ以下の攻撃は威力半分・最大HP55',cond:()=>false},
   gambler:{ic:'🃏',n:'ギャンブラー',hidden:2,d:'迷宮の宝も、命も、すべて賭けの種。',fx:'攻撃のダメージが毎回0.5〜2倍に揺れる・💰の価値3・最大HP50',cond:()=>false},
@@ -1943,7 +1945,12 @@ const CLASSES={
   alchemist:{ic:'⚗️',n:'錬金術師',hidden:2,d:'あらゆるものを混ぜ合わせる、変わり者の学者。',fx:'🛡️🧪💰を混ぜてつなげる（それぞれの効果が出るが、混ぜると効果半減）・剣の攻撃力が低い（1・強化+1）・最大HP42',cond:()=>false}
 };
 const MAIN_CLS=Object.keys(CLASSES).filter(k=>!CLASSES[k].hidden);
-const classOk=k=>{const c=CLASSES[k];if(c.hidden)return !!UNL.got['h_'+k];return !c.soon;};
+const classOk=k=>{const c=CLASSES[k];if(c.hidden)return !!UNL.got['h_'+k];return k==='warrior'||!!UNL.got['c_'+k];};
+/* 基本の職業：最初は戦士だけ。冒険を終えるたびに、かんたんな条件を満たした職業が1つ仲間になる（3回で全員） */
+const BASE_UNL=[['thief',r=>(r.shops||0)>=1,'💰をためて ショップを使う'],['cleric',r=>!!r.heal,'🧪で HPを回復する'],['mage',r=>S.level>=5,'Lv5まで 育てる']];
+function unlockBase(){if(TUT||!S||!S.run)return null;const b=BASE_UNL.find(([k,f])=>!classOk(k)&&f(S.run));if(!b)return null;
+  UNL.got['c_'+b[0]]=Date.now();unlSave();const c=CLASSES[b[0]];achToast({ic:c.ic,n:`職業「${c.n}」`,d:'次の冒険から選べる',secret:0,custom:'仲間が増えた'});return b[0];}
+function baseMigrate(){if(UNL.baseMig)return;UNL.baseMig=1;const n=Math.max(RUNS.length,((ACH.st&&ACH.st.games)||0)-1);BASE_UNL.forEach(([k],i)=>{if(n>i)UNL.got['c_'+k]=Date.now();});unlSave();}
 const drainOf=()=>3+Math.floor(S.level/3);
 function vampDrain(k,msgs){if(S.cls!=='vampire'||k<=0)return '';const h=Math.min(k*drainOf(),S.maxHp-S.hp);if(h<=0)return '';S.hp+=h;flash('bHp');const t=`🩸吸血 HP+${h}`;if(msgs)msgs.push(t);return t;}
 function applyClass(s,k){
@@ -1964,11 +1971,11 @@ function pickClass(then,cancel,peek){
   const ks=Object.keys(CLASSES);
   if(ks.filter(classOk).length<=1){then('warrior');return;}
   const cur=partyCls(),me=p=>pickClass(then,cancel,p);
-  const how=c=>c.hidden===2?'元凶を倒すと、現れるらしい':c.kill?`${EK[c.kill[0]].name}を${c.kill[1]}体倒し${c.floor?`、B${c.floor}Fまでたどり着く`:''}と…`:'';
-  const pk=peek&&!classOk(peek)?CLASSES[peek]:null,c=CLASSES[cur];
-  const card=pk?`<span class="ci">❔</span><div><b>？？？</b><p>🗨️ ${how(pk)}</p></div>`:`<span class="ci">${c.ic}</span><div><b>${c.n}</b><p>${c.fx}</p></div>`;
+  const how=c=>c.hidden===2?'元凶を倒すと、現れるらしい':c.kill?`3回目の冒険から。B${c.floor}F以上で ${EK[c.kill[0]].name}を${c.kill[1]}体倒すと…`:'';
+  const pk=peek&&!classOk(peek)?CLASSES[peek]:null,c=CLASSES[cur],bu=pk&&BASE_UNL.find(x=>x[0]===peek);
+  const card=bu?`<span class="ci" style="filter:grayscale(1);opacity:.6">${pk.ic}</span><div><b>🔒 ${pk.n}</b><p>${bu[2]}と、冒険のあとに仲間になる</p></div>`:pk?`<span class="ci">❔</span><div><b>？？？</b><p>🗨️ ${how(pk)}</p></div>`:`<span class="ci">${c.ic}</span><div><b>${c.n}</b><p>${c.fx}</p></div>`;
   openModal(`${pgHead('🧭 職業','戻る','pcCancel')}<div class="pcard">${card}</div>
-    <div class="tgrid" style="--c:3">${ks.map(k=>{const x=CLASSES[k],ok=classOk(k);return `<button class="tile ${ok?'':'lock'} ${ok&&k===cur?'sel':''}" data-k="${k}"><span class="ti">${ok?x.ic:'❔'}</span>${ok?`<small style="${x.n.length>4?'font-size:11px':''}">${x.n}</small>`:''}</button>`;}).join('')}</div>
+    <div class="tgrid" style="--c:3">${ks.map(k=>{const x=CLASSES[k],ok=classOk(k);return `<button class="tile ${ok?'':'lock'} ${ok&&k===cur?'sel':''}" data-k="${k}"><span class="ti">${ok||!x.hidden?x.ic:'❔'}</span>${ok||!x.hidden?`<small style="${x.n.length>4?'font-size:11px':''}">${x.n}</small>`:''}</button>`;}).join('')}</div>
     <button class="gopri tofoot after" id="pcGo">▶ 出発<small>${c.ic} ${c.n}</small></button>`);
   bindTiles('.tile[data-k]',b=>{const k=b.dataset.k;if(classOk(k)){UNL.cls=k;unlSave();me();}else me(k);});
   $('pcGo').onclick=()=>{closeModal();then(cur);};$('pcCancel').onclick=cancel||closeModal;
@@ -2175,7 +2182,7 @@ try{SLOT=Math.min(NSLOT-1,Math.max(0,+localStorage.getItem(LS_SLOT)||0));}catch(
 try{const b=localStorage.getItem(LS_BEST);if(b)best=JSON.parse(b);}catch(e){}
 try{localStorage.removeItem('dchain_log_cur_v1');localStorage.removeItem('dchain_log_last_v1');}catch(e){}
 achLoad();unlLoad();runsLoad();achSeed();achLong();achSave();
-applyTheme();
+baseMigrate();applyTheme();
 if(!UNL.retroH){UNL.retroH=1;for(let i=0;i<Math.min(ACH.st.clears||0,5);i++)clearReward(true);unlSave();}checkUnlocks();refreshTitle();setTimeout(titleAnim,100);setCloud('この端末のブラウザに保存');
 requestAnimationFrame(frame);
 setTimeout(initCloud,0);
