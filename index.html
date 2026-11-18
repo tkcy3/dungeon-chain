@@ -19,11 +19,11 @@
 #story{position:fixed;inset:0;z-index:30;background:#040304;display:flex;align-items:center;justify-content:center;padding:28px;transition:opacity 1.4s}
 #story.fade{opacity:0}
 #story .lantern{position:absolute;left:50%;top:48%;width:150vmin;height:150vmin;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(255,168,84,.15) 0,rgba(255,140,60,.06) 26%,transparent 58%);animation:flick 3.2s infinite;pointer-events:none}
-#storyText{position:relative;font-family:var(--mincho);font-size:18px;line-height:2.2;color:#d8cdbd;text-align:center;max-width:22em;letter-spacing:.07em;transition:opacity .9s}
+#storyText{position:relative;font-family:var(--mincho);font-size:min(18px,4.8vw);line-height:2.2;color:#d8cdbd;text-align:center;max-width:22em;letter-spacing:.07em;transition:opacity .9s}
 #storyText.out{opacity:0}
-#storyText .ln{opacity:0;animation:lnIn 1.8s ease forwards}
+#storyText .ln{opacity:0;animation:lnIn 1.8s ease forwards;white-space:nowrap}
 #mbox .em{color:#f0d9a8;font-size:17px}
-#storyText .em{font-size:22px;color:#f0d9a8;text-shadow:0 0 14px rgba(255,170,90,.35)}
+#storyText .em{font-size:min(22px,6vw);color:#f0d9a8;text-shadow:0 0 14px rgba(255,170,90,.35)}
 @keyframes lnIn{from{opacity:0;transform:translateY(8px);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}
 #storyHint{position:absolute;bottom:42px;left:0;right:0;text-align:center;font-size:12px;color:#6d6458;opacity:0;transition:opacity 1.2s;letter-spacing:.2em}
 #storySkip{position:absolute;top:14px;right:14px;background:none;border:1px solid #352e2b;color:#81776b;border-radius:8px;padding:6px 12px;font-size:13px;z-index:2}
@@ -867,10 +867,10 @@ async function initCloud(){
 /* ---------- opening story ---------- */
 const STORY=[
   ['その年、村の井戸は','黒く濁りはじめた。'],
-  ['作物は枯れ、夜はすこしずつ長くなった。','古老たちは声をひそめて言った。','「地の底で、何かが目をひらいたのだ」'],
-  ['村はずれの、忘れられた墓地。','苔むした石棺の下に、','誰も降りたことのない階段がある。'],
-  ['湿った石の匂い。','どこかで、水の滴る音。','ランタンの灯が、闇に小さな輪をつくる。'],
-  ['目指すは、地下100F。','<span class="em">世界の元凶を――討て。</span>']
+  ['作物は枯れ、','夜はすこしずつ長くなった。','古老たちは声をひそめて言った。','「地の底で、','何かが目をひらいたのだ」'],
+  ['村はずれの、忘れられた墓地。','苔むした石棺の下に、','誰も降りたことのない','階段がある。'],
+  ['湿った石の匂い。','どこかで、水の滴る音。','ランタンの灯が、','闇に小さな輪をつくる。'],
+  ['目指すは、地下100F。','<span class="em">世界の元凶を――</span>']
 ];
 let storyDone=null,storyPage=0,storyReady=false,storyTimer=null;
 function playStory(then){
@@ -1737,8 +1737,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshA
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='1.0.1';
+const VERSION='1.0.2';
 const CHANGELOG=[
+  {v:'1.0.2',d:'2026-11-18',items:['オープニングの文章を、スマホでも読みやすい改行に整えた']},
   {v:'1.0.1',d:'2026-11-18',items:['一部の職業が解放されるタイミングを調整した']},
   {v:'1.0.0',d:'2026-11-18',items:[
     '敵を倒したとき・ダメージを受けたとき・盾で防いだときなどの効果音を新しくした',
