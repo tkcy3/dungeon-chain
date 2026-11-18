@@ -1767,11 +1767,13 @@ const CHANGELOG=[
     'バージョン表示と、この「更新内容」を追加しました']}
 ];
 const LS_VER='dchain_seen_ver';
+/* 同じ日の更新は1つにまとめて見せる（新しい順） */
+function chgByDay(){const out=[];for(const c of CHANGELOG){let g=out.find(x=>x.d===c.d);if(!g){g={d:c.d,vs:[],items:[]};out.push(g);}g.vs.push(c.v);g.items.push(...c.items);}return out;}
 function verUnseen(){let v=null;try{v=localStorage.getItem(LS_VER);}catch(e){}
   if(v===VERSION)return false;if(!v&&!((ACH&&ACH.st&&ACH.st.games)||0)){try{localStorage.setItem(LS_VER,VERSION);}catch(e){}return false;}return true;}
 function refreshVer(){const b=$('ver');if(!b)return;const n=verUnseen();b.textContent=`v${VERSION}`+(n?' ・ 更新内容を見る':'');b.classList.toggle('new',n);}
 function showChangelog(back){try{localStorage.setItem(LS_VER,VERSION);}catch(e){}refreshVer();
-  openModal(`<h2>📋 更新内容</h2><p style="text-align:center;font-size:12px;color:#a99fae">いまのバージョン：v${VERSION}</p><div class="chg">${CHANGELOG.map(c=>`<h3>v${c.v}<small>${c.d.replace(/-/g,'/')}</small></h3><ul>${c.items.map(x=>`<li>${x}</li>`).join('')}</ul>`).join('')}</div>
+  openModal(`<h2>📋 更新内容</h2><p style="text-align:center;font-size:12px;color:#a99fae">いまのバージョン：v${VERSION}</p><div class="chg">${chgByDay().map(g=>`<h3>${g.d.replace(/-/g,'/')}<small>v${g.vs[g.vs.length-1]}${g.vs.length>1?'〜v'+g.vs[0]:''}</small></h3><ul>${g.items.map(x=>`<li>${x}</li>`).join('')}</ul>`).join('')}</div>
     <button class="opt" id="chgB" style="text-align:center;position:sticky;bottom:0;background:#2e2535;margin-top:12px">戻る</button>`);
   $('chgB').onclick=()=>{if(back)back();else closeModal();};}
 function showSettings(back,msg){
@@ -1885,6 +1887,7 @@ function showVillage(back){checkVillage();const me=()=>showVillage(back);
   const wellOk=vilOk('well');
   openModal(`<h2 style="font-family:var(--mincho)">🏘️ 村</h2>
     <p style="text-align:center;font-size:12.5px;color:#c9bfcf;margin:0 0 6px">${wellOk?'井戸は澄み、村に灯りが戻った。':'黒く濁った井戸のまわりで、村は静かに眠っている。'}<br>復興 ${vilCount()} / ${vilTotal()}</p>
+    <p id="vCls" style="text-align:center;font-size:13px;margin:0 0 8px">次の冒険の職業：<b>${CLASSES[partyCls()].ic} ${CLASSES[partyCls()].n}</b>${vilOk('tavern')?'<small style="color:#a99fae">（🍺 酒場で変えられる）</small>':''}</p>
     ${news?`<div class="vnews">${news}</div>`:''}<div class="vgrid">${VIL.map(cell).join('')}</div>
     <p id="vInfo" class="vz-cap">建物をタップ。冒険へは 🪦 墓地の階段 から</p>
     <button class="opt" id="vBack" style="text-align:center">タイトルへ</button>`);
@@ -1894,6 +1897,7 @@ function showVillage(back){checkVillage();const me=()=>showVillage(back);
     if(v.id==='tavern')return showTavern(me);if(v.id==='tailor')return showTailor(me);
     if(v.id==='stairs')return villageStairs(me);
     $('vInfo').innerHTML=v.id==='well'?'澄んだ水が、静かに湧いている。<br>この村は、もう大丈夫だ。':`${v.ic} ${v.n}：${v.fx}`;});
+  if(vilOk('tavern'))$('vCls').onclick=()=>showTavern(me);
   $('vBack').onclick=back||closeModal;}
 /* tower: doors map, achievements, stats */
 function showTowerMenu(back){const me=()=>showTowerMenu(back);
