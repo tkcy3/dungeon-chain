@@ -1739,7 +1739,7 @@ let settingsBack=null;
 /* ---------- version & changelog ---------- */
 const VERSION='1.1.0';
 const CHANGELOG=[
-  {v:'1.1.0',d:'2026-11-19',items:['村が冒険の拠点になりました。冒険に出るときも、冒険から戻ったときも、村に立ち寄ります','冒険の記録や魔物図鑑は、村の建物で見られるようになりました','冒険中のメニューの「タイトルへ戻る」を「村に戻る」に変えました']},
+  {v:'1.1.0',d:'2026-11-19',items:['拾った手記は、村の古民家で読めるようになりました','村が冒険の拠点になりました。冒険に出るときも、冒険から戻ったときも、村に立ち寄ります','冒険の記録や魔物図鑑は、村の建物で見られるようになりました','冒険中のメニューの「タイトルへ戻る」を「村に戻る」に変えました']},
   {v:'1.0.3',d:'2026-11-19',items:['元凶を倒して手に入る隠し職業が、集めるほど手に入りにくくなるようにしました']},
   {v:'1.0.2',d:'2026-11-18',items:['オープニングの文章を、スマホでも読みやすい改行に整えました','冒険を始めたときの案内文を変えました']},
   {v:'1.0.1',d:'2026-11-18',items:['一部の職業が解放されるタイミングを調整しました']},
@@ -1841,7 +1841,7 @@ function showStages(back){
 /* ---------- the village (unlock hub) ---------- */
 const VIL=[
   {id:'tower',ic:'🔭',n:'見張り台',fx:'扉の地図・実績・戦績が見られる',cond:()=>achCount()>=1,hint:'実績を1つ解除する',easy:1},
-  {id:'house',ic:'🛖',n:'古民家',fx:'拾った「失われた手記」が読める',cond:()=>unlocked('s3'),hint:'世界の元凶を倒す'},
+  {id:'house',ic:'🛖',n:'古民家',fx:'拾った「失われた手記」が読める',cond:()=>Object.keys(UNL.notes||{}).length>=1,hint:'失われた手記を拾う',easy:1},
   {id:'church',ic:'⛪',n:'教会',fx:'一度手にした遺物を1つ、冒険に持ち込める',cond:()=>unlocked('s2'),hint:'B40Fに到達する'},
   {id:'tavern',ic:'🍺',n:'酒場',fx:'旅の仲間（職業）が集まる。隠し職業の噂も聞ける',cond:()=>unlocked('s1'),hint:'B20Fのボスを倒す'},
   {id:'well',ic:'⛲',n:'村の井戸',fx:'',cond:()=>VIL.filter(v=>v.id!=='well'&&!v.deco).every(v=>vilOk(v.id)),hint:'村のすべての建物をよみがえらせる'},
@@ -1852,9 +1852,9 @@ const VIL=[
 ];
 const vilOk=id=>!!(UNL.vil&&UNL.vil[id]);
 /* 村の建物は、1回の冒険につき1つずつよみがえる（全部そろうのは5回目くらい） */
-const VIL_ORDER=['tower','library','tavern','smith','church','tailor','house'];
+const VIL_ORDER=['tower','library','house','tavern','smith','church','tailor'];
 /* 建物ごとの、よみがえるのに必要な冒険の回数 */
-const VIL_MIN={tavern:3,smith:6,church:10,tailor:15,house:20};
+const VIL_MIN={tavern:3,smith:6,church:10,tailor:15};
 function checkVillage(){UNL.vil=UNL.vil||{};let ch=false;const g=(ACH&&ACH.st&&ACH.st.games)||0;
   const ord=[...VIL.filter(x=>x.id!=='well').sort((a,b)=>VIL_ORDER.indexOf(a.id)-VIL_ORDER.indexOf(b.id)),VIL.find(x=>x.id==='well')];
   for(const v of ord){if(v.deco||UNL.vil[v.id]||!v.cond()||g<(VIL_MIN[v.id]||0))continue;
@@ -1910,7 +1910,7 @@ const NOTES=[
 /* 1回の冒険で拾える手記は1つまで（全部そろうのは25〜30回目くらい） */
 const NOTES_PER_RUN=1;
 function checkNotes(F){if(TUT||!S)return;UNL.notes=UNL.notes||{};let got=0;NOTES.forEach((n,i)=>{if(F>=n.f&&!UNL.notes[i]&&(S.notesGot||0)<NOTES_PER_RUN){UNL.notes[i]=1;S.notesGot=(S.notesGot||0)+1;got++;}});
-  if(got){unlSave();if(inGame)achToast({ic:'📜',n:'失われた手記を拾った',d:vilOk('house')?'村の古民家で読める':'村の古民家がよみがえれば読める',secret:0,custom:`手記 ${Object.keys(UNL.notes).length} / ${NOTES.length}`});}}
+  if(got){unlSave();if(inGame)achToast({ic:'📜',n:'失われた手記を拾った',d:'村の古民家で読める',secret:0,custom:`手記 ${Object.keys(UNL.notes).length} / ${NOTES.length}`});checkVillage();}}
 function showLibrary(back){const n=UNL.notes||{};
   openModal(`<h2>🛖 古民家</h2><p style="text-align:center;font-size:12px;color:#a99fae">誰かが暮らしていた家。棚に、拾い集めた手記が並んでいる。<br>失われた手記 ${Object.keys(n).length} / ${NOTES.length}</p><div class="alist">${NOTES.map((x,i)=>n[i]?`<div class="ach"><span class="ai">📜</span><span><b>手記 その${i+1}</b><small style="font-family:var(--mincho);line-height:1.8">${x.t}</small></span></div>`:`<div class="ach lock"><span class="ai">❔</span><span><b>？？？</b><small>B${x.f}F付近に落ちているらしい</small></span></div>`).join('')}</div>
     <button class="opt" id="lbB" style="text-align:center;position:sticky;bottom:0;background:#2e2535">戻る</button>`);$('lbB').onclick=back;}
