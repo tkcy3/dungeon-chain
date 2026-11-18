@@ -244,6 +244,7 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
       <button class="tbtn" id="btnNew">冒険に出る</button>
     </div>
     <div class="tsub">
+      <button id="btnAch"><span>🏆</span>実績</button>
       <button id="btnSet"><span>⚙️</span>設定</button>
       <button id="btnImport"><span>📥</span>読み込み</button>
     </div>
@@ -309,15 +310,15 @@ function newState(cls){
     baseDmg:1,weaponDmg:2,healPer:2,goldPer:2,
     gold:0,goldNeed:70,shieldPts:0,shieldNeed:30,
     skills:[],pending:[],bossFlag:false,maxChain:0,bless:0,floor:1,fprog:0,bossUp:false,run:{hit:false,shops:0,mute:0},board:[]};
-  if(!TUT){s.curse=Math.min(UNL.curseSel||0,UNL.curseMax||0);s.relics=[];}
+  if(!TUT){s.curse=0;s.relics=[];}
   for(let r=0;r<N;r++){s.board.push([]);for(let c=0;c<N;c++){const t=randTile(s);t.ry=r;s.board[r].push(t);}}
-  applyClass(s,TUT?'warrior':(cls||(S&&S.cls)||'warrior'));villagePerks(s);
-  if(!TUT)s.name=getName();S=s;applyCarry();ensureMove();if(!TUT){achStat('games');const td=new Date().toDateString();if(ACH.st.lastDay!==td){ACH.st.lastDay=td;achStat('days');}achSave();}
+  applyClass(s,TUT?'warrior':(cls||(S&&S.cls)||'warrior'));
+  if(!TUT)s.name=getName();S=s;ensureMove();if(!TUT){achStat('games');const td=new Date().toDateString();if(ACH.st.lastDay!==td){ACH.st.lastDay=td;achStat('days');}achSave();}
   return s;
 }
 function randTile(s,noEnemy){
   const aw=t=>{const a=s.anom&&ANOMS[s.anom];return a&&a.w&&a.w[t]||1;};
-  const w=[['skull',noEnemy?0:(17+Math.min(8,s.turn/40))*aw('skull')*(!TUT&&unlocked('s1')?.92:1)*(s.relics&&s.relics.includes('bell')?.82:1)],['sword',20*aw('sword')],['shield',19*aw('shield')],['potion',17*aw('potion')],['coin',20*aw('coin')]];
+  const w=[['skull',noEnemy?0:(17+Math.min(8,s.turn/40))*aw('skull')*(!TUT&&playsN()>=3?.92:1)*(s.relics&&s.relics.includes('bell')?.82:1)],['sword',20*aw('sword')],['shield',19*aw('shield')],['potion',17*aw('potion')],['coin',20*aw('coin')]];
   let x=Math.random()*w.reduce((a,b)=>a+b[1],0);
   for(const [t,v] of w){if((x-=v)<0)return t==='skull'?makeEnemy(s):{t};}
   return {t:'coin'};
@@ -352,7 +353,7 @@ const RELICS={
 };
 const hasR=id=>!!(typeof S!=='undefined'&&S&&S.relics&&S.relics.includes(id));
 function relicTgt(e,d){if(!S||!S.relics)return d;let m=1;if(hasR('heart')&&(e.boss||e.mini))m*=1.5;if(hasR('blade')&&e.hp<=e.maxHp/2)m*=1.5;return m===1?d:Math.round(d*m);}
-function relicOptions(){const pool=Object.keys(RELICS).filter(k=>!hasR(k)&&(!RELICS[k].x||unlocked('s4')));
+function relicOptions(){const pool=Object.keys(RELICS).filter(k=>!hasR(k)&&!RELICS[k].x);
   return pick(pool.map(k=>({label:`${RELICS[k].ic} ${RELICS[k].n}`,desc:RELICS[k].d,apply:()=>{S.relics=S.relics||[];S.relics.push(k);UNL.relSeen=UNL.relSeen||{};UNL.relSeen[k]=1;unlSave();if(RELICS[k].on)RELICS[k].on();}})),3);}
 function showRelics(){if(modalOpen||!S.relics||!S.relics.length)return;openModal(`<h2>🏺 持っている遺物</h2><div class="alist">${S.relics.map(k=>`<div class="ach"><span class="ai">${RELICS[k].ic}</span><span><b>${RELICS[k].n}</b><small>${RELICS[k].d}</small></span></div>`).join('')}</div><p style="text-align:center;font-size:12px;color:#a99fae">遺物はこの冒険のあいだだけ有効</p><button class="opt" id="rlX" style="text-align:center">閉じる</button>`);$('rlX').onclick=closeModal;}
 function relicsHtml(){return (S.relics||[]).map(k=>RELICS[k].ic).join('');}
@@ -369,7 +370,7 @@ const ANOMS={
   wind:{ic:'🍃',n:'追い風',d:'4つ以上のチェーンの倍率+0.15'},
   rust:{ic:'🟤',n:'腐食',d:'防御が毎ターン1ずつ錆びていく'}
 };
-function rollAnomaly(F,msgs){if(TUT||!unlocked('s3'))return;
+function rollAnomaly(F,msgs){return;
   if(F%10===1&&F>10){if(Math.random()<.55){const ks=Object.keys(ANOMS).filter(k=>k!==S.anom);S.anom=ks[rnd(ks.length)];S.anomTo=F+9;const a=ANOMS[S.anom];msgs.push(`${a.ic} 異変「${a.n}」：${a.d}`);}else if(S.anom){msgs.push(`${ANOMS[S.anom].ic} 異変がおさまった`);S.anom=null;}}
   else if(S.anom&&F>S.anomTo){msgs.push(`${ANOMS[S.anom].ic} 異変がおさまった`);S.anom=null;}}
 
@@ -486,9 +487,8 @@ function makeEnemy0(s){
   if(s.bossFlag){s.bossFlag=false;return makeBoss(s);}
   if(s.miniFlag){s.miniFlag=false;return makeMini(s);}
   const F=s.floor||1;let w;
-  if(!unlocked('s1'))w=[['skel',10],['bat',F>=2?4:0],['zombie',F>=6?3:0],['bomb',F>=8?2:0],['spider',F>=12?3:0],['ghost',F>=16?2:0],['golem',F>=21?2:0],['shaman',F>=26?2:0]].filter(([k])=>playOk(k));
-  else{if(Math.random()<.004){const rp=rareAt(F);if(rp.length)return makeKind(rp[rnd(rp.length)],T);}
-    w=Object.entries(rosterAt(F));}
+  if(Math.random()<.004){const rp=rareAt(F);if(rp.length)return makeKind(rp[rnd(rp.length)],T);}
+  w=Object.entries(rosterAt(F));
   let x=Math.random()*w.reduce((a,b)=>a+b[1],0);
   for(const [k,v] of w){if((x-=v)<0)return makeKind(k,T);}
   return makeKind('skel',T);
@@ -823,16 +823,16 @@ function showHelp(back){const M=[[3,1],[4,1.2],[5,1.4],[7,1.8],[10,2.6],[14,4.1]
 function showMenu(){
   if(TUT){openModal(`${pgHead('🎓 チュートリアル','✕ 閉じる','u4')}<button class="prow" id="u1"><span class="ri">⏭️</span><span class="rt">${TUT.fromNew?'飛ばして冒険へ':'チュートリアルを終わる'}</span></button><button class="prow" id="u2"><span class="ri">❓</span><span class="rt">遊び方</span></button><button class="prow" id="u3"><span class="ri">🏠</span><span class="rt">タイトルへ</span></button>`);
     $('u1').onclick=tutSkip;$('u2').onclick=()=>showHelp(showMenu);$('u3').onclick=()=>{closeModal();endTutorial();showTitle();};$('u4').onclick=closeModal;return;}
-  const rec=!(firstRun()||!(vilOk('tower')||vilOk('library')));
+  const rec=!firstRun();
   openModal(`${pgHead('☰ メニュー','✕ 閉じる','m5')}<div class="tgrid" style="--c:3">
     <button class="tile big" id="m1"><span class="ti">❓</span><small>遊び方</small></button>
     <button class="tile big" id="m8"><span class="ti">⚙️</span><small>設定</small></button>
-    <button class="tile big" id="m3"><span class="ti">🏘️</span><small>村へ</small></button>
+    <button class="tile big" id="m3"><span class="ti">🏠</span><small>タイトルへ</small></button>
     ${rec?'<button class="tile big" id="m7"><span class="ti">📜</span><small>記録</small></button>':''}
     <button class="tile big" id="m2"><span class="ti">💾</span><small>書き出し</small></button></div>
     <button class="prow danger" id="m4" style="margin-top:22px"><span class="ri">🏳️</span><span class="rt">あきらめる</span></button>`);
   $('m1').onclick=()=>showHelp(showMenu);$('m2').onclick=showExport;if(rec)$('m7').onclick=()=>showRecords(showMenu);$('m8').onclick=()=>showSettings(showMenu);
-  $('m3').onclick=()=>{saveGame();closeModal();showTitle(true);};
+  $('m3').onclick=()=>{saveGame();closeModal();showTitle();};
   $('m4').onclick=()=>{openModal(`<div class="big" style="text-align:center">🏳️</div><h2>あきらめる？</h2><p style="text-align:center">この冒険のセーブは消えます。</p><button class="opt" id="n" style="text-align:center">続ける</button><button class="opt" id="y" style="text-align:center;border-color:#8a3a3a;color:#ffc4c4">あきらめる</button>`);
     $('y').onclick=()=>{closeModal();GIVEUP=true;gameOver();};$('n').onclick=showMenu;};
   $('m5').onclick=closeModal;
@@ -951,7 +951,7 @@ function refreshTitle(){refreshVer();
   let info='';if(has){let L=null;[0,1,2].forEach(i=>{const s=slotInfo(i);if(s&&!s.broken&&(!L||(s.ts||0)>(L.ts||0)))L=s;});
     info=(n>1?`セーブ${n}件・`:'')+(L?`前回：${L.name?esc(L.name)+' ':''}B${L.floor||1}F・Lv${L.level}`:'');if(info)info=`（${info}）`;}
   $('btnCont').innerHTML='続きから'+(info?`<small>${info.replace(/^（|）$/g,'')}</small>`:'');
-  $('bestLine').textContent=best?`${best.cleared?'👑':'🕳️'} 最深 B${best.floor||1+Math.floor(best.turn/2)}F`+(UNL.curseMax?`　🩸 呪いLv${UNL.curseMax}まで`:''):'';
+  $('bestLine').textContent=best?`${best.cleared?'👑':'🕳️'} 最深 B${best.floor||1+Math.floor(best.turn/2)}F`:'';
 }
 /* ---------- title background: a live board tracing chains ---------- */
 let tAnimOn=false;const TT=['skull','sword','shield','potion','coin'];
@@ -974,7 +974,7 @@ function titleAnim(){if(tAnimOn)return;tAnimOn=true;const bd=$('tBoard'),sv=$('t
       clearInterval(t);setTimeout(()=>{P.forEach(([r,c])=>{const el=cells[r*N+c];el.classList.remove('on');el.classList.add('gone');});sv.innerHTML='';
         setTimeout(()=>{P.forEach(([r,c])=>{set(r,c,tRand());cells[r*N+c].classList.remove('gone');});setTimeout(cycle,700);},380);},650);},230);}
   setTimeout(cycle,900);}
-function showTitle(toVil){setTimeout(titleAnim,50);checkUnlocks();setTimeout(()=>{if(inGame||modalOpen)return;if(UNL.unseen.length)showUnlockCeremony(toVil?()=>{refreshTitle();goVillage();}:refreshTitle);else if(toVil)goVillage();},toVil?250:400);clearTimeout(pendTimer);hideTip();endTutorial();inGame=false;bgmStop();closeModal();refreshTitle();$('title').classList.remove('hidden');}
+function showTitle(){setTimeout(titleAnim,50);checkUnlocks();clearTimeout(pendTimer);hideTip();endTutorial();inGame=false;bgmStop();closeModal();refreshTitle();$('title').classList.remove('hidden');}
 function startGame(){inGame=true;if(!TUT){const h=new Date().getHours();if(h<4)setTimeout(()=>unlock('s_night'),1500);}if(!TUT&&S&&S.turn===0)setTimeout(()=>{if(inGame&&!TUT&&S.turn===0)showBanner('B1F',zoneAt(1).name,'目指すは地下100F。元凶は、その奥に。');},1300);ensureAudio();if(AU.on.bgm)bgmStart();$('title').classList.add('hidden');chain=[];$('log').textContent='';layout();updateAll();showNextPending();}
 function gameOver(){
   if(GIVEUP&&S.turn===0)unlock('s_coward');if(!GIVEUP&&floorOf()===100)unlock('s_almost');achState();
@@ -985,13 +985,13 @@ function showGameOver(isNew){
   openModal(`<div class="big" style="text-align:center">💀</div><h2>力尽きた…</h2>
   <p style="text-align:center;font-size:15px"><span style="color:#a99fae;font-size:13px">${NM()}（${(CLASSES[S.cls]||CLASSES.warrior).n}）${S.curse?`・呪いLv${S.curse}`:''}${S.relics&&S.relics.length?`・${relicsHtml()}`:''}</span><br>B${floorOf()}F「${floorOf()%20===0?bossFloorName(floorOf()):zoneAt(floorOf()).name}」で倒れた<br>${S.turn}ターン ／ 撃破${S.kills} ／ Lv${S.level} ／ 最長${S.maxChain||0}チェーン</p>
   <p style="text-align:center">${isNew?'🏆 最深記録を更新！':`最深記録：B${best.floor||1}F`}</p>${heldAchHtml()}
-  <button class="opt" id="g1" style="text-align:center">もう一度</button><button class="opt" id="g2" style="text-align:center">🏘️ 村に戻る</button>
+  <button class="opt" id="g1" style="text-align:center">もう一度</button><button class="opt" id="g2" style="text-align:center">🏠 タイトルへ</button>
   <button class="opt" id="g3" style="text-align:center;font-size:13px">📝 この結果をメモ用にコピー</button>`);copyBtn('g3',runReportText);
-  $('g1').onclick=()=>{closeModal();const go=()=>{newState();startGame();saveGame();};if(UNL.unseen.length)showUnlockCeremony(go);else go();};
-  $('g2').onclick=()=>{closeModal();showTitle(true);};
+  $('g1').onclick=()=>{closeModal();newState();startGame();saveGame();};
+  $('g2').onclick=()=>{closeModal();showTitle();};
 }
 $('btnCont').onclick=()=>{if(!anySave())return;const f=[0,1,2].filter(i=>slotJson(i));if(f.length===1){loadSlot(f[0]);return;}showSlots('load',loadSlot);};
-function newAdventure(cls){if((cls===undefined||typeof cls!=='string')&&!TUT&&vilOk('tavern'))cls=partyCls();if(cls===undefined||typeof cls!=='string'){pickClass(c=>newAdventure(c),()=>{closeModal();if(TUT){endTutorial();showTitle();}});return;}closeModal();endTutorial();newState(cls);startGame();saveGame();}
+function newAdventure(cls){if(cls===undefined||typeof cls!=='string'){pickClass(c=>newAdventure(c),()=>{closeModal();if(TUT){endTutorial();showTitle();}});return;}closeModal();endTutorial();newState(cls);startGame();saveGame();}
 function slotCard(i){const s=slotInfo(i);if(!s)return '';if(s.broken)return `<span class="si">⚠️</span><span><b>？</b><small>読み込めないデータ</small></span>`;
   const c=CLASSES[s.cls]||CLASSES.warrior,d=s.ts?new Date(s.ts):null;
   return `<span class="si">${c.ic}</span><span style="flex:1;min-width:0"><b>B${s.floor||1}F</b><small>Lv${s.level}・${esc(s.name||c.n)}</small></span><small style="align-self:flex-start">${d?`${d.getMonth()+1}/${d.getDate()}`:''}</small>`;}
@@ -1015,31 +1015,21 @@ function loadSlot(i){setSlot(i);try{closeModal();startFromSave(savedJson);}catch
 let NG_BACK=null;
 function showNewGameMenu(over){
   if(typeof over!=='boolean'){chooseNewSlot(ov=>showNewGameMenu(!!ov),NG_BACK||undefined);return;}
-  const vb=NG_BACK;NG_BACK=null;
+  NG_BACK=null;
   const first=!tutDoneFlag()&&!best;
-  const pc=CLASSES[partyCls()];
-  openModal(`${pgHead('⚔️ 新しい冒険',vb?'村':'✕ やめる','ng4')}${nameField()}${curseField()}<p style="text-align:center;margin:0 0 12px">${over?`<span class="chip" style="border-color:#8a3a3a;color:#ffb0a0">💾 ${SLOT+1} に上書き</span>`:`<span class="chip">💾 ${SLOT+1}</span>`}</p>
-    <div class="tgrid" style="--c:${vb?2:3}">
+  openModal(`${pgHead('⚔️ 新しい冒険','✕ やめる','ng4')}${nameField()}<p style="text-align:center;margin:0 0 12px">${over?`<span class="chip" style="border-color:#8a3a3a;color:#ffb0a0">💾 ${SLOT+1} に上書き</span>`:`<span class="chip">💾 ${SLOT+1}</span>`}</p>
+    <div class="tgrid" style="--c:3">
       <button class="tile big ${first?'sel':''}" id="ng1"><span class="ti">📜</span><small>物語から</small></button>
-      ${vb?'':'<button class="tile big" id="ng2"><span class="ti">⚔️</span><small>すぐ冒険</small></button>'}
-      <button class="tile big" id="ng3"><span class="ti">🎓</span><small>練習から</small></button></div>
-    ${vb?`<button class="gopri tofoot after" id="ng2">⚔️ 冒険へ<small>${vilOk('tavern')?`${pc.ic} ${pc.n}`:'地の底へ'}</small></button>`:''}`);
-  $('ng1').onclick=()=>{closeModal();if(first){playStory(()=>startTutorial(true));return;}if(vilOk('tavern')){const c=partyCls();playStory(()=>newAdventure(c));return;}pickClass(c=>playStory(()=>newAdventure(c)));};
-  $('ng2').onclick=()=>newAdventure();
+      <button class="tile big ${first?'':'sel'}" id="ng2"><span class="ti">⚔️</span><small>すぐ冒険</small></button>
+      <button class="tile big" id="ng3"><span class="ti">🎓</span><small>練習から</small></button></div>`);
+  const back=()=>showNewGameMenu(over);
+  $('ng1').onclick=()=>{if(first){closeModal();playStory(()=>startTutorial(true));return;}pickClass(c=>{closeModal();playStory(()=>newAdventure(c));},back);};
+  $('ng2').onclick=()=>pickClass(c=>newAdventure(c),back);
   $('ng3').onclick=()=>{closeModal();startTutorial(true);};
-  $('ng4').onclick=vb||closeModal;wireNameField();wireCurse();
+  $('ng4').onclick=closeModal;wireNameField();
 }
-const villageReady=()=>!!best||((ACH&&ACH.st&&ACH.st.games)||0)>0;
-/* 墓地の階段：続きの冒険があれば選べる。新しい冒険は職業選びから */
-function villageStairs(back){const f=[0,1,2].filter(i=>slotJson(i));
-  const fresh=()=>{NG_BACK=back;showNewGameMenu();};
-  if(!f.length)return fresh();
-  openModal(`${pgHead('🪦 墓地の階段','村')}
-    <button class="opt" id="sa1">📖 続きから<small>${f.length===1?(i=>{const c=CLASSES[i.cls]||CLASSES.warrior;return `${c.ic} ${c.n}・B${i.floor||1}F`;})(slotInfo(f[0])||{}):`途中の冒険 ${f.length}つ`}</small></button>
-    <button class="opt" id="sa2">⚔️ 新しい冒険</button>`);
-  $('sa1').onclick=()=>{if(f.length===1)loadSlot(f[0]);else showSlots('load',loadSlot,()=>villageStairs(back));};$('sa2').onclick=fresh;$('pgBack').onclick=back;}
-function goVillage(){showVillage(()=>{closeModal();refreshTitle();});}
-$('btnNew').onclick=()=>{if(villageReady())goVillage();else showNewGameMenu();};
+$('btnNew').onclick=()=>showNewGameMenu();
+$('btnAch').onclick=()=>showRecords(null);
 $('tutSkip').onclick=e=>{e.stopPropagation();tutSkip();};
 $('btnSet').onclick=()=>showSettings(null);
 $('ver').onclick=()=>showChangelog(null);
@@ -1558,8 +1548,7 @@ function flashFloor(){const e=$('tTurn');e.classList.remove('flash');void e.offs
 function advanceFloor(msgs){
   if(TUT||S.bossFlag||bossAlive())return;
   S.fprog=(S.fprog||0)+1;if(S.fprog<2)return;
-  S.fprog=0;S.floor=floorOf()+1;const F=S.floor;if(S.kk)checkClassKills();flashFloor();maybeEvent(F);rollAnomaly(F,msgs);checkNotes(F);
-  if(F%20===10&&unlocked('s2')){S.miniFlag=true;msgs.push('⚠️ 強い気配がする…（中ボス）');}
+  S.fprog=0;S.floor=floorOf()+1;const F=S.floor;if(S.kk)checkClassKills();flashFloor();
   if(F%20===0){S.bossFlag=true;const k=bossKindAt(F);
     showBanner(`B${F}F`,bossFloorName(F),k==='abyss'?'世界の元凶が、目を覚ました。':`${EK[k].icon} ${EK[k].name}が待ち構えている。倒すまで先へは進めない。`,'#ff8a7a');
     msgs.push(`B${F}F ${bossFloorName(F)}`);sfx('boss');return;}
@@ -1575,7 +1564,7 @@ function checkBoss(msgs){
   else{msgs.push('🗝️ ボスを倒した！下への階段が開いた');sfx('level');}
 }
 function showClear(){
-  unlock('clear');let rk=null;if(!TUT){const L=S.curse||0;if(L>=1)UNL.curseClear=Math.max(UNL.curseClear||0,L);const nm=Math.min(10,L+1);if(nm>(UNL.curseMax||0)){UNL.curseMax=nm;achToast({ic:'🩸',n:`呪いLv${nm}が解放された`,d:'新しい冒険で、呪いの強さを選べる',secret:0,custom:'さらなる試練'});}unlSave();checkUnlocks();rk=clearReward();achStat('clears');unlock('cl_'+(S.cls||'warrior'));achLong();achSave();}
+  unlock('clear');let rk=null;if(!TUT){unlSave();checkUnlocks();rk=clearReward();achStat('clears');unlock('cl_'+(S.cls||'warrior'));achLong();achSave();}
   sfx('level');const nth=Math.round(floorOf()/100);S.cleared=(S.cleared||0)+1;
   recordBest();
   if(nth===1){
@@ -1799,8 +1788,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshA
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='1.1.3';
+const VERSION='1.2.0';
 const CHANGELOG=[
+  {v:'1.2.0',d:'2026-11-19',items:['パズルに集中できるよう、村・手記・扉をなくして作りをすっきりさせました','4つの職業を最初から選べるようになりました','タイトル画面に「🏆 実績」を追加し、実績・魔物図鑑・戦績をまとめました','盤面の色は「設定」から選べます']},
   {v:'1.1.3',d:'2026-11-19',items:['戻るボタンを画面の下にまとめ、片手で押しやすくしました','設定・メニュー・遊び方・セーブの画面を、アイコン中心に見やすくしました']},
   {v:'1.1.2',d:'2026-11-19',items:['村の建物の中を、大きな文字とアイコンで見やすくしました','手記は1枚ずつ大きく読めるようになりました']},
   {v:'1.1.1',d:'2026-11-19',items:['村の画面を見やすく整理しました。冒険へは、いちばん下の「墓地の階段へ」から出発できます','墓地の階段のボタンに、途中の冒険が出るようにしました']},
@@ -1832,12 +1822,13 @@ function showSettings(back,msg){
   const tg=(id,ic,label,on)=>`<button class="tile big tg ${on?'':'off'}" id="${id}"><span class="ti">${ic}</span><small>${label}</small><em>${on?'ON':'OFF'}</em></button>`;
   openModal(`${pgHead('⚙️ 設定','戻る','stClose')}<div class="tgrid" style="--c:3">${tg('st1','🎵','BGM',AU.on.bgm)}${tg('st2','🔊','効果音',AU.on.sfx)}${tg('st3',VIB_IC==='振動'?'📳':VIB_IC,'振動',AU.on.vib)}</div>
     <button class="prow" id="stVer" style="margin-top:14px"><span class="ri">📋</span><span class="rt">更新内容${verUnseen()?'<span class="newb">NEW</span>':''}</span><span class="rs">v${VERSION}</span></button>
+    <button class="prow" id="stTheme"><span class="ri">🎨</span><span class="rt">盤面の色</span><span class="rs">›</span></button>
     ${inGame?'':'<button class="prow" id="stData"><span class="ri">🗑️</span><span class="rt">データを消す</span><span class="rs">›</span></button>'}
     ${msg?`<p id="stMsg" style="text-align:center;color:#8fe08f;font-size:14.5px">${msg}</p>`:''}`);
   const flip=k=>{AU.on[k]=!AU.on[k];saveAudio();refreshAudioBtns();if(k==='bgm'&&AU.on.bgm&&inGame)bgmStart();if(k==='vib'&&AU.on.vib)vib(30);showSettings();};
   $('stVer').onclick=()=>showChangelog(()=>showSettings());
   $('st1').onclick=()=>flip('bgm');$('st2').onclick=()=>flip('sfx');$('st3').onclick=()=>flip('vib');
-  if(!inGame)$('stData').onclick=showDataReset;
+  $('stTheme').onclick=()=>showTailor(()=>showSettings());if(!inGame)$('stData').onclick=showDataReset;
   $('stClose').onclick=()=>{const b=settingsBack;settingsBack=null;if(b)b();else closeModal();};
 }
 /* データを消す：危ない操作はここにまとめる（説明は確認画面で出す） */
@@ -1869,41 +1860,14 @@ let UNL={got:{},met:{},kills:{},unseen:[]};
 function unlLoad(){try{const u=JSON.parse(localStorage.getItem(LS_UNL)||'null');if(u&&u.got)UNL={got:u.got,met:u.met||{},kills:u.kills||{},unseen:u.unseen||[],retroH:u.retroH,curseMax:u.curseMax||0,curseClear:u.curseClear||0,curseSel:u.curseSel||0,vil:u.vil||{},notes:u.notes||{},relSeen:u.relSeen||{},carry:u.carry||null,theme:u.theme||'def'};}catch(e){}}
 function unlSave(){try{localStorage.setItem(LS_UNL,JSON.stringify(UNL));}catch(e){}}
 const bestFloor=()=>best?(best.floor||1+Math.floor((best.turn||0)/2)):0;
-const STAGES=[
-  {id:'s0',n:'はじまり',hint:'最初から',items:['職業「戦士」','魔物図鑑'],cond:()=>true},
-  {id:'s1',n:'第一の扉',hint:'冒険3回目以降に B20Fのボスを倒す',items:['イベント部屋','職業「盗賊」'],cond:()=>playsN()>=3&&(!!ACH.u.ogre||bestFloor()>=21||(S&&!TUT&&floorOf()>=21))},
-  {id:'s2',n:'第二の扉',hint:'冒険6回目以降に B40Fに到達する',items:['職業「僧侶」','遺物','中ボス'],cond:()=>playsN()>=6&&(!!ACH.u.f40||bestFloor()>=40||(S&&!TUT&&floorOf()>=40))},
-  {id:'s3',n:'第三の扉',hint:'冒険3回目以降に 世界の元凶を倒す',items:['職業「魔術師」','呪いLv（難易度段階）','階ごとの「異変」','失われた手記'],cond:()=>playsN()>=3&&(!!ACH.u.clear||!!(best&&best.cleared))},
-  {id:'s4',n:'第四の扉',hint:'呪いLv1以上でクリアする',items:['遺物の追加（6種）'],cond:()=>(UNL.curseClear||0)>=1}
-];
-const isSoon=x=>x[0]==='*',itemNm=x=>x.replace(/^\*/,''),itemsTxt=st=>st.items.map(x=>isSoon(x)?itemNm(x)+'（近日追加）':x).join('・');
-const unlocked=id=>id==='s0'||!!UNL.got[id];
-function checkUnlocks(silent){
-  let changed=false;
-  for(const st of STAGES){if(st.id==='s0'||UNL.got[st.id])continue;if(st.cond()){UNL.got[st.id]=Date.now();if(!silent)UNL.unseen.push(st.id);changed=true;
-    if(!silent&&inGame&&!TUT)achToast({ic:'🔓',n:`${st.n}が開いた`,d:itemsTxt(st),secret:0,custom:'新しい要素が解放された'});}}
+/* 隠し職業だけが、遊ぶうちに増えていく */
+function checkUnlocks(){let changed=false;
   for(const k in CLASSES){const c=CLASSES[k];if(!c.hidden||UNL.got['h_'+k]||!c.cond())continue;UNL.got['h_'+k]=Date.now();changed=true;
     achToast({ic:c.ic,n:`隠し職業「${c.n}」`,d:'新しい冒険で選べるようになった',secret:0,custom:'隠し職業が解放された'});}
-  checkVillage();
   if(changed)unlSave();return changed;
 }
 function achToast(a){achQ.push(a);if(!achShowing)achNext();}
-function showUnlockCeremony(then){
-  const id=UNL.unseen.shift();if(!id){unlSave();if(then)then();return;}unlSave();
-  const st=STAGES.find(x=>x.id===id);sfx('ach');
-  openModal(`<div class="big" style="text-align:center">🔓</div><h2 style="font-family:var(--mincho)">新たな道が開かれた</h2>
-    <p style="text-align:center;color:#c9b48a">― ${st.n} ―</p>
-    <div class="alist">${st.items.map(x=>`<div class="ach"><span class="ai">✨</span><span><b>${itemNm(x)}</b>${isSoon(x)?'<small>次の更新で遊べるようになります</small>':''}</span></div>`).join('')}</div>
-    <button class="opt" id="ucOk" style="text-align:center">進む</button>`);
-  $('ucOk').onclick=()=>{closeModal();showUnlockCeremony(then);};
-}
-function showStages(back){
-  const row=st=>{const g=unlocked(st.id);return `<div class="ach ${g?'':'lock'}"><span class="ai">${g?'🔓':'🔒'}</span><span><b>${st.n}</b><small>${g?itemsTxt(st)+(false?'（次の更新で追加）':''):'条件：'+st.hint}</small></span></div>`;};
-  openModal(`<h2>🔓 解放</h2><p style="text-align:center">${STAGES.filter(s=>unlocked(s.id)).length} / ${STAGES.length} の扉が開いている</p><div class="alist">${STAGES.map(row).join('')}</div>
-    <button class="opt" id="sgBack" style="text-align:center;position:sticky;bottom:0;background:#2e2535;box-shadow:0 -8px 12px #211a25">戻る</button>`);
-  $('sgBack').onclick=back||closeModal;
-}
-/* ---------- village pages: shared parts ---------- */
+/* ---------- menu pages: shared parts ---------- */
 /* 見出しは上、戻るボタンは画面の下（片手で押せる位置）に置く。.tofoot の要素も下の帯へ移す */
 const pgHead=(title,bl,id='pgBack')=>`<div class="phead" data-bl="${bl||'戻る'}" data-id="${id}"><h2>${title}</h2></div>`;
 const meter=(n,N)=>`<div class="meter"><div><i style="width:${N?n/N*100:0}%"></i></div><span>${n} / ${N}</span></div>`;
@@ -1911,111 +1875,8 @@ const meter=(n,N)=>`<div class="meter"><div><i style="width:${N?n/N*100:0}%"></i
 function tapTip(el,html){const r=el.getBoundingClientRect();showTip(html,r.left+r.width/2,r.top+6);
   setTimeout(()=>{const off=()=>{document.removeEventListener('pointerdown',off,true);hideTip();};document.addEventListener('pointerdown',off,true);},0);}
 const bindTiles=(sel,fn)=>document.querySelectorAll('#mbox '+sel).forEach(b=>b.onclick=()=>fn(b));
-/* ---------- the village (unlock hub) ---------- */
-const VIL=[
-  {id:'tower',ic:'🔭',n:'見張り台',fx:'扉の地図・実績・戦績が見られる',cond:()=>achCount()>=1,hint:'実績を1つ解除する',easy:1},
-  {id:'house',ic:'🛖',n:'古民家',fx:'拾った「失われた手記」が読める',cond:()=>Object.keys(UNL.notes||{}).length>=1,hint:'失われた手記を拾う',easy:1},
-  {id:'church',ic:'⛪',n:'教会',fx:'一度手にした遺物を1つ、冒険に持ち込める',cond:()=>unlocked('s2'),hint:'B40Fに到達する'},
-  {id:'tavern',ic:'🍺',n:'酒場',fx:'冒険に出る職業を選べる。隠し職業の噂も聞ける',cond:()=>unlocked('s1'),hint:'B20Fのボスを倒す'},
-  {id:'well',ic:'⛲',n:'村の井戸',fx:'',cond:()=>VIL.filter(v=>v.id!=='well'&&!v.deco).every(v=>vilOk(v.id)),hint:'村のすべての建物をよみがえらせる'},
-  {id:'smith',ic:'⚒️',n:'鍛冶屋',fx:'冒険の始まりに 剣の攻撃力+1',cond:()=>bestFloor()>=30,hint:'B30Fに到達する'},
-  {id:'tailor',ic:'🧵',n:'仕立て屋',fx:'迷宮の色合い（盤面の見た目）を選べる',cond:()=>achCount()>=20,hint:'実績を20個集める'},
-  {id:'library',ic:'📚',n:'図書館',fx:'魔物図鑑が見られる',cond:()=>Object.values(UNL.kills||{}).reduce((a,b)=>a+b,0)>=10,hint:'魔物を10体倒す',easy:1},
-  {id:'stairs',ic:'🪦',n:'墓地の階段',fx:'ダンジョンへ降りる',cond:()=>true,deco:1}
-];
-const vilOk=id=>!!(UNL.vil&&UNL.vil[id]);
-/* 村の建物は、1回の冒険につき1つずつよみがえる（全部そろうのは5回目くらい） */
-const VIL_ORDER=['tower','library','house','tavern','smith','church','tailor'];
-/* 建物ごとの、よみがえるのに必要な冒険の回数 */
-const VIL_MIN={tavern:3,smith:6,church:10,tailor:15};
-function checkVillage(){UNL.vil=UNL.vil||{};let ch=false;const g=(ACH&&ACH.st&&ACH.st.games)||0;
-  const ord=[...VIL.filter(x=>x.id!=='well').sort((a,b)=>VIL_ORDER.indexOf(a.id)-VIL_ORDER.indexOf(b.id)),VIL.find(x=>x.id==='well')];
-  for(const v of ord){if(v.deco||UNL.vil[v.id]||!v.cond()||g<(VIL_MIN[v.id]||0))continue;
-    if(!v.easy&&v.id!=='well'){if(g<=(UNL.vilRun||0))continue;UNL.vilRun=g;}
-    UNL.vil[v.id]=Date.now();ch=true;(UNL.vilFresh=UNL.vilFresh||[]).push(v.id);}
-  if(ch)unlSave();}
-const vilCount=()=>VIL.filter(v=>!v.deco&&vilOk(v.id)).length,vilTotal=()=>VIL.filter(v=>!v.deco).length;
-function showVillage(back){checkVillage();const me=()=>showVillage(back);
-  const fresh=UNL.vilFresh||[],intro=!UNL.vilSeen;UNL.vilFresh=[];UNL.vilSeen=1;unlSave();if(fresh.length)setTimeout(()=>sfx('ach'),200);
-  const news=(intro?'村に帰ってきた。<br>冒険から戻るたびに、<br>村は少しずつよみがえる。':'')+(intro&&fresh.length?'<br>':'')+fresh.map(id=>{const v=VIL.find(x=>x.id===id);return id==='well'?'⛲ 井戸の水が、澄んだ。<br><small>村に、光が戻った。</small>':`✨ ${v.ic} ${v.n}がよみがえった<br><small>${v.fx}</small>`;}).join('<br>');
-  const cell=v=>{const ok=vilOk(v.id),w=v.id==='well';
-    return `<button class="vcell ${ok?'':'ruin'} ${fresh.includes(v.id)?'fresh':''}" data-v="${v.id}"><span class="vic">${ok?(w?'⛲':v.ic):(w?'🕳️':'🏚️')}</span><small>${ok||w?v.n:'？？？'}</small></button>`;};
-  /* 井戸を2段目の中ほどに置く */
-  const order=['tower','house','church','tavern','smith','well','tailor','library'].map(id=>VIL.find(v=>v.id===id));
-  const sv=[0,1,2].filter(i=>slotJson(i)),si=sv.length===1?slotInfo(sv[0]):null;
-  const goSub=sv.length>1?`途中の冒険が ${sv.length}つ ある`:si&&!si.broken?`続きから　${(CLASSES[si.cls]||CLASSES.warrior).ic} ${(CLASSES[si.cls]||CLASSES.warrior).n}・B${si.floor||1}F`:'地の底へ降りる';
-  const wellOk=vilOk('well'),n=vilCount(),N=vilTotal(),c=CLASSES[partyCls()],canCls=vilOk('tavern');
-  openModal(`${pgHead('🏘️ 村','タイトル','vBack')}
-    <p class="vflav">${wellOk?'井戸は澄み、村に灯りが戻った。':'井戸は濁り、村は眠っている。'}</p>
-    <div class="vstat"><span class="vprog">復興<i>${Array.from({length:N},(_,i)=>`<b class="${i<n?'on':''} ${i<n&&i>=n-fresh.length?'new':''}"></b>`).join('')}</i>${n}/${N}</span>
-      <button class="vcls ${canCls?'can':''}" id="vCls">${c.ic} ${c.n}${canCls?' ›':''}</button></div>
-    ${news?`<div class="vnews" style="margin:8px 0 0">${news}</div>`:''}<div class="vgrid">${order.map(cell).join('')}</div>
-    <p id="vInfo" class="vinfo"></p>
-    <button class="vgo tofoot after" id="vGo">🪦 墓地の階段へ<small>${goSub}</small></button>`);
-  document.querySelectorAll('#mbox .vcell').forEach(b=>b.onclick=()=>{const v=VIL.find(x=>x.id===b.dataset.v),ok=v.deco||vilOk(v.id);
-    document.querySelectorAll('#mbox .vcell').forEach(x=>x.classList.toggle('sel',x===b));
-    if(!ok){$('vInfo').innerHTML=v.id==='well'?'🕳️ 黒く濁った井戸。底は見えない。':'🏚️ 崩れた建物。<br><small style="color:#a99fae">冒険から戻るたびに、村は少しずつよみがえる</small>';return;}
-    if(v.id==='tower')return showTowerMenu(me);if(v.id==='library')return showBestiary(me);if(v.id==='house')return showLibrary(me);if(v.id==='church')return showChurch(me);
-    if(v.id==='tavern')return showTavern(me);if(v.id==='tailor')return showTailor(me);
-    $('vInfo').innerHTML=v.id==='well'?'澄んだ水が、静かに湧いている。<br>この村は、もう大丈夫だ。':`${v.ic} ${v.n}：${v.fx}`;});
-  $('vGo').onclick=()=>villageStairs(me);
-  $('vCls').onclick=()=>{if(canCls)return showTavern(me);$('vInfo').innerHTML='いまの冒険者の職業。<br><small style="color:#a99fae">村の建物がよみがえると、変えられるようになる</small>';};
-  $('vBack').onclick=back||closeModal;}
-/* tower: doors map, achievements, stats */
-function showTowerMenu(back){const me=()=>showTowerMenu(back),d=STAGES.filter(s=>unlocked(s.id)).length,g=Math.max((ACH.st&&ACH.st.games)||0,RUNS.length);
-  openModal(`${pgHead('🔭 見張り台','村')}<div class="tgrid" style="--c:3">
-    <button class="tile big" id="tw1"><span class="ti">🚪</span><small>扉</small><em>${d} / ${STAGES.length}</em></button>
-    <button class="tile big" id="tw2"><span class="ti">🏆</span><small>実績</small><em>${achCount()} / ${ACH_N()}</em></button>
-    <button class="tile big" id="tw3"><span class="ti">📊</span><small>戦績</small><em>${g}回</em></button></div>`);
-  $('tw1').onclick=()=>showTower(me);$('tw2').onclick=()=>showAchievements(me,'見張り台');$('tw3').onclick=()=>showStats(me,'見張り台');$('pgBack').onclick=back;}
-/* tower: dungeon map of the doors */
-function showTower(back){
-  const depth={s0:'地上',s1:'B20F',s2:'B40F',s3:'B100F',s4:'呪いの底'};
-  const nodes=STAGES.map(st=>{const g=unlocked(st.id);return `<div class="tnode ${g?'on':''}"><i>${g?'🚪':'🔒'}</i><div><small>${depth[st.id]||''}</small><b>${g?st.n:'？？？'}</b>${g?`<span>${itemsTxt(st)}</span>`:''}</div></div>`;}).join('');
-  openModal(`${pgHead('🚪 扉','見張り台')}${meter(STAGES.filter(s=>unlocked(s.id)).length,STAGES.length)}<div class="tmap">${nodes}</div>`);$('pgBack').onclick=back;}
-/* library: lost notes */
-const NOTES=[
-  {f:5,t:'井戸が濁る前の晩、地の底から鐘の音がした。誰も信じなかったが、私は数えた。十三回。'},
-  {f:15,t:'骸骨たちは私たちを恨んでいない。ただ、上へ帰る道を忘れてしまっただけなのだ。'},
-  {f:25,t:'呪術師の祭壇には、名前の削られた碑がある。かつてここで祈った者がいた。'},
-  {f:35,t:'石像は動く。だが、夜明けの方角を向いたものだけは、決して動かなかった。'},
-  {f:45,t:'竜の骨は温かい。この谷の竜は、死んでもなお何かを守っている。'},
-  {f:60,t:'城の主は、昔は村の医者だったという。治せない病を、血で治そうとしたのだ。'},
-  {f:75,t:'壁の向こうから水の音がする。この下に、海があるはずがないのに。'},
-  {f:90,t:'神殿の柱に、井戸の絵が刻まれていた。私たちの村の井戸と、まったく同じ形の。'},
-  {f:100,t:'深淵の眼は、泣いていた。あれは元凶ではなく、最初にここへ降りた誰かの、なれの果てだ。'},
-  {f:130,t:'底の先にも、底があった。上へ戻る者がいない理由が、ようやく分かった。'},
-  {f:170,t:'ここまで来ると、魔物たちのほうが道を譲る。私も、もう向こう側なのかもしれない。'},
-  {f:200,t:'――この手記を拾った者へ。井戸の水は澄んだか？ それだけが、知りたい。'}
-];
-/* 1回の冒険で拾える手記は1つまで（全部そろうのは25〜30回目くらい） */
-const NOTES_PER_RUN=1;
-function checkNotes(F){if(TUT||!S)return;UNL.notes=UNL.notes||{};let got=0;NOTES.forEach((n,i)=>{if(F>=n.f&&!UNL.notes[i]&&(S.notesGot||0)<NOTES_PER_RUN){UNL.notes[i]=1;S.notesGot=(S.notesGot||0)+1;got++;}});
-  if(got){unlSave();if(inGame)achToast({ic:'📜',n:'失われた手記を拾った',d:'村の古民家で読める',secret:0,custom:`手記 ${Object.keys(UNL.notes).length} / ${NOTES.length}`});checkVillage();}}
-function showLibrary(back){const n=UNL.notes||{},got=NOTES.map((_,i)=>i).filter(i=>n[i]),me=()=>showLibrary(back);
-  openModal(`${pgHead('🛖 古民家','村')}${meter(got.length,NOTES.length)}<div class="tgrid" style="--c:4">${NOTES.map((x,i)=>n[i]?`<button class="tile" data-i="${i}"><span class="ti">📜</span><small>${i+1}</small></button>`:`<div class="tile lock"><span class="ti">📜</span><small>&nbsp;</small></div>`).join('')}</div>`);
-  $('pgBack').onclick=back;bindTiles('.tile[data-i]',b=>showNote(+b.dataset.i,got,me));}
-/* 手記を1枚ずつ大きく読む。‹ › で前後へ */
-function showNote(i,got,back){const k=got.indexOf(i),pv=got[k-1],nx=got[k+1];
-  openModal(`${pgHead('📜 その'+(i+1),'古民家')}<div class="note">${NOTES[i].t.replace(/([。？])(?!$)/g,'$1<br>')}</div>
-    <div class="npager">${k+1} / ${got.length}</div><button class="nav tofoot" id="nPv" ${pv==null?'disabled':''}>◀</button><button class="nav tofoot after" id="nNx" ${nx==null?'disabled':''}>▶</button>`);
-  $('pgBack').onclick=back;if(pv!=null)$('nPv').onclick=()=>showNote(pv,got,back);if(nx!=null)$('nNx').onclick=()=>showNote(nx,got,back);}
-/* church: carry one relic */
-function showChurch(back){const all=Object.keys(RELICS).filter(k=>!RELICS[k].x||unlocked('s4')),seen=UNL.relSeen||{},me=()=>showChurch(back);
-  const cur=UNL.carry&&seen[UNL.carry]&&all.includes(UNL.carry)?UNL.carry:null,R=cur&&RELICS[cur];
-  openModal(`${pgHead('⛪ 教会','村')}<div class="pcard"><span class="ci">${R?R.ic:'🙏'}</span><div><b>${R?R.n:'持ち込まない'}</b>${R?`<p>${R.d}</p>`:''}</div></div>
-    <div class="tgrid" style="--c:5"><button class="tile ${cur?'':'sel'}" data-k=""><span class="ti">🚫</span></button>${all.map(k=>seen[k]?`<button class="tile ${cur===k?'sel':''}" data-k="${k}"><span class="ti">${RELICS[k].ic}</span></button>`:`<div class="tile lock"><span class="ti">❔</span></div>`).join('')}</div>`);
-  bindTiles('.tile[data-k]',b=>{UNL.carry=b.dataset.k||null;unlSave();me();});$('pgBack').onclick=back;}
-/* tavern: class roster */
+/* the class used last time is picked first */
 const partyCls=()=>{if(UNL.cls&&classOk(UNL.cls))return UNL.cls;const l=RUNS.length&&RUNS[RUNS.length-1].c;return l&&classOk(l)?l:'warrior';};
-function showTavern(back,peek){const ks=Object.keys(CLASSES),cur=partyCls(),me=p=>showTavern(back,p);
-  const how=c=>c.hidden===2?'元凶を倒すと、まれに現れるらしい':c.kill?`${EK[c.kill[0]].name}を${c.kill[1]}体倒し${c.floor?`、B${c.floor}Fまでたどり着く`:''}と…`:'';
-  const pk=peek&&!classOk(peek)?CLASSES[peek]:null,c=CLASSES[cur];
-  const card=pk?`<span class="ci">${pk.hidden?'❔':pk.ic}</span><div><b>${pk.hidden?'？？？':pk.n}</b><p>${pk.hidden?'🗨️ '+how(pk):'🔒'}</p></div>`
-    :`<span class="ci">${c.ic}</span><div><b>${c.n}</b><p>${c.fx}</p></div>`;
-  openModal(`${pgHead('🍺 酒場','村')}${meter(ks.filter(classOk).length,ks.length)}<div class="pcard">${card}</div>
-    <div class="tgrid" style="--c:3">${ks.map(k=>{const x=CLASSES[k],ok=classOk(k);return `<button class="tile ${ok?'':'lock'} ${ok&&k===cur?'sel':''}" data-k="${k}"><span class="ti">${ok||!x.hidden?x.ic:'❔'}</span>${ok||!x.hidden?`<small>${x.n}</small>`:''}</button>`;}).join('')}</div>`);
-  bindTiles('.tile[data-k]',b=>{const k=b.dataset.k;if(classOk(k)){UNL.cls=k;unlSave();me();}else me(k);});$('pgBack').onclick=back;}
 /* tailor: board themes */
 const BG0={...BG};
 const THEMES={def:{n:'いつもの迷宮',need:0,bg:BG0},
@@ -2025,20 +1886,17 @@ const THEMES={def:{n:'いつもの迷宮',need:0,bg:BG0},
   gold:{n:'黄金郷',need:65,bg:{skull:'#4a2a14',sword:'#4a3e22',shield:'#3a3a26',potion:'#4a2e2e',coin:'#6a5210'}}};
 function applyTheme(){const t=THEMES[UNL.theme]||THEMES.def;Object.assign(BG,t.bg);}
 function showTailor(back){const me=()=>showTailor(back),K=['skull','sword','shield','potion','coin'];
-  openModal(`${pgHead('🧵 仕立て屋','村')}<div class="tgrid" style="--c:2">${Object.entries(THEMES).map(([k,t])=>{const ok=achCount()>=t.need,sel=(UNL.theme||'def')===k;
+  openModal(`${pgHead('🎨 盤面の色','設定')}<div class="tgrid" style="--c:2">${Object.entries(THEMES).map(([k,t])=>{const ok=achCount()>=t.need,sel=(UNL.theme||'def')===k;
     return `<button class="tile ${ok?'':'lock'} ${sel?'sel':''}" data-k="${k}" ${ok?'':'disabled'}><span class="sw">${[0,1,2,3,4,0,2,4,1].map(i=>`<i style="background:${t.bg[K[i]]}"></i>`).join('')}</span><small>${ok?t.n:'🔒 🏆'+t.need}</small></button>`;}).join('')}</div>`);
   bindTiles('.tile[data-k]:not([disabled])',b=>{UNL.theme=b.dataset.k;unlSave();applyTheme();me();});$('pgBack').onclick=back;}
-/* start-of-adventure perks from the village */
-function villagePerks(s){if(TUT)return;if(vilOk('smith'))s.weaponDmg+=1;}
-function applyCarry(){if(TUT||!vilOk('church')||!UNL.carry||!RELICS[UNL.carry]||!(UNL.relSeen||{})[UNL.carry])return;if(RELICS[UNL.carry].x&&!unlocked('s4'))return;S.relics=[UNL.carry];if(RELICS[UNL.carry].on)RELICS[UNL.carry].on();}
 /* bestiary */
 const BOSS_KINDS=['ogre','dragon','vampire','kraken','abyss'];
-const BEAST_ORDER=[...['skel','bat','zombie','bomb','spider','ghost','golem','shaman'],...Object.keys(EK).filter(k=>!CUT_KINDS.includes(k)).filter(k=>EK[k].from||(!BOSS_KINDS.includes(k)&&!EK[k].mini&&!['skel','bat','zombie','bomb','spider','ghost','golem','shaman'].includes(k))).sort((a,b)=>firstFloor(a)-firstFloor(b)),...MINI_ORDER,...BOSS_KINDS];
+const BEAST_ORDER=[...['skel','bat','zombie','bomb','spider','ghost','golem','shaman'],...Object.keys(EK).filter(k=>!CUT_KINDS.includes(k)).filter(k=>EK[k].from||(!BOSS_KINDS.includes(k)&&!EK[k].mini&&!['skel','bat','zombie','bomb','spider','ghost','golem','shaman'].includes(k))).sort((a,b)=>firstFloor(a)-firstFloor(b)),...BOSS_KINDS];
 function noteMet(k){if(TUT||UNL.met[k])return;UNL.met[k]=1;unlSave();const D=EK[k];if(!D||k==='skel'||BOSS_KINDS.includes(k)||D.mini||typeof firstRun==='undefined'||firstRun()||!inGame)return;
   achToast({ic:D.icon,n:D.name,d:D.desc.replace(/\s+/g,''),secret:0,custom:D.rare?'★ めずらしい魔物に出会った':'はじめて出会った魔物',flt:D.flt});}
-function noteKills(list){if(TUT||!list.length)return;for(const t of list){const k=kindOf(t);UNL.kills[k]=(UNL.kills[k]||0)+1;UNL.met[k]=1;if(S){S.kk=S.kk||{};S.kk[k]=(S.kk[k]||0)+1;const D=EK[k]||{};if(D.dh||D.dg||D.dx||D.sp||D.db||D.fz)(S._dq=S._dq||[]).push(k);if(t.mini&&unlocked('s2'))S.pending.push('relic');}}unlSave();checkClassKills();}
+function noteKills(list){if(TUT||!list.length)return;for(const t of list){const k=kindOf(t);UNL.kills[k]=(UNL.kills[k]||0)+1;UNL.met[k]=1;if(S){S.kk=S.kk||{};S.kk[k]=(S.kk[k]||0)+1;const D=EK[k]||{};if(D.dh||D.dg||D.dx||D.sp||D.db||D.fz)(S._dq=S._dq||[]).push(k);}}unlSave();checkClassKills();}
 function unlockClass(k){if(UNL.got['h_'+k])return false;UNL.got['h_'+k]=Date.now();unlSave();const c=CLASSES[k];
-  achToast({ic:c.ic,n:`隠し職業「${c.n}」`,d:c.hidden===2?`隠し職業 ${h2Got()} / ${H2().length}（あと${H2().length-h2Got()}種類）`:(vilOk('tavern')?'村の酒場で選べるようになった':'次の冒険から選べるようになった'),secret:0,custom:'隠し職業が解放された'});return true;}
+  achToast({ic:c.ic,n:`隠し職業「${c.n}」`,d:c.hidden===2?`隠し職業 ${h2Got()} / ${H2().length}（あと${H2().length-h2Got()}種類）`:'次の冒険から選べるようになった',secret:0,custom:'隠し職業が解放された'});return true;}
 function checkClassKills(){if(!S||TUT||!S.kk)return;for(const k in CLASSES){const c=CLASSES[k];if(c.kill&&(S.kk[c.kill[0]]||0)>=c.kill[1]&&(S.floor||1)>=(c.floor||0))unlockClass(k);}}
 const H2=()=>Object.keys(CLASSES).filter(k=>CLASSES[k].hidden===2),h2Got=()=>H2().filter(k=>UNL.got['h_'+k]).length;
 /* 隠し職業：1つ目は元凶1回、2つ目はさらに2回、3つ目はさらに3回…と必要な回数が1ずつ増える */
@@ -2054,18 +1912,19 @@ function showBestiary(back,bl){
   const seen=BEAST_ORDER.filter(k=>UNL.met[k]).length;
   const tile=k=>{const e=EK[k],m=UNL.met[k],boss=BOSS_KINDS.includes(k);
     return m?`<button class="tile" data-k="${k}"><span class="ti" style="${e.flt?'filter:'+e.flt:''}">${e.icon}</span>${boss?'<span class="badge">👑</span>':e.mini?'<span class="badge">◆</span>':e.rare?'<span class="badge" style="color:#ffd54a">★</span>':''}</button>`:`<button class="tile lock" data-k="${k}"><span class="ti">❔</span></button>`;};
-  openModal(`${pgHead('📖 魔物図鑑',bl||'村')}${meter(seen,BEAST_ORDER.length)}<div class="tgrid" style="--c:5">${BEAST_ORDER.map(tile).join('')}</div>`);
+  openModal(`${pgHead('📖 魔物図鑑',bl)}${meter(seen,BEAST_ORDER.length)}<div class="tgrid" style="--c:5">${BEAST_ORDER.map(tile).join('')}</div>`);
   bindTiles('.tile[data-k]',b=>{const k=b.dataset.k,e=EK[k];if(!UNL.met[k])return tapTip(b,'<div class="th">？？？</div>');
     const tag=BOSS_KINDS.includes(k)?'👑 ボス':e.mini?'◆ 中ボス':e.rare?'★ めずらしい':'';
     tapTip(b,`<div class="th">${e.icon} ${e.name}</div>${tag?`<small>${tag}</small><br>`:''}${e.desc}<br><small>⚔️ ${UNL.kills[k]||0}体</small>`);});
   $('pgBack').onclick=back||closeModal;
 }
 function showRecords(back){
-  const b=back||closeModal,tw=vilOk('tower'),bd=vilOk('library'),me=()=>showRecords(back);
-  openModal(`${pgHead('📜 冒険の記録','戻る')}<div class="tgrid" style="--c:3">
-    ${tw?`<button class="tile big" id="rc0"><span class="ti">📊</span><small>戦績</small></button><button class="tile big" id="rc1"><span class="ti">🏆</span><small>実績</small><em>${achCount()} / ${ACH_N()}</em></button>`:''}
-    ${bd?`<button class="tile big" id="rc2"><span class="ti">📖</span><small>図鑑</small><em>${BEAST_ORDER.filter(k=>UNL.met[k]).length} / ${BEAST_ORDER.length}</em></button>`:''}</div>`);
-  if(tw){$('rc0').onclick=()=>showStats(me);$('rc1').onclick=()=>showAchievements(me);}if(bd)$('rc2').onclick=()=>showBestiary(me,'戻る');$('pgBack').onclick=b;
+  const b=back||closeModal,me=()=>showRecords(back);
+  openModal(`${pgHead('🏆 実績',back?'戻る':'✕ 閉じる')}<div class="tgrid" style="--c:3">
+    <button class="tile big" id="rc1"><span class="ti">🏆</span><small>実績</small><em>${achCount()} / ${ACH_N()}</em></button>
+    <button class="tile big" id="rc2"><span class="ti">📖</span><small>図鑑</small><em>${BEAST_ORDER.filter(k=>UNL.met[k]).length} / ${BEAST_ORDER.length}</em></button>
+    <button class="tile big" id="rc0"><span class="ti">📊</span><small>戦績</small><em>${Math.max((ACH.st&&ACH.st.games)||0,RUNS.length)}回</em></button></div>`);
+  $('rc0').onclick=()=>showStats(me,'実績');$('rc1').onclick=()=>showAchievements(me,'実績');$('rc2').onclick=()=>showBestiary(me,'実績');$('pgBack').onclick=b;
 }
 /* classes */
 const CLASSES={
@@ -2084,7 +1943,7 @@ const CLASSES={
   alchemist:{ic:'⚗️',n:'錬金術師',hidden:2,d:'あらゆるものを混ぜ合わせる、変わり者の学者。',fx:'🛡️🧪💰を混ぜてつなげる（それぞれの効果が出るが、混ぜると効果半減）・剣の攻撃力が低い（1・強化+1）・最大HP42',cond:()=>false}
 };
 const MAIN_CLS=Object.keys(CLASSES).filter(k=>!CLASSES[k].hidden);
-const classOk=k=>{const c=CLASSES[k];if(c.hidden)return !!UNL.got['h_'+k];return !c.soon&&unlocked(c.stage);};
+const classOk=k=>{const c=CLASSES[k];if(c.hidden)return !!UNL.got['h_'+k];return !c.soon;};
 const drainOf=()=>3+Math.floor(S.level/3);
 function vampDrain(k,msgs){if(S.cls!=='vampire'||k<=0)return '';const h=Math.min(k*drainOf(),S.maxHp-S.hp);if(h<=0)return '';S.hp+=h;flash('bHp');const t=`🩸吸血 HP+${h}`;if(msgs)msgs.push(t);return t;}
 function applyClass(s,k){
@@ -2101,15 +1960,18 @@ function applyClass(s,k){
   if(k==='knight'){s.maxArmor=8;s.armor=8;s.healPer=1;s.maxHp=50;s.hp=50;}
   if(k==='alchemist'){s.weaponDmg=1;s.wpnUp=1;s.maxHp=42;s.hp=42;}
 }
-function pickClass(then,cancel){
-  const ks=Object.keys(CLASSES).filter(k=>!CLASSES[k].hidden||classOk(k));
+function pickClass(then,cancel,peek){
+  const ks=Object.keys(CLASSES);
   if(ks.filter(classOk).length<=1){then('warrior');return;}
-  openModal(`<h2>職業を選ぶ</h2>${ks.map(k=>{const c=CLASSES[k],ok=classOk(k);
-    return `<button class="opt" data-k="${k}" ${ok?'':'disabled style="opacity:.4"'}>${ok?c.ic:'🔒'} ${c.n}<small>${ok?c.d+'<br>'+c.fx:(c.soon&&unlocked(c.stage)?'次の更新で追加':'解放条件：'+STAGES.find(s=>s.id===c.stage).hint)}</small></button>`;}).join('')}
-    <p style="text-align:center;font-size:12px;color:#a99fae;margin:6px 0">${h2Got()<H2().length?`？ 元凶を倒すと手に入る隠し職業 ${h2Got()} / ${H2().length}（次まで あと元凶${h2Left()}回）`:'隠し職業 コンプリート'}</p>
-    <button class="opt" id="pcCancel" style="text-align:center">やめる</button>`);
-  $('mbox').querySelectorAll('.opt[data-k]').forEach(b=>{if(!b.disabled)b.onclick=()=>{closeModal();then(b.dataset.k);};});
-  $('pcCancel').onclick=cancel||closeModal;
+  const cur=partyCls(),me=p=>pickClass(then,cancel,p);
+  const how=c=>c.hidden===2?`元凶を倒すと、まれに現れるらしい（次まで あと${h2Left()}回）`:c.kill?`${EK[c.kill[0]].name}を${c.kill[1]}体倒し${c.floor?`、B${c.floor}Fまでたどり着く`:''}と…`:'';
+  const pk=peek&&!classOk(peek)?CLASSES[peek]:null,c=CLASSES[cur];
+  const card=pk?`<span class="ci">❔</span><div><b>？？？</b><p>🗨️ ${how(pk)}</p></div>`:`<span class="ci">${c.ic}</span><div><b>${c.n}</b><p>${c.fx}</p></div>`;
+  openModal(`${pgHead('🧭 職業','戻る','pcCancel')}<div class="pcard">${card}</div>
+    <div class="tgrid" style="--c:3">${ks.map(k=>{const x=CLASSES[k],ok=classOk(k);return `<button class="tile ${ok?'':'lock'} ${ok&&k===cur?'sel':''}" data-k="${k}"><span class="ti">${ok?x.ic:'❔'}</span>${ok?`<small style="${x.n.length>4?'font-size:11px':''}">${x.n}</small>`:''}</button>`;}).join('')}</div>
+    <button class="gopri tofoot after" id="pcGo">▶ 出発<small>${c.ic} ${c.n}</small></button>`);
+  bindTiles('.tile[data-k]',b=>{const k=b.dataset.k;if(classOk(k)){UNL.cls=k;unlSave();me();}else me(k);});
+  $('pcGo').onclick=()=>{closeModal();then(cur);};$('pcCancel').onclick=cancel||closeModal;
 }
 /* event rooms */
 const EVENTS=[
@@ -2138,7 +2000,7 @@ const EVENTS=[
     {l:'触れない',s:'何も起きない',f:()=>'うなり声は、背後でいつまでも続いていた。'}]}
 ];
 function maybeEvent(F){
-  if(TUT||!unlocked('s1')||F%20===0)return;
+  return;
   if(!S.nextEvent)S.nextEvent=F+2+rnd(3);
   if(F>=S.nextEvent&&!S.pending.includes('event')){S.pending.push('event');S.nextEvent=F+4+rnd(3);}
 }
@@ -2162,7 +2024,7 @@ const NM_B=['ルカ','ミオ','ガルド','セナ','トビ','イリス','ノア'
 const randName=()=>NM_A[Math.random()*NM_A.length|0]+NM_B[Math.random()*NM_B.length|0];
 function getName(){try{const n=localStorage.getItem(LS_NAME);if(n)return n;}catch(e){}const n=randName();setName(n);return n;}
 function setName(n){n=String(n||'').replace(/[\r\n<>]/g,'').trim().slice(0,16);if(!n)return;try{localStorage.setItem(LS_NAME,n);}catch(e){}}
-function curseField(){const mx=UNL.curseMax||0;if(!mx)return '';const v=Math.min(UNL.curseSel||0,mx);
+function curseField(){return '';const mx=0;const v=Math.min(UNL.curseSel||0,mx);
   return `<div class="nmrow"><label>呪いLv</label><button id="cuM">－</button><b id="cuV" style="flex:1;text-align:center;color:${v?'#ff8a8a':'#ece4d8'}">${v?'Lv'+v:'なし'}</b><button id="cuP">＋</button></div><p id="cuD" style="text-align:center;font-size:11.5px;color:#a99fae;margin:-4px 0 6px">${curseDesc(v)}</p>`;}
 function curseDesc(v){return v?`敵のHP+${v*12}%${v>=3?`・攻撃力+${Math.floor(v/3)}`:''}（最大Lv${UNL.curseMax}）`:`呪いなし（最大Lv${UNL.curseMax}まで選べる）`;}
 function wireCurse(){if(!$('cuV'))return;const set=d=>{UNL.curseSel=Math.max(0,Math.min(UNL.curseMax||0,(UNL.curseSel||0)+d));unlSave();const v=UNL.curseSel;$('cuV').textContent=v?'Lv'+v:'なし';$('cuV').style.color=v?'#ff8a8a':'#ece4d8';$('cuD').textContent=curseDesc(v);};
@@ -2313,9 +2175,8 @@ try{SLOT=Math.min(NSLOT-1,Math.max(0,+localStorage.getItem(LS_SLOT)||0));}catch(
 try{const b=localStorage.getItem(LS_BEST);if(b)best=JSON.parse(b);}catch(e){}
 try{localStorage.removeItem('dchain_log_cur_v1');localStorage.removeItem('dchain_log_last_v1');}catch(e){}
 achLoad();unlLoad();runsLoad();achSeed();achLong();achSave();
-checkVillage();applyTheme();
-if(ACH.u.clear&&!(UNL.curseMax>=1)){UNL.curseMax=1;unlSave();}
-if(!UNL.retroH){UNL.retroH=1;for(let i=0;i<Math.min(ACH.st.clears||0,5);i++)clearReward(true);unlSave();}checkUnlocks();refreshTitle();setTimeout(titleAnim,100);setTimeout(()=>{if(!inGame&&!modalOpen&&UNL.unseen.length)showUnlockCeremony(refreshTitle);},600);setCloud('この端末のブラウザに保存');
+applyTheme();
+if(!UNL.retroH){UNL.retroH=1;for(let i=0;i<Math.min(ACH.st.clears||0,5);i++)clearReward(true);unlSave();}checkUnlocks();refreshTitle();setTimeout(titleAnim,100);setCloud('この端末のブラウザに保存');
 requestAnimationFrame(frame);
 setTimeout(initCloud,0);
 </script>
