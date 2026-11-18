@@ -81,9 +81,18 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 .nmrow{display:flex;align-items:center;gap:6px;margin:6px 0 10px}.nmrow label{font-size:12px;color:#c9bfcf;white-space:nowrap}.nmrow input{flex:1;min-width:0;background:#1a1420;border:1px solid #4a3d52;border-radius:8px;color:#ece4d8;font-size:16px;padding:8px 10px}.nmrow button{background:#2e2535;border:1px solid #4a3d52;border-radius:8px;font-size:18px;padding:6px 10px}
 .slotrow{display:flex;gap:6px;align-items:stretch}.slotrow .opt{flex:1;min-width:0}.sldel{background:#2e2535;border:1px solid #4a3d52;border-radius:10px;font-size:18px;padding:0 12px;margin:4px 0}
 .rwd{background:#2a2230;border:1px solid #6b5a3a;border-radius:10px;padding:10px;margin:8px 0;text-align:center;color:#f0d9a8;font-size:15px}.rwd small{color:#c9bfcf;font-size:12px}.rwbar{height:6px;background:#1a1420;border-radius:3px;margin:8px 0 4px;overflow:hidden}.rwbar div{height:100%;background:#c98500;border-radius:3px}
-.vgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0}
-.vcell{background:#2a2230;border:1px solid #4a3d52;border-radius:12px;padding:10px 2px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;color:#ece4d8}
-.vcell .vic{font-size:30px;line-height:1.1}.vcell small{font-size:11px;color:#c9bfcf}.vcell.ruin{opacity:.55;filter:grayscale(.7)}
+.vgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:8px 0 4px}
+.vhead{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;margin-bottom:2px}.vhead h2{margin:0;font-family:var(--mincho)}
+.vback{justify-self:start;background:none;border:0;color:#a99fae;font-size:12.5px;padding:8px 6px 8px 0;min-height:36px}
+.vflav{text-align:center;font-size:12px!important;color:#a99fae!important;margin:0 0 8px!important}
+.vstat{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;font-size:12.5px;color:#c9bfcf}
+.vprog{display:flex;align-items:center;gap:6px}.vprog i{display:flex;gap:2px}.vprog i b{width:9px;height:9px;border-radius:2px;background:#3a3040;border:1px solid #4a3d52}.vprog i b.on{background:#e8b33a;border-color:#e8b33a}
+.vcls{background:#2a2230;border:1px solid #4a3d52;border-radius:999px;padding:4px 10px;color:#ece4d8;font-size:12.5px}.vcls.can{border-color:#8a6f3a}
+.vgo{display:block;width:100%;margin-top:4px;padding:11px 10px 9px;background:linear-gradient(#3f321c,#2a2114);border:1px solid #c9a24a;border-radius:12px;color:#f6e6bf;font-size:16px;font-family:var(--mincho);box-shadow:0 0 14px rgba(232,179,58,.18)}
+.vgo small{display:block;font-family:inherit;font-size:11.5px;color:#cdb98e;margin-top:2px}.vgo:active{background:#4a3b20}
+.vcell{background:#2a2230;border:1px solid #4a3d52;border-radius:12px;padding:9px 1px 7px;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;color:#ece4d8}
+.vcell .vic{font-size:28px;line-height:1.1}.vcell small{font-size:11px;color:#c9bfcf;white-space:nowrap}.vcell.ruin{opacity:.4;filter:grayscale(.8);border-style:dashed}.vcell.ruin.sel{opacity:.8;border-style:solid}
+.vinfo{font-size:12px;color:#c9bfcf;text-align:center;min-height:56px;margin:4px 0 2px;line-height:1.5}.vinfo i{font-style:normal;color:#8f8396}
 .vcell.fresh{border-color:#e8b33a;animation:vfresh 1.6s ease-in-out 3}.vcell.sel{border-color:#e8b33a}
 @keyframes vfresh{0%,100%{box-shadow:0 0 0 rgba(232,179,58,0)}50%{box-shadow:0 0 18px rgba(232,179,58,.55)}}
 .vnews{background:#2a2230;border:1px solid #6b5a3a;border-radius:10px;padding:8px 10px;margin:0 0 8px;font-size:12.5px;line-height:1.7;color:#f0d9a8;text-align:center}
@@ -1752,8 +1761,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshA
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='1.1.0';
+const VERSION='1.1.1';
 const CHANGELOG=[
+  {v:'1.1.1',d:'2026-11-19',items:['村の画面を見やすく整理しました。冒険へは、いちばん下の「墓地の階段へ」から出発できます']},
   {v:'1.1.0',d:'2026-11-19',items:['冒険に出る職業は、村の酒場で選ぶようになりました。一度選べば、次からはそのまま出発できます','よみがえった建物は、村に戻ったときにまとめてお知らせするようにしました','拾った手記は、村の古民家で読めるようになりました','村が冒険の拠点になりました。冒険に出るときも、冒険から戻ったときも、村に立ち寄ります','冒険の記録や魔物図鑑は、村の建物で見られるようになりました','冒険中のメニューの「タイトルへ戻る」を「村に戻る」に変えました。途中の冒険は、墓地の階段から続きを始められます']},
   {v:'1.0.3',d:'2026-11-19',items:['元凶を倒して手に入る隠し職業が、集めるほど手に入りにくくなるようにしました']},
   {v:'1.0.2',d:'2026-11-18',items:['オープニングの文章を、スマホでも読みやすい改行に整えました','冒険を始めたときの案内文を変えました']},
@@ -1881,23 +1891,27 @@ function checkVillage(){UNL.vil=UNL.vil||{};let ch=false;const g=(ACH&&ACH.st&&A
 const vilCount=()=>VIL.filter(v=>!v.deco&&vilOk(v.id)).length,vilTotal=()=>VIL.filter(v=>!v.deco).length;
 function showVillage(back){checkVillage();const me=()=>showVillage(back);
   const fresh=UNL.vilFresh||[],intro=!UNL.vilSeen;UNL.vilFresh=[];UNL.vilSeen=1;unlSave();if(fresh.length)setTimeout(()=>sfx('ach'),200);
-  const news=(intro?'村に帰ってきた。<br>冒険から戻るたびに、<br>村は少しずつよみがえる。<br>地の底へは 🪦 墓地の階段 から。':'')+(intro&&fresh.length?'<br>':'')+fresh.map(id=>{const v=VIL.find(x=>x.id===id);return id==='well'?'⛲ 井戸の水が、澄んだ。村に、光が戻った。':`✨ ${v.ic} ${v.n}がよみがえった ― ${v.fx}`;}).join('<br>');
-  const cell=v=>{const ok=v.deco||vilOk(v.id);
-    return `<button class="vcell ${ok?'':'ruin'} ${fresh.includes(v.id)?'fresh':''}" data-v="${v.id}"><span class="vic">${ok?(v.id==='well'?'⛲':v.ic):(v.id==='well'?'🕳️':'🏚️')}</span><small>${ok||v.id==='well'?v.n:'？？？'}</small></button>`;};
-  const wellOk=vilOk('well');
-  openModal(`<h2 style="font-family:var(--mincho)">🏘️ 村</h2>
-    <p style="text-align:center;font-size:12.5px;color:#c9bfcf;margin:0 0 6px">${wellOk?'井戸は澄み、村に灯りが戻った。':'黒く濁った井戸のまわりで、村は静かに眠っている。'}<br>復興 ${vilCount()} / ${vilTotal()}</p>
-    <p id="vCls" style="text-align:center;font-size:13px;margin:0 0 8px">冒険者の職業：<b>${CLASSES[partyCls()].ic} ${CLASSES[partyCls()].n}</b>${vilOk('tavern')?'<small style="color:#a99fae">（🍺 酒場で変えられる）</small>':''}</p>
-    ${news?`<div class="vnews">${news}</div>`:''}<div class="vgrid">${VIL.map(cell).join('')}</div>
-    <p id="vInfo" class="vz-cap">建物をタップ。冒険へは 🪦 墓地の階段 から</p>
-    <button class="opt" id="vBack" style="text-align:center">タイトルへ</button>`);
+  const news=(intro?'村に帰ってきた。<br>冒険から戻るたびに、村は少しずつよみがえる。':'')+(intro&&fresh.length?'<br>':'')+fresh.map(id=>{const v=VIL.find(x=>x.id===id);return id==='well'?'⛲ 井戸の水が、澄んだ。村に、光が戻った。':`✨ ${v.ic} ${v.n}がよみがえった ― ${v.fx}`;}).join('<br>');
+  const cell=v=>{const ok=vilOk(v.id),w=v.id==='well';
+    return `<button class="vcell ${ok?'':'ruin'} ${fresh.includes(v.id)?'fresh':''}" data-v="${v.id}"><span class="vic">${ok?(w?'⛲':v.ic):(w?'🕳️':'🏚️')}</span><small>${ok||w?v.n:'？？？'}</small></button>`;};
+  /* 井戸を2段目の中ほどに置く */
+  const order=['tower','house','church','tavern','smith','well','tailor','library'].map(id=>VIL.find(v=>v.id===id));
+  const wellOk=vilOk('well'),n=vilCount(),N=vilTotal(),c=CLASSES[partyCls()],canCls=vilOk('tavern');
+  openModal(`<div class="vhead"><button class="vback" id="vBack">‹ タイトル</button><h2>🏘️ 村</h2><span></span></div>
+    <p class="vflav">${wellOk?'井戸は澄み、村に灯りが戻った。':'井戸は濁り、村は眠っている。'}</p>
+    <div class="vstat"><span class="vprog">復興<i>${Array.from({length:N},(_,i)=>`<b class="${i<n?'on':''}"></b>`).join('')}</i>${n}/${N}</span>
+      <button class="vcls ${canCls?'can':''}" id="vCls">${c.ic} ${c.n}${canCls?' ›':''}</button></div>
+    ${news?`<div class="vnews" style="margin:8px 0 0">${news}</div>`:''}<div class="vgrid">${order.map(cell).join('')}</div>
+    <p id="vInfo" class="vinfo"><i>建物をタップすると、くわしく見られる</i></p>
+    <button class="vgo" id="vGo">🪦 墓地の階段へ<small>地の底へ降りる</small></button>`);
   document.querySelectorAll('#mbox .vcell').forEach(b=>b.onclick=()=>{const v=VIL.find(x=>x.id===b.dataset.v),ok=v.deco||vilOk(v.id);
-    if(!ok){$('vInfo').innerHTML=`🏚️ 崩れた建物。<br>よみがえらせる条件：<b>${VIL_MIN[v.id]?`冒険${VIL_MIN[v.id]}回目以降に `:''}${v.hint}</b>`+(v.id!=='well'&&!v.easy?`<br><small style="color:#a99fae">建物は 1回の冒険につき1つずつ よみがえる</small>`:'');return;}
+    document.querySelectorAll('#mbox .vcell').forEach(x=>x.classList.toggle('sel',x===b));
+    if(!ok){$('vInfo').innerHTML=`${v.id==='well'?'🕳️ 濁った井戸':'🏚️ 崩れた建物'}：<b>${VIL_MIN[v.id]?`冒険${VIL_MIN[v.id]}回目以降に `:''}${v.hint}</b>`+(v.id!=='well'&&!v.easy?`<br><small style="color:#a99fae">建物は 1回の冒険につき1つずつ よみがえる</small>`:'');return;}
     if(v.id==='tower')return showTowerMenu(me);if(v.id==='library')return showBestiary(me);if(v.id==='house')return showLibrary(me);if(v.id==='church')return showChurch(me);
     if(v.id==='tavern')return showTavern(me);if(v.id==='tailor')return showTailor(me);
-    if(v.id==='stairs')return villageStairs(me);
     $('vInfo').innerHTML=v.id==='well'?'澄んだ水が、静かに湧いている。<br>この村は、もう大丈夫だ。':`${v.ic} ${v.n}：${v.fx}`;});
-  if(vilOk('tavern'))$('vCls').onclick=()=>showTavern(me);
+  $('vGo').onclick=()=>villageStairs(me);
+  $('vCls').onclick=()=>{if(canCls)return showTavern(me);$('vInfo').innerHTML='いまの冒険者の職業。<br><small style="color:#a99fae">村の建物がよみがえると、変えられるようになる</small>';};
   $('vBack').onclick=back||closeModal;}
 /* tower: doors map, achievements, stats */
 function showTowerMenu(back){const me=()=>showTowerMenu(back);
