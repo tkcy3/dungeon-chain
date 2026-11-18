@@ -1218,8 +1218,8 @@ const SFX={
     else{tone(988,t,.08,{gain:.06});tone(1319,t+.07,.22,{gain:.06});}},
   kill(n=1){const t=T0(),lv=n>=4?2:n>=2?1:0,v=[1,1.25,1.5][lv],L=[1,1.2,1.5][lv],R=[1,1.2,1.45][lv];busyTo(t+.2+.12*L);withVar(()=>{air3(t,.27,.1*v,400,{type:'bandpass',q:1.5,to:6000,toAt:.21,peak:.2});air3(t+.2,.87*L,.2*v,7000,{to:300,toAt:.73*L,peak:.006,rv:R});if(lv>=1)air3(t+.2,.6*L,.1*v,9000,{type:'highpass',to:3000,toAt:.5*L,peak:.01,rv:R});if(lv>=2)air3(t+.21,1.1,.22,1200,{to:120,toAt:1,peak:.02,rv:1.2});});},
   hurt(lv=1){const t=T0(),v=[.55,1,1.4][lv]||1,L=[.8,1,1.3][lv]||1;withVar(()=>{gruff(t,55,26,.42*L,520,v);tone(44,t,.46*L,{type:'sine',gain:.42*v,slideTo:26,attack:.002});noise(t,.1*L,.26*v,350,{type:'lowpass'});if(lv>=2)air3(t+.02,.7,.14,260,{to:50,peak:.01,rv:.8});});},
-  guard(){const t=T0();withVar(()=>{noise(t,.03,.13,2200,{type:'bandpass',q:1.2});[[1800,.1,.07],[2700,.08,.06],[3900,.05,.05]].forEach(([f,g,d])=>noise(t,d,g,f,{type:'bandpass',q:5}));
-    for(let i=0;i<6;i++){const dt=.03+i*.018+Math.random()*.008;noise(t+dt,.025,.07*(1-i*.13),2500+Math.random()*2500,{type:'bandpass',q:2});}noise(t+.03,.13,.04,3000,{type:'bandpass',q:1,sweepTo:1800,attack:.004});});},
+  guard(){const t=T0();withVar(()=>{noise(t,.025,.12,4200,{type:'bandpass',q:1.2});[[3400,.09,.06],[5000,.07,.05],[7000,.05,.045]].forEach(([f,g,d])=>noise(t,d,g,f,{type:'bandpass',q:5}));
+    for(let i=0;i<6;i++){const dt=.028+i*.016+Math.random()*.007;noise(t+dt,.022,.065*(1-i*.13),4500+Math.random()*4500,{type:'bandpass',q:2});}noise(t+.028,.12,.04,6000,{type:'bandpass',q:1,sweepTo:3800,attack:.004});});},
   block(){const t=T0()+.22;tone(1400,t,.09,{type:'triangle',gain:.1});tone(1000,t+.04,.12,{type:'triangle',gain:.07});},
   skill(){const t=T0();busyTo(t+.4);tone(220,t,.4,{type:'sine',gain:.16,slideTo:1300});noise(t,.35,.08,2000);},
   level(){const t=T0();busyTo(t+.5);[72,76,79,84].forEach((m,i)=>tone(mf(m),t+i*.09,.22,{type:'square',gain:.06,filter:4000}));},
