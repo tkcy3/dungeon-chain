@@ -985,7 +985,7 @@ function gameOver(){
 function showGameOver(isNew){
   openModal(`<div class="big" style="text-align:center">💀</div><h2>力尽きた…</h2>
   <p style="text-align:center;font-size:15px"><span style="color:#a99fae;font-size:13px">${NM()}（${(CLASSES[S.cls]||CLASSES.warrior).n}）${S.curse?`・呪いLv${S.curse}`:''}${S.relics&&S.relics.length?`・${relicsHtml()}`:''}</span><br>B${floorOf()}F「${floorOf()%20===0?bossFloorName(floorOf()):zoneAt(floorOf()).name}」で倒れた<br>${S.turn}ターン ／ 撃破${S.kills} ／ Lv${S.level} ／ 最長${S.maxChain||0}チェーン</p>
-  <p style="text-align:center">${isNew?'🏆 最深記録を更新！':`最深記録：B${best.floor||1}F`}</p>${S._newCls?`<div class="rwd">🆕 ${CLASSES[S._newCls].ic} ${CLASSES[S._newCls].n}が 仲間になった</div>`:''}${heldAchHtml()}
+  <p style="text-align:center">${isNew?'🏆 最深記録を更新！':`最深記録：B${best.floor||1}F`}</p>${S._newCls?`<div class="rwd">🆕 ${S._newCls.map(k=>CLASSES[k].ic).join(' ')}<br><small>${S._newCls.map(k=>CLASSES[k].n).join('・')}が 仲間になった</small></div>`:''}${heldAchHtml()}
   <button class="opt" id="g1" style="text-align:center">もう一度</button><button class="opt" id="g2" style="text-align:center">🏠 タイトルへ</button>
   <button class="opt" id="g3" style="text-align:center;font-size:13px">📝 この結果をメモ用にコピー</button>`);copyBtn('g3',runReportText);
   $('g1').onclick=()=>pickClass(c=>newAdventure(c),()=>showTitle());
@@ -1791,7 +1791,7 @@ let settingsBack=null;
 /* ---------- version & changelog ---------- */
 const VERSION='1.2.2';
 const CHANGELOG=[
-  {v:'1.2.2',d:'2026-11-19',items:['最初は戦士だけで始まり、冒険を終えるたびに仲間が増えるようにしました（3回で4職業そろいます）','ヴァンパイアとゾンビの条件を見直し、手に入りやすくしました']},
+  {v:'1.2.2',d:'2026-11-19',items:['最初の2回は戦士で冒険し、2回目を終えると盗賊・僧侶・魔術師が仲間になるようにしました','ヴァンパイアとゾンビの条件を見直し、手に入りやすくしました']},
   {v:'1.2.1',d:'2026-11-19',items:['隠し職業の手に入り方を変えました。世界の元凶を倒すたびに、まだ持っていない隠し職業が1つ手に入ります（3回目の冒険から）']},
   {v:'1.2.0',d:'2026-11-19',items:['パズルに集中できるよう、村・手記・扉をなくして作りをすっきりさせました','4つの職業を最初から選べるようになりました','タイトル画面に「🏆 実績」を追加し、実績・魔物図鑑・戦績をまとめました','盤面の色は「設定」から選べます']},
   {v:'1.1.3',d:'2026-11-19',items:['戻るボタンを画面の下にまとめ、片手で押しやすくしました','設定・メニュー・遊び方・セーブの画面を、アイコン中心に見やすくしました']},
@@ -1946,11 +1946,11 @@ const CLASSES={
 };
 const MAIN_CLS=Object.keys(CLASSES).filter(k=>!CLASSES[k].hidden);
 const classOk=k=>{const c=CLASSES[k];if(c.hidden)return !!UNL.got['h_'+k];return k==='warrior'||!!UNL.got['c_'+k];};
-/* 基本の職業：最初は戦士だけ。冒険を終えるたびに、かんたんな条件を満たした職業が1つ仲間になる（3回で全員） */
-const BASE_UNL=[['thief',r=>(r.shops||0)>=1,'💰をためて ショップを使う'],['cleric',r=>!!r.heal,'🧪で HPを回復する'],['mage',r=>S.level>=5,'Lv5まで 育てる']];
-function unlockBase(){if(TUT||!S||!S.run)return null;const b=BASE_UNL.find(([k,f])=>!classOk(k)&&f(S.run));if(!b)return null;
-  UNL.got['c_'+b[0]]=Date.now();unlSave();const c=CLASSES[b[0]];achToast({ic:c.ic,n:`職業「${c.n}」`,d:'次の冒険から選べる',secret:0,custom:'仲間が増えた'});return b[0];}
-function baseMigrate(){if(UNL.baseMig)return;UNL.baseMig=1;const n=Math.max(RUNS.length,((ACH.st&&ACH.st.games)||0)-1);BASE_UNL.forEach(([k],i)=>{if(n>i)UNL.got['c_'+k]=Date.now();});unlSave();}
+/* 基本の職業：1〜2回目の冒険は戦士だけ。2回目の冒険を終えると、残りの3職業がそろって仲間になる */
+const BASE_UNL=[['thief'],['cleric'],['mage']];
+function unlockBase(){if(TUT||!S||((ACH.st&&ACH.st.games)||0)<2)return null;const ks=BASE_UNL.map(x=>x[0]).filter(k=>!classOk(k));if(!ks.length)return null;
+  ks.forEach(k=>UNL.got['c_'+k]=Date.now());unlSave();achToast({ic:ks.map(k=>CLASSES[k].ic).join(''),n:ks.map(k=>CLASSES[k].n).join('・'),d:'次の冒険から選べる',secret:0,custom:'仲間が増えた'});return ks;}
+function baseMigrate(){if(UNL.baseMig2)return;UNL.baseMig2=1;const n=Math.max(RUNS.length,((ACH.st&&ACH.st.games)||0)-1);if(n>=2)BASE_UNL.forEach(([k])=>UNL.got['c_'+k]=Date.now());unlSave();}
 const drainOf=()=>3+Math.floor(S.level/3);
 function vampDrain(k,msgs){if(S.cls!=='vampire'||k<=0)return '';const h=Math.min(k*drainOf(),S.maxHp-S.hp);if(h<=0)return '';S.hp+=h;flash('bHp');const t=`🩸吸血 HP+${h}`;if(msgs)msgs.push(t);return t;}
 function applyClass(s,k){
@@ -1973,7 +1973,7 @@ function pickClass(then,cancel,peek){
   const cur=partyCls(),me=p=>pickClass(then,cancel,p);
   const how=c=>c.hidden===2?'元凶を倒すと、現れるらしい':c.kill?`3回目の冒険から。B${c.floor}F以上で ${EK[c.kill[0]].name}を${c.kill[1]}体倒すと…`:'';
   const pk=peek&&!classOk(peek)?CLASSES[peek]:null,c=CLASSES[cur],bu=pk&&BASE_UNL.find(x=>x[0]===peek);
-  const card=bu?`<span class="ci" style="filter:grayscale(1);opacity:.6">${pk.ic}</span><div><b>🔒 ${pk.n}</b><p>${bu[2]}と、冒険のあとに仲間になる</p></div>`:pk?`<span class="ci">❔</span><div><b>？？？</b><p>🗨️ ${how(pk)}</p></div>`:`<span class="ci">${c.ic}</span><div><b>${c.n}</b><p>${c.fx}</p></div>`;
+  const card=bu?`<span class="ci" style="filter:grayscale(1);opacity:.6">${pk.ic}</span><div><b>🔒 ${pk.n}</b><p>2回目の冒険を終えると 仲間になる</p></div>`:pk?`<span class="ci">❔</span><div><b>？？？</b><p>🗨️ ${how(pk)}</p></div>`:`<span class="ci">${c.ic}</span><div><b>${c.n}</b><p>${c.fx}</p></div>`;
   openModal(`${pgHead('🧭 職業','戻る','pcCancel')}<div class="pcard">${card}</div>
     <div class="tgrid" style="--c:3">${ks.map(k=>{const x=CLASSES[k],ok=classOk(k);return `<button class="tile ${ok?'':'lock'} ${ok&&k===cur?'sel':''}" data-k="${k}"><span class="ti">${ok||!x.hidden?x.ic:'❔'}</span>${ok||!x.hidden?`<small style="${x.n.length>4?'font-size:11px':''}">${x.n}</small>`:''}</button>`;}).join('')}</div>
     <button class="gopri tofoot after" id="pcGo">▶ 出発<small>${c.ic} ${c.n}</small></button>`);
