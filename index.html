@@ -1788,8 +1788,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshA
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='1.2.0';
+const VERSION='1.2.1';
 const CHANGELOG=[
+  {v:'1.2.1',d:'2026-11-19',items:['隠し職業の手に入り方を変えました。世界の元凶を倒すたびに、まだ持っていない隠し職業が1つ手に入ります（3回目の冒険から）']},
   {v:'1.2.0',d:'2026-11-19',items:['パズルに集中できるよう、村・手記・扉をなくして作りをすっきりさせました','4つの職業を最初から選べるようになりました','タイトル画面に「🏆 実績」を追加し、実績・魔物図鑑・戦績をまとめました','盤面の色は「設定」から選べます']},
   {v:'1.1.3',d:'2026-11-19',items:['戻るボタンを画面の下にまとめ、片手で押しやすくしました','設定・メニュー・遊び方・セーブの画面を、アイコン中心に見やすくしました']},
   {v:'1.1.2',d:'2026-11-19',items:['村の建物の中を、大きな文字とアイコンで見やすくしました','手記は1枚ずつ大きく読めるようになりました']},
@@ -1899,15 +1900,14 @@ function unlockClass(k){if(UNL.got['h_'+k])return false;UNL.got['h_'+k]=Date.now
   achToast({ic:c.ic,n:`隠し職業「${c.n}」`,d:c.hidden===2?`隠し職業 ${h2Got()} / ${H2().length}（あと${H2().length-h2Got()}種類）`:'次の冒険から選べるようになった',secret:0,custom:'隠し職業が解放された'});return true;}
 function checkClassKills(){if(!S||TUT||!S.kk)return;for(const k in CLASSES){const c=CLASSES[k];if(c.kill&&(S.kk[c.kill[0]]||0)>=c.kill[1]&&(S.floor||1)>=(c.floor||0))unlockClass(k);}}
 const H2=()=>Object.keys(CLASSES).filter(k=>CLASSES[k].hidden===2),h2Got=()=>H2().filter(k=>UNL.got['h_'+k]).length;
-/* 隠し職業：1つ目は元凶1回、2つ目はさらに2回、3つ目はさらに3回…と必要な回数が1ずつ増える */
-const h2Need=()=>h2Got()+1,h2Left=()=>Math.max(1,h2Need()-(UNL.h2p||0));
-function rewardHtml(k){const n=h2Got(),t=H2().length;
-  if(k===false){const need=h2Need(),p=UNL.h2p||0;
-    return `<div class="rwd">🔒 次の隠し職業まで、あと${need-p}回<div class="rwbar"><div style="width:${p/need*100}%"></div></div><small>隠し職業 ${n} / ${t}<br>元凶を倒すたびに、次の1つに近づく</small></div>`;}
+/* 隠し職業：基本の職業がすべてそろい、3回目以降の冒険なら、元凶を倒すたびに1つもらえる */
+const h2Ready=()=>MAIN_CLS.every(classOk)&&playsN()>=3;
+function rewardHtml(k){const n=h2Got(),t=H2().length,bar=`<div class="rwbar"><div style="width:${n/t*100}%"></div></div>`;
+  if(k===false)return `<div class="rwd">🔒 隠し職業は 3回目の冒険から${bar}<small>${n} / ${t}</small></div>`;
   const head=k?`🎁 隠し職業「${CLASSES[k].ic}${CLASSES[k].n}」を獲得！`:'🎁 隠し職業はすべて獲得済み';
-  return `<div class="rwd">${head}<div class="rwbar"><div style="width:${n/t*100}%"></div></div><small>隠し職業 ${n} / ${t}${n<t?`（あと${t-n}種類）<br>次は元凶を${h2Need()}回倒すと手に入る`:'　コンプリート！'}</small></div>`;}
-function clearReward(force){const pool=Object.keys(CLASSES).filter(k=>CLASSES[k].hidden===2&&!UNL.got['h_'+k]);if(!pool.length)return null;
-  if(!force){UNL.h2p=(UNL.h2p||0)+1;if(UNL.h2p<h2Need()){unlSave();return false;}}UNL.h2p=0;const k=pool[rnd(pool.length)];unlockClass(k);return k;}
+  return `<div class="rwd">${head}${bar}<small>${n} / ${t}${n<t?'':'　コンプリート！'}</small></div>`;}
+function clearReward(force){const pool=H2().filter(k=>!UNL.got['h_'+k]);if(!pool.length)return null;
+  if(!force&&!h2Ready())return false;const k=pool[rnd(pool.length)];unlockClass(k);return k;}
 function showBestiary(back,bl){
   const seen=BEAST_ORDER.filter(k=>UNL.met[k]).length;
   const tile=k=>{const e=EK[k],m=UNL.met[k],boss=BOSS_KINDS.includes(k);
@@ -1964,7 +1964,7 @@ function pickClass(then,cancel,peek){
   const ks=Object.keys(CLASSES);
   if(ks.filter(classOk).length<=1){then('warrior');return;}
   const cur=partyCls(),me=p=>pickClass(then,cancel,p);
-  const how=c=>c.hidden===2?`元凶を倒すと、まれに現れるらしい（次まで あと${h2Left()}回）`:c.kill?`${EK[c.kill[0]].name}を${c.kill[1]}体倒し${c.floor?`、B${c.floor}Fまでたどり着く`:''}と…`:'';
+  const how=c=>c.hidden===2?'元凶を倒すと、現れるらしい':c.kill?`${EK[c.kill[0]].name}を${c.kill[1]}体倒し${c.floor?`、B${c.floor}Fまでたどり着く`:''}と…`:'';
   const pk=peek&&!classOk(peek)?CLASSES[peek]:null,c=CLASSES[cur];
   const card=pk?`<span class="ci">❔</span><div><b>？？？</b><p>🗨️ ${how(pk)}</p></div>`:`<span class="ci">${c.ic}</span><div><b>${c.n}</b><p>${c.fx}</p></div>`;
   openModal(`${pgHead('🧭 職業','戻る','pcCancel')}<div class="pcard">${card}</div>
