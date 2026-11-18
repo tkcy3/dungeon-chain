@@ -1667,7 +1667,7 @@ const ACHS=[
   {id:'boss200',ic:'🏆',n:'王たちの終わり',d:'ボスを累計200体倒す'},
   {id:'clears3',ic:'👑',n:'三度の夜明け',d:'世界の元凶を累計3回倒す'},
   {id:'clears10',ic:'🌅',n:'救世の常連',d:'世界の元凶を累計10回倒す'},
-  {id:'cl_warrior',ic:'🪖',n:'戦士の誉れ',d:'戦士で世界の元凶を倒す'},
+  {id:'cl_warrior',ic:'💪',n:'戦士の誉れ',d:'戦士で世界の元凶を倒す'},
   {id:'cl_thief',ic:'🗝️',n:'盗賊の誉れ',d:'盗賊で世界の元凶を倒す'},
   {id:'cl_mage',ic:'🔮',n:'魔術師の誉れ',d:'魔術師で世界の元凶を倒す'},
   {id:'cl_cleric',ic:'📿',n:'僧侶の誉れ',d:'僧侶で世界の元凶を倒す'},
@@ -1803,8 +1803,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshA
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='1.2.6';
+const VERSION='1.2.7';
 const CHANGELOG=[
+  {v:'1.2.7',d:'2026-11-19',items:['戦士のアイコンを 💪 に変えました']},
   {v:'1.2.6',d:'2026-11-19',items:['職業を「🎲 おまかせ」で選べるようになりました','魔物の出てくる階を、浅い階から深い階まで散らしました','途中の階の名前と、魔物の予告を出さないようにしました']},
   {v:'1.2.5',d:'2026-11-19',items:['色違いの魔物に、ちゃんと色がつくようにしました','B101Fより深い階では、色違いの魔物が20階ごとに1種類ずつ増えるようにしました','冒険を1回終えるたびに、職業が1つずつ増えるようにしました']},
   {v:'1.2.4',d:'2026-11-19',items:['レベルアップとショップの説明を短くしました']},
@@ -1948,7 +1949,7 @@ function showRecords(back){
 }
 /* classes */
 const CLASSES={
-  warrior:{ic:'🪖',n:'戦士',d:'剣の扱いに長けた、頑丈な探索者。',fx:'最大HP60・最大防御5で、最初から防御が満タン。癖がなく扱いやすい',stage:'s0'},
+  warrior:{ic:'💪',n:'戦士',d:'剣の扱いに長けた、頑丈な探索者。',fx:'最大HP60・最大防御5で、最初から防御が満タン。癖がなく扱いやすい',stage:'s0'},
   thief:{ic:'🗝️',n:'盗賊',d:'金目のものに目がない、身軽な流れ者。',fx:'💰の価値3（通常2）・ショップの必要額2割引・最大HP40',stage:'s1'},
   mage:{ic:'🔮',n:'魔術師',d:'古い術を受け継ぐ、線の細い学者。',fx:'最初から🔥火球を習得・スキルの再使用ターン25%短縮・最大HP40',stage:'s3'},
   cleric:{ic:'📿',n:'僧侶',d:'祈りで傷を癒やしてきた、穏やかな巡礼者。',fx:'🧪の回復量3（通常2）・回復の余りは経験値に・基礎攻撃力が伸びやすく（+7）、剣は伸びにくい（+1）',stage:'s2'},
