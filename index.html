@@ -84,6 +84,9 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 .vgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0}
 .vcell{background:#2a2230;border:1px solid #4a3d52;border-radius:12px;padding:10px 2px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;color:#ece4d8}
 .vcell .vic{font-size:30px;line-height:1.1}.vcell small{font-size:11px;color:#c9bfcf}.vcell.ruin{opacity:.55;filter:grayscale(.7)}
+.vcell.fresh{border-color:#e8b33a;animation:vfresh 1.6s ease-in-out 3}.vcell.sel{border-color:#e8b33a}
+@keyframes vfresh{0%,100%{box-shadow:0 0 0 rgba(232,179,58,0)}50%{box-shadow:0 0 18px rgba(232,179,58,.55)}}
+.vnews{background:#2a2230;border:1px solid #6b5a3a;border-radius:10px;padding:8px 10px;margin:0 0 8px;font-size:12.5px;line-height:1.7;color:#f0d9a8;text-align:center}
 .tmap{position:relative;margin:8px 0 8px 14px;border-left:2px dashed #5a4a62;padding-left:14px}
 .tnode{position:relative;display:flex;gap:8px;margin:0 0 12px;opacity:.55}.tnode.on{opacity:1}.tnode i{position:absolute;left:-29px;top:0;font-style:normal;font-size:18px;background:#211a25}
 .tnode small{display:block;font-size:10.5px;color:#e8b33a}.tnode b{display:block;font-size:14px}.tnode span{display:block;font-size:11.5px;color:#c9bfcf}
@@ -941,7 +944,7 @@ function showGameOver(isNew){
   $('g2').onclick=()=>{closeModal();showTitle(true);};
 }
 $('btnCont').onclick=()=>{if(!anySave())return;const f=[0,1,2].filter(i=>slotJson(i));if(f.length===1){loadSlot(f[0]);return;}showSlots('load',loadSlot);};
-function newAdventure(cls){if(cls===undefined||typeof cls!=='string'){pickClass(c=>newAdventure(c),()=>{closeModal();if(TUT){endTutorial();showTitle();}});return;}closeModal();endTutorial();newState(cls);startGame();saveGame();}
+function newAdventure(cls){if((cls===undefined||typeof cls!=='string')&&!TUT&&vilOk('tavern'))cls=partyCls();if(cls===undefined||typeof cls!=='string'){pickClass(c=>newAdventure(c),()=>{closeModal();if(TUT){endTutorial();showTitle();}});return;}closeModal();endTutorial();newState(cls);startGame();saveGame();}
 function slotLine(i){const s=slotInfo(i);if(!s)return `<b>スロット${i+1}</b>　<span style="color:#8f8396">― 空き ―</span>`;if(s.broken)return `<b>スロット${i+1}</b>　読み込めないデータ`;
   const c=CLASSES[s.cls]||CLASSES.warrior,d=s.ts?new Date(s.ts):null;
   return `<b>スロット${i+1}</b>　${c.ic}${esc(s.name||'')}（${c.n}）<small>B${s.floor||1}F・Lv${s.level}・${s.turn}ターン${d?`　${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`:''}</small>`;}
@@ -967,12 +970,12 @@ function showNewGameMenu(over){
   const vb=NG_BACK;NG_BACK=null;
   const first=!tutDoneFlag()&&!best;
   openModal(`<h2>新しい冒険</h2>${nameField()}${curseField()}<p style="text-align:center;font-size:12px;color:${over?'#f99':'#a99fae'}">${over?`スロット${SLOT+1}の冒険に上書きします`:`スロット${SLOT+1}に記録します`}</p>
-    ${vb?'<button class="opt" id="ng2">⚔️ 冒険へ<small>職業を選んで、地の底へ</small></button>':''}
+    ${vb?`<button class="opt" id="ng2">⚔️ 冒険へ<small>${vilOk('tavern')?`${CLASSES[partyCls()].ic} ${CLASSES[partyCls()].n}で出発（職業は酒場で変えられる）`:'地の底へ'}</small></button>`:''}
     <button class="opt" id="ng1">📜 物語から始める<small>${first?'はじめての方へ。物語のあと、チュートリアルで遊び方を覚えられます（スキップ可）':'オープニングを見てから冒険へ'}</small></button>
     ${vb?'':'<button class="opt" id="ng2">⚔️ すぐに冒険へ<small>オープニングもチュートリアルも飛ばす</small></button>'}
     <button class="opt" id="ng3">🎓 チュートリアルから<small>遊び方をおさらいしてから冒険へ</small></button>
     <button class="opt" id="ng4" style="text-align:center">${vb?'村に戻る':'やめる'}</button>`);
-  $('ng1').onclick=()=>{closeModal();if(first){playStory(()=>startTutorial(true));return;}pickClass(c=>playStory(()=>newAdventure(c)));};
+  $('ng1').onclick=()=>{closeModal();if(first){playStory(()=>startTutorial(true));return;}if(vilOk('tavern')){const c=partyCls();playStory(()=>newAdventure(c));return;}pickClass(c=>playStory(()=>newAdventure(c)));};
   $('ng2').onclick=()=>newAdventure();
   $('ng3').onclick=()=>{closeModal();startTutorial(true);};
   $('ng4').onclick=vb||closeModal;wireNameField();wireCurse();
@@ -984,7 +987,7 @@ function villageStairs(back){const f=[0,1,2].filter(i=>slotJson(i));
   if(!f.length)return fresh();
   openModal(`<h2>🪦 墓地の階段</h2><p style="text-align:center;font-size:12px;color:#a99fae">苔むした石棺の下へ、階段が続いている。</p>
     <button class="opt" id="sa1">📖 続きから<small>${f.length===1?slotLine(f[0]).replace(/<[^>]+>/g,' '):'途中の冒険を選んで再開する'}</small></button>
-    <button class="opt" id="sa2">⚔️ 新しい冒険<small>職業を選んで、地の底へ</small></button>
+    <button class="opt" id="sa2">⚔️ 新しい冒険<small>地の底へ、もう一度</small></button>
     <button class="opt" id="sa3" style="text-align:center">戻る</button>`);
   $('sa1').onclick=()=>{if(f.length===1)loadSlot(f[0]);else showSlots('load',loadSlot,()=>villageStairs(back));};$('sa2').onclick=fresh;$('sa3').onclick=back;}
 function goVillage(){showVillage(()=>{closeModal();refreshTitle();});}
@@ -1751,7 +1754,7 @@ let settingsBack=null;
 /* ---------- version & changelog ---------- */
 const VERSION='1.1.0';
 const CHANGELOG=[
-  {v:'1.1.0',d:'2026-11-19',items:['拾った手記は、村の古民家で読めるようになりました','村が冒険の拠点になりました。冒険に出るときも、冒険から戻ったときも、村に立ち寄ります','冒険の記録や魔物図鑑は、村の建物で見られるようになりました','冒険中のメニューの「タイトルへ戻る」を「村に戻る」に変えました。途中の冒険は、墓地の階段から続きを始められます']},
+  {v:'1.1.0',d:'2026-11-19',items:['冒険に出る職業は、村の酒場で選ぶようになりました。一度選べば、次からはそのまま出発できます','よみがえった建物は、村に戻ったときにまとめてお知らせするようにしました','拾った手記は、村の古民家で読めるようになりました','村が冒険の拠点になりました。冒険に出るときも、冒険から戻ったときも、村に立ち寄ります','冒険の記録や魔物図鑑は、村の建物で見られるようになりました','冒険中のメニューの「タイトルへ戻る」を「村に戻る」に変えました。途中の冒険は、墓地の階段から続きを始められます']},
   {v:'1.0.3',d:'2026-11-19',items:['元凶を倒して手に入る隠し職業が、集めるほど手に入りにくくなるようにしました']},
   {v:'1.0.2',d:'2026-11-18',items:['オープニングの文章を、スマホでも読みやすい改行に整えました','冒険を始めたときの案内文を変えました']},
   {v:'1.0.1',d:'2026-11-18',items:['一部の職業が解放されるタイミングを調整しました']},
@@ -1855,7 +1858,7 @@ const VIL=[
   {id:'tower',ic:'🔭',n:'見張り台',fx:'扉の地図・実績・戦績が見られる',cond:()=>achCount()>=1,hint:'実績を1つ解除する',easy:1},
   {id:'house',ic:'🛖',n:'古民家',fx:'拾った「失われた手記」が読める',cond:()=>Object.keys(UNL.notes||{}).length>=1,hint:'失われた手記を拾う',easy:1},
   {id:'church',ic:'⛪',n:'教会',fx:'一度手にした遺物を1つ、冒険に持ち込める',cond:()=>unlocked('s2'),hint:'B40Fに到達する'},
-  {id:'tavern',ic:'🍺',n:'酒場',fx:'旅の仲間（職業）が集まる。隠し職業の噂も聞ける',cond:()=>unlocked('s1'),hint:'B20Fのボスを倒す'},
+  {id:'tavern',ic:'🍺',n:'酒場',fx:'冒険に出る職業を選べる。隠し職業の噂も聞ける',cond:()=>unlocked('s1'),hint:'B20Fのボスを倒す'},
   {id:'well',ic:'⛲',n:'村の井戸',fx:'',cond:()=>VIL.filter(v=>v.id!=='well'&&!v.deco).every(v=>vilOk(v.id)),hint:'村のすべての建物をよみがえらせる'},
   {id:'smith',ic:'⚒️',n:'鍛冶屋',fx:'冒険の始まりに 剣の攻撃力+1',cond:()=>bestFloor()>=30,hint:'B30Fに到達する'},
   {id:'tailor',ic:'🧵',n:'仕立て屋',fx:'迷宮の色合い（盤面の見た目）を選べる',cond:()=>achCount()>=20,hint:'実績を20個集める'},
@@ -1871,17 +1874,18 @@ function checkVillage(){UNL.vil=UNL.vil||{};let ch=false;const g=(ACH&&ACH.st&&A
   const ord=[...VIL.filter(x=>x.id!=='well').sort((a,b)=>VIL_ORDER.indexOf(a.id)-VIL_ORDER.indexOf(b.id)),VIL.find(x=>x.id==='well')];
   for(const v of ord){if(v.deco||UNL.vil[v.id]||!v.cond()||g<(VIL_MIN[v.id]||0))continue;
     if(!v.easy&&v.id!=='well'){if(g<=(UNL.vilRun||0))continue;UNL.vilRun=g;}
-    UNL.vil[v.id]=Date.now();ch=true;
-    achToast({ic:v.ic,n:v.id==='well'?'井戸の水が、澄んだ':`${v.n}がよみがえった`,d:v.id==='well'?'村に、光が戻った。':v.fx,secret:0,custom:'村の復興'});}
+    UNL.vil[v.id]=Date.now();ch=true;(UNL.vilFresh=UNL.vilFresh||[]).push(v.id);}
   if(ch)unlSave();}
 const vilCount=()=>VIL.filter(v=>!v.deco&&vilOk(v.id)).length,vilTotal=()=>VIL.filter(v=>!v.deco).length;
 function showVillage(back){checkVillage();const me=()=>showVillage(back);
+  const fresh=UNL.vilFresh||[],intro=!UNL.vilSeen;UNL.vilFresh=[];UNL.vilSeen=1;unlSave();if(fresh.length)setTimeout(()=>sfx('ach'),200);
+  const news=(intro?'村に帰ってきた。<br>冒険から戻るたびに、<br>村は少しずつよみがえる。<br>地の底へは 🪦 墓地の階段 から。':'')+(intro&&fresh.length?'<br>':'')+fresh.map(id=>{const v=VIL.find(x=>x.id===id);return id==='well'?'⛲ 井戸の水が、澄んだ。村に、光が戻った。':`✨ ${v.ic} ${v.n}がよみがえった ― ${v.fx}`;}).join('<br>');
   const cell=v=>{const ok=v.deco||vilOk(v.id);
-    return `<button class="vcell ${ok?'':'ruin'}" data-v="${v.id}"><span class="vic">${ok?(v.id==='well'?'⛲':v.ic):(v.id==='well'?'🕳️':'🏚️')}</span><small>${ok||v.id==='well'?v.n:'？？？'}</small></button>`;};
+    return `<button class="vcell ${ok?'':'ruin'} ${fresh.includes(v.id)?'fresh':''}" data-v="${v.id}"><span class="vic">${ok?(v.id==='well'?'⛲':v.ic):(v.id==='well'?'🕳️':'🏚️')}</span><small>${ok||v.id==='well'?v.n:'？？？'}</small></button>`;};
   const wellOk=vilOk('well');
   openModal(`<h2 style="font-family:var(--mincho)">🏘️ 村</h2>
     <p style="text-align:center;font-size:12.5px;color:#c9bfcf;margin:0 0 6px">${wellOk?'井戸は澄み、村に灯りが戻った。':'黒く濁った井戸のまわりで、村は静かに眠っている。'}<br>復興 ${vilCount()} / ${vilTotal()}</p>
-    <div class="vgrid">${VIL.map(cell).join('')}</div>
+    ${news?`<div class="vnews">${news}</div>`:''}<div class="vgrid">${VIL.map(cell).join('')}</div>
     <p id="vInfo" class="vz-cap">建物をタップ。冒険へは 🪦 墓地の階段 から</p>
     <button class="opt" id="vBack" style="text-align:center">タイトルへ</button>`);
   document.querySelectorAll('#mbox .vcell').forEach(b=>b.onclick=()=>{const v=VIL.find(x=>x.id===b.dataset.v),ok=v.deco||vilOk(v.id);
@@ -1934,11 +1938,13 @@ function showChurch(back){const seen=Object.keys(UNL.relSeen||{}).filter(k=>RELI
     <button class="opt" id="chB" style="text-align:center">戻る</button>`);
   document.querySelectorAll('#mbox .chs').forEach(b=>b.onclick=()=>{UNL.carry=b.dataset.k||null;unlSave();showChurch(back);});$('chB').onclick=back;}
 /* tavern: class roster */
-function showTavern(back){const ks=Object.keys(CLASSES);
-  openModal(`<h2>🍺 酒場</h2><p style="text-align:center;font-size:12px;color:#a99fae">旅の仲間 ${ks.filter(classOk).length} / ${ks.length}</p><div class="alist">${ks.map(k=>{const c=CLASSES[k],ok=classOk(k);
+const partyCls=()=>{if(UNL.cls&&classOk(UNL.cls))return UNL.cls;const l=RUNS.length&&RUNS[RUNS.length-1].c;return l&&classOk(l)?l:'warrior';};
+function showTavern(back){const ks=Object.keys(CLASSES),cur=partyCls();
+  openModal(`<h2>🍺 酒場</h2><p style="text-align:center;font-size:12px;color:#a99fae">いっしょに地の底へ降りる職業を選ぶ。次の冒険から、この職業で出発する。<br>旅の仲間 ${ks.filter(classOk).length} / ${ks.length}</p><div class="alist">${ks.map(k=>{const c=CLASSES[k],ok=classOk(k);
     const how=c.hidden===2?'元凶を倒すと、まれに現れるらしい':c.kill?`1回の冒険で${EK[c.kill[0]].name}を${c.kill[1]}体倒し${c.floor?`、B${c.floor}Fまでたどり着く`:''}と…`:STAGES.find(s=>s.id===c.stage)?'条件：'+STAGES.find(s=>s.id===c.stage).hint:'';
-    return ok?`<div class="ach"><span class="ai">${c.ic}</span><span><b>${c.n}</b><small>${c.fx}</small></span></div>`:`<div class="ach lock"><span class="ai">❔</span><span><b>${c.hidden?'？？？':c.n}</b><small>${c.hidden?'噂：'+how:how}</small></span></div>`;}).join('')}</div>
-    <button class="opt" id="tvB" style="text-align:center;position:sticky;bottom:0;background:#2e2535">戻る</button>`);$('tvB').onclick=back;}
+    return ok?`<button class="opt tvc" data-k="${k}" style="${k===cur?'border-color:#e8b33a;':''}text-align:left">${c.ic} <b>${c.n}</b>${k===cur?' <span style="color:#e8b33a;font-size:12px">（この職業で出発）</span>':''}<small>${c.d}<br>${c.fx}</small></button>`:`<div class="ach lock"><span class="ai">❔</span><span><b>${c.hidden?'？？？':c.n}</b><small>${c.hidden?'噂：'+how:how}</small></span></div>`;}).join('')}</div>
+    <button class="opt" id="tvB" style="text-align:center;position:sticky;bottom:0;background:#2e2535">村に戻る</button>`);
+  document.querySelectorAll('#mbox .tvc').forEach(b=>b.onclick=()=>{UNL.cls=b.dataset.k;unlSave();showTavern(back);});$('tvB').onclick=back;}
 /* tailor: board themes */
 const BG0={...BG};
 const THEMES={def:{n:'いつもの迷宮',need:0,bg:BG0},
@@ -1962,7 +1968,7 @@ function noteMet(k){if(TUT||UNL.met[k])return;UNL.met[k]=1;unlSave();const D=EK[
   achToast({ic:D.icon,n:D.name,d:D.desc.replace(/\s+/g,''),secret:0,custom:D.rare?'★ めずらしい魔物に出会った':'はじめて出会った魔物',flt:D.flt});}
 function noteKills(list){if(TUT||!list.length)return;for(const t of list){const k=kindOf(t);UNL.kills[k]=(UNL.kills[k]||0)+1;UNL.met[k]=1;if(S){S.kk=S.kk||{};S.kk[k]=(S.kk[k]||0)+1;const D=EK[k]||{};if(D.dh||D.dg||D.dx||D.sp||D.db||D.fz)(S._dq=S._dq||[]).push(k);if(t.mini&&unlocked('s2'))S.pending.push('relic');}}unlSave();checkClassKills();}
 function unlockClass(k){if(UNL.got['h_'+k])return false;UNL.got['h_'+k]=Date.now();unlSave();const c=CLASSES[k];
-  achToast({ic:c.ic,n:`隠し職業「${c.n}」`,d:c.hidden===2?`隠し職業 ${h2Got()} / ${H2().length}（あと${H2().length-h2Got()}種類）`:'次の冒険から選べるようになった',secret:0,custom:'隠し職業が解放された'});return true;}
+  achToast({ic:c.ic,n:`隠し職業「${c.n}」`,d:c.hidden===2?`隠し職業 ${h2Got()} / ${H2().length}（あと${H2().length-h2Got()}種類）`:(vilOk('tavern')?'村の酒場で選べるようになった':'次の冒険から選べるようになった'),secret:0,custom:'隠し職業が解放された'});return true;}
 function checkClassKills(){if(!S||TUT||!S.kk)return;for(const k in CLASSES){const c=CLASSES[k];if(c.kill&&(S.kk[c.kill[0]]||0)>=c.kill[1]&&(S.floor||1)>=(c.floor||0))unlockClass(k);}}
 const H2=()=>Object.keys(CLASSES).filter(k=>CLASSES[k].hidden===2),h2Got=()=>H2().filter(k=>UNL.got['h_'+k]).length;
 /* 隠し職業：1つ目は元凶1回、2つ目はさらに2回、3つ目はさらに3回…と必要な回数が1ずつ増える */
