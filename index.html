@@ -623,7 +623,7 @@ function commitChain(){
     };
     if(g==='mix'){const cnt={};cells.forEach(p=>{const t=tileAt(p).t;cnt[t]=(cnt[t]||0)+1;});const ty=Object.keys(cnt).length;if(ty>1){mult*=MIXLOSS;msgs.push('⚗️ 調合');}for(const k of ['shield','potion','coin'])if(cnt[k])eff(k,cnt[k]);}else eff(g,cells.length);
   }
-  sfx('clear',g);if(g==='atk'&&S.kills>killsBefore)sfx('kill');
+  if(g==='atk'&&S.kills>killsBefore)sfx('kill');else sfx('clear',g);
   if(bonus){gainXp(hasR('starfrag')?bonus*2:bonus);flash('bXp');}
   if(cells.length>=5){if(hasR('chalice')){addGold(4);msgs.push('🏆 💰+4');}if(hasR('clover'))gainXp(1);}
   if(mult>1)msgs.unshift('✨'+bonusTxtOf(cells.length));
@@ -1157,6 +1157,15 @@ function noise(t,dur,gain,hp,o={}){
   const g=c.createGain();g.gain.setValueAtTime(o.attack?.0001:gain,t);if(o.attack)g.gain.exponentialRampToValueAtTime(gain,t+o.attack);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
   s.connect(f);f.connect(g);g.connect(dest);if(o.echo&&AU.echoIn){const e=c.createGain();e.gain.value=o.echo;g.connect(e);e.connect(AU.echoIn);}s.start(t,Math.random()*.5);s.stop(t+dur+.02);
 }
+// 長い継ぎ目なしノイズと部屋鳴り（撃破音の余韻用）
+function longNoise(){if(AU.lnoise)return AU.lnoise;const c=AU.ctx,n=c.sampleRate*4,b=c.createBuffer(1,n,c.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;return AU.lnoise=b;}
+function revIn(){if(AU.rvIn)return AU.rvIn;const c=AU.ctx,len=Math.floor(c.sampleRate*2.2),ir=c.createBuffer(2,len,c.sampleRate);for(let ch=0;ch<2;ch++){const d=ir.getChannelData(ch);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3.2);}
+  const cv=c.createConvolver();cv.buffer=ir;const g=c.createGain();g.gain.value=.7;cv.connect(g);g.connect(AU.sfx);const i=c.createGain();i.connect(cv);return AU.rvIn=i;}
+function air3(t,d,g,f,o={}){const c=AU.ctx;if(!c)return;const s=c.createBufferSource();s.buffer=longNoise();const fl=c.createBiquadFilter();fl.type=o.type||'lowpass';fl.frequency.setValueAtTime(f*SVAR,t);if(o.q)fl.Q.value=o.q;
+  if(o.to)fl.frequency.exponentialRampToValueAtTime(o.to*SVAR,t+(o.toAt||d));
+  const gn=c.createGain(),pk=o.peak||.01;gn.gain.setValueAtTime(0,t);gn.gain.linearRampToValueAtTime(.0001,t+.002);gn.gain.exponentialRampToValueAtTime(g,t+pk);gn.gain.setTargetAtTime(0,t+pk,(d-pk)/4.5);
+  s.connect(fl);fl.connect(gn);gn.connect(AU.sfx);if(o.rv){const r=c.createGain();r.gain.value=o.rv;gn.connect(r);r.connect(revIn());}
+  s.start(t,Math.random()*(4-d-.2));s.stop(t+d+.1);}
 function withVar(fn){SVAR=1+(Math.random()*.1-.05);try{fn();}finally{SVAR=1;}}
 /* --- BGM: original 8-bar loop in A minor --- */
 let STEP=60/70/2;AU.tr=0;
@@ -1196,7 +1205,7 @@ const SFX={
     else if(g==='shield'){tone(660,t,.18,{type:'triangle',gain:.14});tone(990,t+.05,.2,{type:'triangle',gain:.1});}
     else if(g==='potion'){tone(380,t,.28,{type:'sine',gain:.16,slideTo:950});tone(600,t+.08,.2,{type:'sine',gain:.08,slideTo:1300});}
     else{tone(988,t,.08,{gain:.06});tone(1319,t+.07,.22,{gain:.06});}},
-  kill(){const t=T0()+.06;withVar(()=>{tone(mf(64),t,.06,{type:'triangle',gain:.1,filter:2500});const u=t+.02;noise(u,.4,.12,3000,{type:'bandpass',q:.8,sweepTo:400,attack:.03,echo:.25});tone(mf(57),u+.02,.36,{type:'sine',gain:.05,slideTo:mf(50),echo:.3});});},
+  kill(){const t=T0();withVar(()=>{air3(t,.4,.16,400,{type:'bandpass',q:1.5,to:6000,toAt:.32,peak:.3});air3(t+.3,1.3,.34,7000,{to:300,toAt:1.1,peak:.006,rv:1});});},
   hurt(){const t=T0()+.22;tone(230,t,.32,{type:'sawtooth',gain:.17,slideTo:65,filter:900});noise(t,.2,.12,300);},
   block(){const t=T0()+.22;tone(1400,t,.09,{type:'triangle',gain:.1});tone(1000,t+.04,.12,{type:'triangle',gain:.07});},
   skill(){const t=T0();tone(220,t,.4,{type:'sine',gain:.16,slideTo:1300});noise(t,.35,.08,2000);},
