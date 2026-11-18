@@ -82,9 +82,14 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 .slotrow{display:flex;gap:6px;align-items:stretch}.slotrow .opt{flex:1;min-width:0}.sldel{background:#2e2535;border:1px solid #4a3d52;border-radius:10px;font-size:18px;padding:0 12px;margin:4px 0}
 .rwd{background:#2a2230;border:1px solid #6b5a3a;border-radius:10px;padding:10px;margin:8px 0;text-align:center;color:#f0d9a8;font-size:15px}.rwd small{color:#c9bfcf;font-size:12px}.rwbar{height:6px;background:#1a1420;border-radius:3px;margin:8px 0 4px;overflow:hidden}.rwbar div{height:100%;background:#c98500;border-radius:3px}
 /* village pages: shared parts (readable sizes, few words) */
-.phead{position:sticky;top:-16px;z-index:3;background:#211a25;margin:-16px -16px 12px;padding:8px 12px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;border-bottom:1px solid #2f2733}
+#modal.sheet{align-items:flex-end;padding:10px 8px max(10px,env(safe-area-inset-bottom))}#modal.sheet .box{max-height:92vh}
+.phead{margin:-6px 0 12px;padding:0 0 10px;text-align:center;border-bottom:1px solid #2f2733}
+.pfoot{position:sticky;bottom:-16px;z-index:3;background:#211a25;margin:14px -16px -16px;padding:10px 12px 12px;border-top:1px solid #2f2733;display:flex;gap:8px;align-items:stretch}
+.pfoot .pback{flex:1;justify-self:auto;min-height:50px;background:#2e2535;border:1px solid #5d4a69;border-radius:12px;color:#ece4d8;font-size:16px;padding:0 12px}
+.pfoot .vgo{flex:2.2;margin:0}.pfoot .nav{flex:0 0 64px;min-height:50px;border-radius:12px;background:#2e2535;border:1px solid #5d4a69;color:#eee;font-size:22px}.pfoot .nav:disabled{opacity:.2}
+.pfoot .gopri{flex:2.2;min-height:50px;border-radius:12px;background:linear-gradient(#3f321c,#2a2114);border:1px solid #c9a24a;color:#f6e6bf;font-size:17px;font-family:var(--mincho)}.pfoot .gopri small{display:block;font-family:inherit;font-size:13px;color:#cdb98e}
 .phead h2{margin:0!important;font-family:var(--mincho);font-size:19px!important;white-space:nowrap}
-.pback{justify-self:start;background:none;border:0;color:#c9bfcf;font-size:14.5px;padding:8px 8px 8px 0;min-height:42px;white-space:nowrap}
+.pback{white-space:nowrap}
 .meter{display:flex;align-items:center;gap:10px;margin:0 2px 12px}.meter div{flex:1;height:8px;background:#2f2733;border-radius:4px;overflow:hidden}.meter i{display:block;height:100%;background:#e8b33a;border-radius:4px}.meter span{font-size:15px;color:#e6dccb;font-variant-numeric:tabular-nums;white-space:nowrap}
 .tgrid{display:grid;grid-template-columns:repeat(var(--c,4),1fr);gap:8px}
 .tile{position:relative;background:#2a2230;border:1px solid #4a3d52;border-radius:12px;padding:10px 2px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#ece4d8;min-width:0;min-height:58px}
@@ -97,8 +102,26 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 .pcard{background:#2a2230;border:1px solid #6b5a3a;border-radius:12px;padding:12px;margin:0 0 12px;display:flex;gap:12px;align-items:center;min-height:86px}
 .pcard .ci{font-size:42px;line-height:1}.pcard b{display:block;font-size:18px;font-family:var(--mincho);color:#f0d9a8}.pcard p{word-break:auto-phrase;font-size:14.5px!important;color:#e0d6ca!important;margin:4px 0 0!important;line-height:1.6!important}
 .note{word-break:auto-phrase;text-wrap:balance;font-family:var(--mincho);font-size:17px;line-height:2.15;color:#e6dccb;text-align:center;padding:24px 4px;background:linear-gradient(#2c2431,#241d29);border:1px solid #4a3d52;border-radius:12px;letter-spacing:.01em}
-.npager{display:flex;align-items:center;justify-content:center;gap:26px;margin-top:14px}.npager button{width:60px;height:50px;border-radius:12px;background:#2e2535;border:1px solid #5d4a69;color:#eee;font-size:26px}.npager button:disabled{opacity:.2}.npager span{font-size:15px;color:#c9bfcf;font-variant-numeric:tabular-nums}
+.npager{text-align:center;margin-top:10px;font-size:15px;color:#c9bfcf;font-variant-numeric:tabular-nums}
 .sw{display:grid;grid-template-columns:repeat(3,15px);gap:3px;margin:2px 0 2px}.sw i{width:15px;height:15px;border-radius:3px;display:block}
+/* bottom bar & other pages */.tg.off{opacity:.45}.tg em{color:#8fe08f}.tg.off em{color:#f08a8a}
+.prow{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#2a2230;border:1px solid #4a3d52;border-radius:12px;padding:12px;margin:0 0 8px;color:#ece4d8;font-size:16px;min-height:52px}
+.prow .ri{font-size:24px;width:30px;text-align:center}.prow .rt{flex:1}.prow .rs{font-size:13px;color:#b9adc0}.prow.danger{border-color:#8a3a3a;color:#ffc4c4}.prow:active{background:#3a2f42}
+.newb{background:#e8b33a;color:#211a25;font-size:11px;font-weight:700;border-radius:999px;padding:2px 7px;margin-left:6px;vertical-align:middle}
+.chg details{margin:0 0 6px}.chg summary{font-size:15px;color:#c9bfcf;padding:8px 0;cursor:pointer}.chg ul{font-size:14px!important;line-height:1.7!important}
+.hlp{display:flex;flex-direction:column;gap:12px}.hcard{background:#2a2230;border:1px solid #4a3d52;border-radius:12px;padding:12px;text-align:center}
+.hcard h4{margin:0 0 8px;font-size:15px;color:#f0d9a8;font-family:var(--mincho);font-weight:600}
+.hchain{display:flex;align-items:center;justify-content:center;gap:4px;font-size:30px}.hchain i{font-style:normal;color:#e8b33a;font-size:20px}
+.hleg{display:grid;grid-template-columns:1fr 1fr;gap:8px}.hleg div{display:flex;align-items:center;gap:8px;background:#211a25;border-radius:10px;padding:8px;font-size:15px;color:#e0d6ca}.hleg span{font-size:26px}
+.hbars{display:flex;align-items:flex-end;justify-content:center;gap:8px;height:96px;margin-top:4px}.hbars div{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;font-size:12.5px;color:#c9bfcf}.hbars b{display:block;width:26px;background:#e8b33a;border-radius:4px 4px 0 0}.hbars em{font-style:normal;font-size:12px;color:#f0d9a8}
+.hen{display:flex;align-items:center;justify-content:center;gap:16px}.hen .et{position:relative;width:76px;height:76px;border-radius:12px;background:#3a2219;font-size:40px;display:flex;align-items:center;justify-content:center}
+.hen .et i{position:absolute;font-style:normal;font-size:15px;font-weight:700;text-shadow:0 1px 2px #000}.hen ul{list-style:none;margin:0;padding:0;text-align:left;font-size:15px;line-height:1.9}
+.hico{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:14.5px;color:#e0d6ca}.hico div{background:#211a25;border-radius:10px;padding:8px 6px}.hico span{display:block;font-size:24px}
+.scard{display:flex;align-items:center;gap:12px;flex:1;min-width:0;text-align:left;background:#2a2230;border:1px solid #4a3d52;border-radius:12px;padding:10px 12px;color:#ece4d8;min-height:64px}
+.scard .si{font-size:34px}.scard b{font-size:20px;display:block}.scard small{display:block;font-size:13px;color:#b9adc0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.scard.empty{border-style:dashed;opacity:.45;justify-content:center;font-size:15px}
+.slotrow .sldel{font-size:22px;padding:0 14px;margin:0}.slotrow{margin-bottom:8px}
+.warn{text-align:center;color:#ffb0a0;font-size:14px;margin:0 0 10px}
+.chip{display:inline-block;background:#2a2230;border:1px solid #4a3d52;border-radius:999px;padding:3px 12px;font-size:13.5px;color:#d9cfc2}
 .gsep{margin:16px 0 8px;font-size:13px;color:#c9a2ff;letter-spacing:.2em;text-align:center}
 .vgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:8px 0 4px}
 .vhead{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;margin-bottom:2px}.vhead h2{margin:0;font-family:var(--mincho)}
@@ -111,7 +134,7 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 .vgo small{display:block;font-family:inherit;font-size:13px;color:#cdb98e;margin-top:2px}.vgo:active{background:#4a3b20}
 .vcell{background:#2a2230;border:1px solid #4a3d52;border-radius:12px;padding:9px 1px 7px;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;color:#ece4d8}
 .vcell .vic{font-size:30px;line-height:1.1}.vcell small{font-size:12.5px;color:#c9bfcf;white-space:nowrap}.vcell.ruin{opacity:.4;filter:grayscale(.8);border-style:dashed}.vcell.ruin.sel{opacity:.8;border-style:solid}
-.vinfo{font-size:14px;color:#d9cfc2;text-align:center;min-height:38px;margin:4px 0 2px;line-height:1.5}.vinfo i{font-style:normal;color:#8f8396}.vinfo b{color:#f0d9a8;font-weight:normal}.vnews small{display:block;font-size:13px;color:#cdb98e;line-height:1.5;margin-bottom:2px}
+.vinfo{font-size:14px;color:#d9cfc2;text-align:center;min-height:42px;margin:4px 0 2px;line-height:1.5}.vinfo i{font-style:normal;color:#8f8396}.vinfo b{color:#f0d9a8;font-weight:normal}.vnews small{display:block;font-size:13px;color:#cdb98e;line-height:1.5;margin-bottom:2px}
 .vcell.fresh{border-color:#e8b33a;animation:vfresh 1.6s ease-in-out 3}.vcell.sel{border-color:#e8b33a}
 @keyframes vfresh{0%,100%{box-shadow:0 0 0 rgba(232,179,58,0)}50%{box-shadow:0 0 18px rgba(232,179,58,.55)}}
 .vnews{background:#2a2230;border:1px solid #6b5a3a;border-radius:10px;padding:8px 10px;margin:0 0 8px;font-size:14.5px;line-height:1.7;color:#f0d9a8;text-align:center}
@@ -138,7 +161,7 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 .box .opt{display:block;width:100%;text-align:left;background:#2e2535;border:1px solid #5d4a69;color:#eee;border-radius:10px;padding:10px 12px;margin-top:8px;font-size:15px}
 .box .opt small{display:block;color:#c4b4cc;font-size:13px;margin-top:2px}
 .box .opt:active{background:#40324a}
-.box textarea{width:100%;height:110px;background:#151017;color:#ddd;border:1px solid #4d3f57;border-radius:8px;font-size:11px;padding:6px;margin-top:8px;user-select:text;-webkit-user-select:text}
+.box textarea{width:100%;height:110px;background:#151017;color:#ddd;border:1px solid #4d3f57;border-radius:8px;font-size:12px;padding:6px;margin-top:8px;user-select:text;-webkit-user-select:text}
 .box ul{font-size:13px;color:#cbb;padding-left:18px;line-height:1.6}
 #title h1{font-size:28px;letter-spacing:.1em;white-space:nowrap;margin:2px 0 6px;font-family:var(--mincho);font-weight:600;color:#e6dccb;text-shadow:0 0 18px rgba(255,170,90,.25)}
 #title .tag{color:#a3978a;font-size:13px;margin-bottom:10px;font-family:var(--mincho);letter-spacing:.05em}
@@ -163,7 +186,7 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 .tlogo::before{content:'';position:absolute;left:-12%;right:-12%;top:-10%;bottom:-10%;z-index:-1;background:radial-gradient(ellipse 50% 50% at 50% 50%,rgba(10,9,11,.88),rgba(10,9,11,.45) 60%,transparent 75%)}
 @keyframes tIn{from{opacity:0;transform:translateY(-10px);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
 .tlow{width:100%;display:flex;flex-direction:column;align-items:center}
-#bestLine{font-size:12.5px;color:#cbbfa8;min-height:18px;margin:0 0 12px;letter-spacing:.04em}
+#bestLine{font-size:14px;color:#cbbfa8;min-height:18px;margin:0 0 12px;letter-spacing:.04em}
 .tmain{width:100%;max-width:300px;display:flex;flex-direction:column;gap:10px}
 .tbtn{width:100%;padding:12px;border-radius:12px;border:1px solid #5d4a69;background:#2e2535;color:#eee;font-size:16px;letter-spacing:.08em}
 .tbtn small{display:block;font-family:inherit;font-size:11.5px;color:#bba9c4;letter-spacing:.02em;margin-top:3px}
@@ -172,8 +195,8 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 .tsub{display:flex;gap:8px;justify-content:center;margin-top:18px;width:100%;max-width:320px}
 .tsub button{flex:1;max-width:76px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0 6px;border-radius:10px;border:1px solid #3a2f3e;background:#241c27;color:#bba9c4;font-size:11px}
 .tsub button span{font-size:20px;filter:saturate(.75)}
-#cloud{font-size:10.5px;color:#6f6670;margin-top:14px}
-#ver{font-size:10.5px;color:#5c545e;margin-top:6px;background:none;border:0;padding:4px 8px;font-family:inherit}#ver.new{color:#e8b33a}
+#cloud{font-size:12.5px;color:#8f8396;margin-top:14px}
+#ver{font-size:12.5px;color:#7f7682;margin-top:6px;background:none;border:0;padding:4px 8px;font-family:inherit}#ver.new{color:#e8b33a}
 .chg h3{font-size:14px;margin:12px 0 4px;color:#f0d9a8}.chg h3 small{color:#8f8396;font-weight:400;margin-left:6px}.chg ul{margin:0;padding-left:18px;font-size:12.5px;line-height:1.65;color:#d9d0dc}
 .big{font-size:44px}
 #tip{position:fixed;z-index:20;max-width:290px;background:#2b2131;border:1px solid #7a6488;border-radius:10px;padding:10px 12px;font-size:14.5px;line-height:1.6;color:#eee;pointer-events:none;box-shadow:0 6px 18px rgba(0,0,0,.6)}
@@ -780,53 +803,49 @@ function chooseReplace(k,kind,opts){
 }
 
 /* ---------- modal ---------- */
-function openModal(html){hideTip();$('mbox').innerHTML=html;$('modal').classList.remove('hidden');modalOpen=true;}
+function openModal(html){hideTip();const m=$('mbox');m.innerHTML=html;m.scrollTop=0;const h=m.querySelector('.phead[data-bl]');$('modal').classList.toggle('sheet',!!h);
+  if(h){const f=document.createElement('div'),bl=h.dataset.bl;f.className='pfoot';const x=[...m.querySelectorAll('.tofoot')],pre=x.filter(e=>!e.classList.contains('after'));
+    pre.forEach(e=>f.appendChild(e));f.insertAdjacentHTML('beforeend',`<button class="pback" id="${h.dataset.id}">${bl[0]==='✕'?bl:'‹ '+bl}</button>`);x.filter(e=>e.classList.contains('after')).forEach(e=>f.appendChild(e));m.appendChild(f);}
+  $('modal').classList.remove('hidden');modalOpen=true;}
 function closeModal(){$('modal').classList.add('hidden');modalOpen=false;}
 
-const HELP=`<h2>遊び方</h2><ul>
-<li>同じ種類のタイルを<b>縦・横・斜め</b>に<b>3つ以上</b>なぞってつなぐと消えます。指を戻すと取り消せます。</li>
-<li><b>⚔️と💀は一緒につなげます。</b>つないだ敵全員に「基礎攻撃力＋剣の本数×武器攻撃力」のダメージ。</li>
-<li>🛡️：防御を回復。満タンを超えた分は<b>盾ポイント</b>になり、たまると防具強化。</li>
-<li>🧪：HP回復（余った分の半分はお金に）。 💰：お金。たまると<b>ショップ</b>で強化を選べます。</li>
-<li><b>長くつなぐほど強い</b>：どのパネルも、つないだ数が多いほど1枚あたりの効果が上がります（4つ×1.2、5つ×1.4、7つ×1.8、10つ×2.6、14つ×4.1）。5つ以上なら経験値ボーナスも（+1〜4）。</li>
-<li>敵を倒すと経験値。<b>レベルアップ</b>でスキル習得や能力強化。</li>
-<li>毎ターン、盤面の敵がまとめて攻撃してきます（出たばかりの敵は次のターンから）。ダメージはまず防御が受け止めます。</li>
-<li>敵タイルの数字：<span style="color:#ffd54a">左下＝攻撃力</span>、<span style="color:#ff6b6b">右下＝HP</span>、<span style="color:#7fc4ff">右上＝装甲</span>（先にダメージを吸収）。</li>
-<li>敵には いろいろな種類がいます（コウモリ、爆弾、ゴーレム…）。<b>長押し</b>で特徴を確認しよう。</li>
-<li>2ターンごとに1階ずつ潜ります。20階ごとにボスがいて、<b>倒すまで下へ進めません</b>（オーガ王→ドラゴン→ヴァンパイア→クラーケン）。</li>
-<li>目標は<b>地下100Fの世界の元凶「深淵の眼」</b>。左上の階層を長押しすると、今いる場所の情報が見られます。</li>
-<li>スキルはターンを消費せずに使えます。</li>
-<li><b>タイル・スキル・ゲージを長押し</b>すると、効果の説明が出ます。</li>
-<li>毎ターン<b>自動セーブ</b>。閉じても「続きから」で再開できます。</li>
-</ul><button class="opt" style="text-align:center;position:sticky;bottom:0;background:#2e2535;box-shadow:0 -8px 12px #211a25" id="mClose">閉じる</button>`;
-function showHelp(){openModal(HELP);$('mClose').onclick=closeModal;}
+/* 遊び方：文章ではなく図で見せる */
+function showHelp(back){const M=[[3,1],[4,1.2],[5,1.4],[7,1.8],[10,2.6],[14,4.1]];
+  openModal(`${pgHead('❓ 遊び方',back?'メニュー':'✕ 閉じる')}<div class="hlp">
+    <div class="hcard"><h4>3つ以上 なぞる</h4><div class="hchain">⚔️<i>―</i>💀<i>―</i>⚔️<i>―</i>💀</div><p style="font-size:22px;color:#c9bfcf;margin:4px 0 0;letter-spacing:.3em">↕ ↔ ⤢</p><p style="font-size:14px;color:#c9bfcf;margin:2px 0 0">⚔️と💀は つながる</p></div>
+    <div class="hcard"><div class="hleg"><div><span>⚔️</span>攻撃</div><div><span>🛡️</span>防御</div><div><span>🧪</span>回復</div><div><span>💰</span>お店</div></div></div>
+    <div class="hcard"><h4>長いほど 強い</h4><div class="hbars">${M.map(([n,x])=>`<div><em>×${x}</em><b style="height:${x/4.1*62}px"></b>${n}</div>`).join('')}</div></div>
+    <div class="hcard"><h4>敵の数字</h4><div class="hen"><div class="et">💀<i style="right:5px;top:3px;color:#7fc4ff">2</i><i style="left:6px;bottom:3px;color:#ffd54a">3</i><i style="right:6px;bottom:3px;color:#ff6b6b">8</i></div>
+      <ul><li><span style="color:#ffd54a">●</span> 攻撃</li><li><span style="color:#ff6b6b">●</span> HP</li><li><span style="color:#7fc4ff">●</span> 装甲</li></ul></div></div>
+    <div class="hcard"><div class="hico"><div><span>👆</span>長押しで説明</div><div><span>⬇️</span>2ターンで1階</div><div><span>👑</span>20階ごとにボス</div><div><span>💾</span>自動セーブ</div></div></div>
+  </div>`);$('pgBack').onclick=back||closeModal;}
 
 function showMenu(){
-  if(TUT){openModal(`<h2>チュートリアル</h2><button class="opt" id="u1">${TUT.fromNew?'スキップして 冒険をはじめる':'チュートリアルを終わる'}</button><button class="opt" id="u2">遊び方（文章）</button><button class="opt" id="u3">タイトルへ</button><button class="opt" id="u4" style="text-align:center">閉じる</button>`);
-    $('u1').onclick=tutSkip;$('u2').onclick=showHelp;$('u3').onclick=()=>{closeModal();endTutorial();showTitle();};$('u4').onclick=closeModal;return;}
-  openModal(`<h2>メニュー</h2>
-  <button class="opt" id="m1">遊び方</button>
-  <button class="opt" id="m2">セーブデータを書き出す<small>別の端末へ移すときや、バックアップ用</small></button>
-  <button class="opt" id="m7">📜 冒険の記録<small>実績・魔物図鑑・解放</small></button>
-  <button class="opt" id="m8">⚙️ 設定<small>音と振動の切り替え</small></button>
-  <button class="opt" id="m3">🏘️ 村に戻る<small>進行状況は保存されています（墓地の階段の「続きから」で再開）</small></button>
-  <button class="opt" id="m4">あきらめる<small>この冒険を終了します</small></button>
-  <button class="opt" id="m5" style="text-align:center">閉じる</button>`);
-  $('m1').onclick=showHelp;$('m2').onclick=showExport;$('m7').onclick=()=>showRecords(showMenu);if(firstRun()||!(vilOk('tower')||vilOk('library')))$('m7').style.display='none';$('m8').onclick=()=>showSettings(showMenu);
+  if(TUT){openModal(`${pgHead('🎓 チュートリアル','✕ 閉じる','u4')}<button class="prow" id="u1"><span class="ri">⏭️</span><span class="rt">${TUT.fromNew?'飛ばして冒険へ':'チュートリアルを終わる'}</span></button><button class="prow" id="u2"><span class="ri">❓</span><span class="rt">遊び方</span></button><button class="prow" id="u3"><span class="ri">🏠</span><span class="rt">タイトルへ</span></button>`);
+    $('u1').onclick=tutSkip;$('u2').onclick=()=>showHelp(showMenu);$('u3').onclick=()=>{closeModal();endTutorial();showTitle();};$('u4').onclick=closeModal;return;}
+  const rec=!(firstRun()||!(vilOk('tower')||vilOk('library')));
+  openModal(`${pgHead('☰ メニュー','✕ 閉じる','m5')}<div class="tgrid" style="--c:3">
+    <button class="tile big" id="m1"><span class="ti">❓</span><small>遊び方</small></button>
+    <button class="tile big" id="m8"><span class="ti">⚙️</span><small>設定</small></button>
+    <button class="tile big" id="m3"><span class="ti">🏘️</span><small>村へ</small></button>
+    ${rec?'<button class="tile big" id="m7"><span class="ti">📜</span><small>記録</small></button>':''}
+    <button class="tile big" id="m2"><span class="ti">💾</span><small>書き出し</small></button></div>
+    <button class="prow danger" id="m4" style="margin-top:22px"><span class="ri">🏳️</span><span class="rt">あきらめる</span></button>`);
+  $('m1').onclick=()=>showHelp(showMenu);$('m2').onclick=showExport;if(rec)$('m7').onclick=()=>showRecords(showMenu);$('m8').onclick=()=>showSettings(showMenu);
   $('m3').onclick=()=>{saveGame();closeModal();showTitle(true);};
-  $('m4').onclick=()=>{openModal(`<h2>本当にあきらめますか？</h2><p style="text-align:center">セーブデータは消えます。</p><button class="opt" id="y" style="text-align:center">あきらめる</button><button class="opt" id="n" style="text-align:center">続ける</button>`);
-    $('y').onclick=()=>{closeModal();GIVEUP=true;gameOver();};$('n').onclick=closeModal;};
+  $('m4').onclick=()=>{openModal(`<div class="big" style="text-align:center">🏳️</div><h2>あきらめる？</h2><p style="text-align:center">この冒険のセーブは消えます。</p><button class="opt" id="n" style="text-align:center">続ける</button><button class="opt" id="y" style="text-align:center;border-color:#8a3a3a;color:#ffc4c4">あきらめる</button>`);
+    $('y').onclick=()=>{closeModal();GIVEUP=true;gameOver();};$('n').onclick=showMenu;};
   $('m5').onclick=closeModal;
 }
 function encodeSave(){return btoa(unescape(encodeURIComponent(serialize())));}
 function showExport(){
   saveGame();
-  openModal(`<h2>セーブデータ</h2><p>下の文字列を保存しておくと、タイトル画面の「読み込み」で再開できます。</p><textarea id="ex" readonly>${encodeSave()}</textarea><button class="opt" id="cp" style="text-align:center">コピー</button><button class="opt" id="cl" style="text-align:center">閉じる</button>`);
+  openModal(`${pgHead('💾 書き出し','メニュー','cl')}<p style="text-align:center;font-size:14px">📋 → 📝 → タイトルの 📥 読み込み</p><textarea id="ex" readonly>${encodeSave()}</textarea><button class="opt" id="cp" style="text-align:center">📋 コピー</button>`);
   $('cp').onclick=async()=>{const ta=$('ex');const ok=await copyText(ta.value);if(ok)$('cp').textContent='コピーしました';else{ta.focus();ta.select();ta.setSelectionRange(0,ta.value.length);$('cp').textContent='選択しました。長押しでコピーしてください';}};
-  $('cl').onclick=closeModal;
+  $('cl').onclick=showMenu;
 }
 function showImport(){
-  openModal(`<h2>セーブデータを読み込む</h2><p>書き出した文字列を貼り付けてください。今のセーブは上書きされます。</p><textarea id="im"></textarea><p id="imErr" style="color:#f88"></p><button class="opt" id="ok" style="text-align:center">読み込んで再開</button><button class="opt" id="cl" style="text-align:center">キャンセル</button>`);
+  openModal(`${pgHead('📥 読み込み','✕ 閉じる','cl')}<p style="text-align:center;font-size:14px">書き出した文字を 貼り付け</p><textarea id="im"></textarea><p id="imErr" style="color:#f88"></p><button class="gopri tofoot after" id="ok">▶ 再開</button>`);
   $('cl').onclick=closeModal;
   $('ok').onclick=()=>{try{const json=decodeURIComponent(escape(atob($('im').value.trim())));const s=JSON.parse(json);if(s.v!==1||!Array.isArray(s.board))throw 0;
       chooseNewSlot(()=>{closeModal();startFromSave(json);saveGame();},showImport);}catch(e){$('imErr').textContent='読み込めませんでした。文字列を確認してください。';}};
@@ -973,17 +992,18 @@ function showGameOver(isNew){
 }
 $('btnCont').onclick=()=>{if(!anySave())return;const f=[0,1,2].filter(i=>slotJson(i));if(f.length===1){loadSlot(f[0]);return;}showSlots('load',loadSlot);};
 function newAdventure(cls){if((cls===undefined||typeof cls!=='string')&&!TUT&&vilOk('tavern'))cls=partyCls();if(cls===undefined||typeof cls!=='string'){pickClass(c=>newAdventure(c),()=>{closeModal();if(TUT){endTutorial();showTitle();}});return;}closeModal();endTutorial();newState(cls);startGame();saveGame();}
+function slotCard(i){const s=slotInfo(i);if(!s)return '';if(s.broken)return `<span class="si">⚠️</span><span><b>？</b><small>読み込めないデータ</small></span>`;
+  const c=CLASSES[s.cls]||CLASSES.warrior,d=s.ts?new Date(s.ts):null;
+  return `<span class="si">${c.ic}</span><span style="flex:1;min-width:0"><b>B${s.floor||1}F</b><small>Lv${s.level}・${esc(s.name||c.n)}</small></span><small style="align-self:flex-start">${d?`${d.getMonth()+1}/${d.getDate()}`:''}</small>`;}
 function slotLine(i){const s=slotInfo(i);if(!s)return `<b>スロット${i+1}</b>　<span style="color:#8f8396">― 空き ―</span>`;if(s.broken)return `<b>スロット${i+1}</b>　読み込めないデータ`;
   const c=CLASSES[s.cls]||CLASSES.warrior,d=s.ts?new Date(s.ts):null;
   return `<b>スロット${i+1}</b>　${c.ic}${esc(s.name||'')}（${c.n}）<small>B${s.floor||1}F・Lv${s.level}・${s.turn}ターン${d?`　${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`:''}</small>`;}
 function showSlots(mode,pick,back){
-  const title=mode==='load'?'続きから':'どのセーブに上書きしますか？';
-  openModal(`<h2>${title}</h2>${mode==='over'?'<p style="text-align:center;color:#f99;font-size:13px">セーブは3つまで。選んだスロットの冒険は消えます。</p>':''}
-    ${[0,1,2].map(i=>{const has=!!slotJson(i);return `<div class="slotrow"><button class="opt sl" data-i="${i}" ${mode==='load'&&!has?'disabled style="opacity:.4"':''}>${slotLine(i)}</button>${mode==='load'&&has?`<button class="sldel" data-i="${i}" aria-label="削除">🗑</button>`:''}</div>`;}).join('')}
-    <button class="opt" id="slBack" style="text-align:center">戻る</button>`);
-  document.querySelectorAll('#mbox .sl').forEach(b=>b.onclick=()=>{if(b.disabled)return;pick(+b.dataset.i);});
+  openModal(`${pgHead(mode==='load'?'📖 続きから':'💾 どれに上書き？','戻る','slBack')}${mode==='over'?'<p class="warn">⚠️ 選んだ冒険は消えます</p>':''}
+    ${[0,1,2].map(i=>{const has=!!slotJson(i);return `<div class="slotrow">${has||mode!=='load'?`<button class="scard sl ${has?'':'empty'}" data-i="${i}">${has?slotCard(i):'空き'}</button>`:`<div class="scard empty">空き</div>`}${mode==='load'&&has?`<button class="sldel" data-i="${i}" aria-label="削除">🗑</button>`:''}</div>`;}).join('')}`);
+  document.querySelectorAll('#mbox .sl').forEach(b=>b.onclick=()=>pick(+b.dataset.i));
   document.querySelectorAll('#mbox .sldel').forEach(b=>b.onclick=()=>{const i=+b.dataset.i;
-    openModal(`<h2>スロット${i+1}を削除</h2><p style="text-align:center">${slotLine(i)}</p><p style="text-align:center">この冒険は消えます。よろしいですか？</p><button class="opt" id="y" style="text-align:center">削除する</button><button class="opt" id="n" style="text-align:center">やめる</button>`);
+    openModal(`<div class="big" style="text-align:center">🗑</div><h2>この冒険を消す？</h2><div class="slotrow"><div class="scard">${slotCard(i)}</div></div><button class="opt" id="n" style="text-align:center">やめる</button><button class="opt" id="y" style="text-align:center;border-color:#8a3a3a;color:#ffc4c4">消す</button>`);
     $('y').onclick=()=>{try{localStorage.removeItem(slotKey(i));}catch(e){}if(i===SLOT)savedJson=null;refreshTitle();anySave()?showSlots(mode,pick,back):(closeModal());};
     $('n').onclick=()=>showSlots(mode,pick,back);});
   $('slBack').onclick=back||closeModal;
@@ -997,12 +1017,13 @@ function showNewGameMenu(over){
   if(typeof over!=='boolean'){chooseNewSlot(ov=>showNewGameMenu(!!ov),NG_BACK||undefined);return;}
   const vb=NG_BACK;NG_BACK=null;
   const first=!tutDoneFlag()&&!best;
-  openModal(`<h2>新しい冒険</h2>${nameField()}${curseField()}<p style="text-align:center;font-size:12px;color:${over?'#f99':'#a99fae'}">${over?`スロット${SLOT+1}の冒険に上書きします`:`スロット${SLOT+1}に記録します`}</p>
-    ${vb?`<button class="opt" id="ng2">⚔️ 冒険へ<small>${vilOk('tavern')?`${CLASSES[partyCls()].ic} ${CLASSES[partyCls()].n}で出発（職業は酒場で変えられる）`:'地の底へ'}</small></button>`:''}
-    <button class="opt" id="ng1">📜 物語から始める<small>${first?'はじめての方へ。物語のあと、チュートリアルで遊び方を覚えられます（スキップ可）':'オープニングを見てから冒険へ'}</small></button>
-    ${vb?'':'<button class="opt" id="ng2">⚔️ すぐに冒険へ<small>オープニングもチュートリアルも飛ばす</small></button>'}
-    <button class="opt" id="ng3">🎓 チュートリアルから<small>遊び方をおさらいしてから冒険へ</small></button>
-    <button class="opt" id="ng4" style="text-align:center">${vb?'村に戻る':'やめる'}</button>`);
+  const pc=CLASSES[partyCls()];
+  openModal(`${pgHead('⚔️ 新しい冒険',vb?'村':'✕ やめる','ng4')}${nameField()}${curseField()}<p style="text-align:center;margin:0 0 12px">${over?`<span class="chip" style="border-color:#8a3a3a;color:#ffb0a0">💾 ${SLOT+1} に上書き</span>`:`<span class="chip">💾 ${SLOT+1}</span>`}</p>
+    <div class="tgrid" style="--c:${vb?2:3}">
+      <button class="tile big ${first?'sel':''}" id="ng1"><span class="ti">📜</span><small>物語から</small></button>
+      ${vb?'':'<button class="tile big" id="ng2"><span class="ti">⚔️</span><small>すぐ冒険</small></button>'}
+      <button class="tile big" id="ng3"><span class="ti">🎓</span><small>練習から</small></button></div>
+    ${vb?`<button class="gopri tofoot after" id="ng2">⚔️ 冒険へ<small>${vilOk('tavern')?`${pc.ic} ${pc.n}`:'地の底へ'}</small></button>`:''}`);
   $('ng1').onclick=()=>{closeModal();if(first){playStory(()=>startTutorial(true));return;}if(vilOk('tavern')){const c=partyCls();playStory(()=>newAdventure(c));return;}pickClass(c=>playStory(()=>newAdventure(c)));};
   $('ng2').onclick=()=>newAdventure();
   $('ng3').onclick=()=>{closeModal();startTutorial(true);};
@@ -1778,8 +1799,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshA
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='1.1.2';
+const VERSION='1.1.3';
 const CHANGELOG=[
+  {v:'1.1.3',d:'2026-11-19',items:['戻るボタンを画面の下にまとめ、片手で押しやすくしました','設定・メニュー・遊び方・セーブの画面を、アイコン中心に見やすくしました']},
   {v:'1.1.2',d:'2026-11-19',items:['村の建物の中を、大きな文字とアイコンで見やすくしました','手記は1枚ずつ大きく読めるようになりました']},
   {v:'1.1.1',d:'2026-11-19',items:['村の画面を見やすく整理しました。冒険へは、いちばん下の「墓地の階段へ」から出発できます','墓地の階段のボタンに、途中の冒険が出るようにしました']},
   {v:'1.1.0',d:'2026-11-19',items:['冒険に出る職業は、村の酒場で選ぶようになりました。一度選べば、次からはそのまま出発できます','よみがえった建物は、村に戻ったときにまとめてお知らせするようにしました','拾った手記は、村の古民家で読めるようになりました','村が冒険の拠点になりました。冒険に出るときも、冒険から戻ったときも、村に立ち寄ります','冒険の記録や魔物図鑑は、村の建物で見られるようになりました','冒険中のメニューの「タイトルへ戻る」を「村に戻る」に変えました。途中の冒険は、墓地の階段から続きを始められます']},
@@ -1801,45 +1823,43 @@ function verUnseen(){let v=null;try{v=localStorage.getItem(LS_VER);}catch(e){}
   if(v===VERSION)return false;if(!v&&!((ACH&&ACH.st&&ACH.st.games)||0)){try{localStorage.setItem(LS_VER,VERSION);}catch(e){}return false;}return true;}
 function refreshVer(){const b=$('ver');if(!b)return;const n=verUnseen();b.textContent=`v${VERSION}`+(n?' ・ 更新内容を見る':'');b.classList.toggle('new',n);}
 function showChangelog(back){try{localStorage.setItem(LS_VER,VERSION);}catch(e){}refreshVer();
-  openModal(`<h2>📋 更新内容</h2><p style="text-align:center;font-size:12px;color:#a99fae">いまのバージョン：v${VERSION}</p><div class="chg">${chgByDay().map(g=>`<h3>${g.d.replace(/-/g,'/')}<small>v${g.vs[g.vs.length-1]}${g.vs.length>1?'〜v'+g.vs[0]:''}</small></h3><ul>${g.items.map(x=>`<li>${x}</li>`).join('')}</ul>`).join('')}</div>
-    <button class="opt" id="chgB" style="text-align:center;position:sticky;bottom:0;background:#2e2535;margin-top:12px">戻る</button>`);
+  const top=CHANGELOG[0],D=chgByDay().map(g=>({...g,items:g.items.filter(x=>!top.items.includes(x))})).filter(g=>g.items.length),day=g=>`<ul>${g.items.map(x=>`<li>${x}</li>`).join('')}</ul>`,dt=g=>g.d.slice(5).replace('-','/');
+  openModal(`${pgHead('📋 更新内容','設定','chgB')}<p style="text-align:center;margin:0 0 6px"><span class="chip">v${VERSION}</span></p><div class="chg">
+    <h3>✨ ${dt(top)}</h3>${day(top)}${D.map(g=>`<details><summary>${dt(g)}</summary>${day(g)}</details>`).join('')}</div>`);
   $('chgB').onclick=()=>{if(back)back();else closeModal();};}
 function showSettings(back,msg){
   if(back!==undefined)settingsBack=back;
-  const tg=(id,label,on)=>`<button class="opt" id="${id}">${label}<span style="float:right;font-weight:700;color:${on?'#8fe08f':'#f08a8a'}">${on?'ON':'OFF'}</span></button>`;
-  const bf=best?(best.floor||1+Math.floor(best.turn/2)):0;
-  openModal(`<h2>⚙️ 設定</h2>
-    <div class="asep">音と振動</div>${tg('st1','🎵 BGM',AU.on.bgm)}${tg('st2','🔊 効果音',AU.on.sfx)}${tg('st3',(VIB_IC==='振動'?'':VIB_IC+' ')+'振動',AU.on.vib)}
-    <div class="asep">このゲームについて</div><button class="opt" id="stVer">📋 更新内容<small>いまのバージョン v${VERSION}${verUnseen()?' ・ 新しい更新があります':''}</small></button>
-    <div class="asep">データのリセット</div>`+(inGame?'<p style="text-align:center">リセットは、タイトル画面の「⚙️ 設定」から行えます。</p>':`
-    <button class="opt" id="rs1">🏆 実績をリセット<small>解除済みの ${achCount()} / ${ACH_N()} と、累計撃破数などの記録を消します</small></button>
-    <button class="opt" id="rs2">🥇 最高記録と戦績をリセット<small>${best?`最深記録 B${bf}F・最長${best.chain||0}チェーンを消します`:'記録はまだありません'}</small></button>
-    <button class="opt" id="rs3">💾 セーブデータを削除<small>${anySave()?'「続きから」で遊べる冒険（3スロットすべて）を消します':'セーブデータはありません'}</small></button>
-    <button class="opt" id="rs5">🎓 はじめての状態に戻す<small>次の「はじめから」で、初めての人向けの物語とチュートリアルの案内が出ます</small></button>
-    <button class="opt" id="rs6" style="border-color:#8a3a3a">⚠️ すべて初期状態に戻す<small>実績・最高記録・セーブ・図鑑・解放状況・設定をまとめて消します</small></button>`)+
-    `<p id="stMsg" style="text-align:center;color:#8fe08f">${msg||''}</p>
-    <button class="opt" id="stClose" style="text-align:center;position:sticky;bottom:0;background:#2e2535;box-shadow:0 -8px 12px #211a25">閉じる</button>`);
+  const tg=(id,ic,label,on)=>`<button class="tile big tg ${on?'':'off'}" id="${id}"><span class="ti">${ic}</span><small>${label}</small><em>${on?'ON':'OFF'}</em></button>`;
+  openModal(`${pgHead('⚙️ 設定','戻る','stClose')}<div class="tgrid" style="--c:3">${tg('st1','🎵','BGM',AU.on.bgm)}${tg('st2','🔊','効果音',AU.on.sfx)}${tg('st3',VIB_IC==='振動'?'📳':VIB_IC,'振動',AU.on.vib)}</div>
+    <button class="prow" id="stVer" style="margin-top:14px"><span class="ri">📋</span><span class="rt">更新内容${verUnseen()?'<span class="newb">NEW</span>':''}</span><span class="rs">v${VERSION}</span></button>
+    ${inGame?'':'<button class="prow" id="stData"><span class="ri">🗑️</span><span class="rt">データを消す</span><span class="rs">›</span></button>'}
+    ${msg?`<p id="stMsg" style="text-align:center;color:#8fe08f;font-size:14.5px">${msg}</p>`:''}`);
   const flip=k=>{AU.on[k]=!AU.on[k];saveAudio();refreshAudioBtns();if(k==='bgm'&&AU.on.bgm&&inGame)bgmStart();if(k==='vib'&&AU.on.vib)vib(30);showSettings();};
   $('stVer').onclick=()=>showChangelog(()=>showSettings());
   $('st1').onclick=()=>flip('bgm');$('st2').onclick=()=>flip('sfx');$('st3').onclick=()=>flip('vib');
-  if(!inGame){
-    $('rs1').onclick=()=>confirmReset('実績をリセット','解除した実績と、累計撃破数・スキル使用回数などの記録がすべて未解除に戻ります。',resetAch);
-    $('rs2').onclick=()=>confirmReset('最高記録と戦績をリセット','最深記録・最長チェーン・元凶討伐の記録と、戦績の冒険履歴が消えます。',resetBest);
-    $('rs3').onclick=()=>confirmReset('セーブデータを削除','「続きから」で遊べる冒険（3スロットすべて）が消えます。',resetSaveData);
-    $('rs5').onclick=()=>confirmReset('はじめての状態に戻す','チュートリアルを終えた記録が消え、次の「はじめから」で初めての人向けの案内が出ます。',resetTutFlag);
-    $('rs6').onclick=()=>confirmReset('すべて初期状態に戻す','実績・最高記録・セーブデータ・図鑑・解放状況・設定がすべて消え、初めて遊ぶときと同じ状態になります。',resetEverything,true);
-  }
+  if(!inGame)$('stData').onclick=showDataReset;
   $('stClose').onclick=()=>{const b=settingsBack;settingsBack=null;if(b)b();else closeModal();};
+}
+/* データを消す：危ない操作はここにまとめる（説明は確認画面で出す） */
+function showDataReset(){
+  const row=(id,ic,t,dis)=>`<button class="prow ${id==='rs6'?'danger':''}" id="${id}" ${dis?'disabled style="opacity:.35"':''}><span class="ri">${ic}</span><span class="rt">${t}</span></button>`;
+  openModal(`${pgHead('🗑️ データを消す','設定','rsB')}${row('rs1','🏆','実績')}${row('rs2','🥇','最高記録と戦績',!best)}${row('rs3','💾','セーブデータ',!anySave())}${row('rs5','🎓','はじめての状態に')}<div style="height:18px"></div>${row('rs6','⚠️','すべて消す')}`);
+  $('rsB').onclick=()=>showSettings();
+  $('rs1').onclick=()=>confirmReset('実績をリセット','解除した実績と、累計撃破数・スキル使用回数などの記録がすべて未解除に戻ります。',resetAch);
+  if(best)$('rs2').onclick=()=>confirmReset('最高記録と戦績をリセット','最深記録・最長チェーン・元凶討伐の記録と、戦績の冒険履歴が消えます。',resetBest);
+  if(anySave())$('rs3').onclick=()=>confirmReset('セーブデータを削除','「続きから」で遊べる冒険（3スロットすべて）が消えます。',resetSaveData);
+  $('rs5').onclick=()=>confirmReset('はじめての状態に戻す','チュートリアルを終えた記録が消え、次の「はじめから」で初めての人向けの案内が出ます。',resetTutFlag);
+  $('rs6').onclick=()=>confirmReset('すべて初期状態に戻す','実績・最高記録・セーブデータ・図鑑・解放状況・設定がすべて消え、初めて遊ぶときと同じ状態になります。',resetEverything,true);
 }
 function confirmReset(name,detail,fn,twice){
   const done=()=>{fn();refreshTitle();sfx('block');showSettings(undefined,`✓ ${name}：完了しました`);};
   openModal(`<h2>${name}</h2><p style="text-align:center">${detail}<br><b style="color:#f5a0a0">この操作は取り消せません。</b>${cloudOn?'<br><small>クラウドに保存された分も消えます。</small>':''}</p>
-    <button class="opt" id="cfY" style="text-align:center;border-color:#8a3a3a;color:#ffc4c4">リセットする</button><button class="opt" id="cfN" style="text-align:center">やめる</button>`);
-  $('cfN').onclick=()=>showSettings();
+    <button class="opt" id="cfN" style="text-align:center">やめる</button><button class="opt" id="cfY" style="text-align:center;border-color:#8a3a3a;color:#ffc4c4">リセットする</button>`);
+  $('cfN').onclick=showDataReset;
   $('cfY').onclick=()=>{if(!twice){done();return;}
     openModal(`<h2>⚠️ 最終確認</h2><p style="text-align:center">本当に、すべてのデータを消して<br>初期状態に戻しますか？</p>
-      <button class="opt" id="cfY2" style="text-align:center;border-color:#8a3a3a;color:#ffc4c4">すべて消す</button><button class="opt" id="cfN2" style="text-align:center">やめる</button>`);
-    $('cfY2').onclick=done;$('cfN2').onclick=()=>showSettings();};
+      <button class="opt" id="cfN2" style="text-align:center">やめる</button><button class="opt" id="cfY2" style="text-align:center;border-color:#8a3a3a;color:#ffc4c4">すべて消す</button>`);
+    $('cfY2').onclick=done;$('cfN2').onclick=showDataReset;};
 }
 
 let GIVEUP=false;
@@ -1884,7 +1904,8 @@ function showStages(back){
   $('sgBack').onclick=back||closeModal;
 }
 /* ---------- village pages: shared parts ---------- */
-const pgHead=(title,bl,id='pgBack')=>`<div class="phead"><button class="pback" id="${id}">‹ ${bl||'戻る'}</button><h2>${title}</h2><span></span></div>`;
+/* 見出しは上、戻るボタンは画面の下（片手で押せる位置）に置く。.tofoot の要素も下の帯へ移す */
+const pgHead=(title,bl,id='pgBack')=>`<div class="phead" data-bl="${bl||'戻る'}" data-id="${id}"><h2>${title}</h2></div>`;
 const meter=(n,N)=>`<div class="meter"><div><i style="width:${N?n/N*100:0}%"></i></div><span>${n} / ${N}</span></div>`;
 /* タップで小さな説明を出す。次にどこかを触ると消える */
 function tapTip(el,html){const r=el.getBoundingClientRect();showTip(html,r.left+r.width/2,r.top+6);
@@ -1930,7 +1951,7 @@ function showVillage(back){checkVillage();const me=()=>showVillage(back);
       <button class="vcls ${canCls?'can':''}" id="vCls">${c.ic} ${c.n}${canCls?' ›':''}</button></div>
     ${news?`<div class="vnews" style="margin:8px 0 0">${news}</div>`:''}<div class="vgrid">${order.map(cell).join('')}</div>
     <p id="vInfo" class="vinfo"></p>
-    <button class="vgo" id="vGo">🪦 墓地の階段へ<small>${goSub}</small></button>`);
+    <button class="vgo tofoot after" id="vGo">🪦 墓地の階段へ<small>${goSub}</small></button>`);
   document.querySelectorAll('#mbox .vcell').forEach(b=>b.onclick=()=>{const v=VIL.find(x=>x.id===b.dataset.v),ok=v.deco||vilOk(v.id);
     document.querySelectorAll('#mbox .vcell').forEach(x=>x.classList.toggle('sel',x===b));
     if(!ok){$('vInfo').innerHTML=v.id==='well'?'🕳️ 黒く濁った井戸。底は見えない。':'🏚️ 崩れた建物。<br><small style="color:#a99fae">冒険から戻るたびに、村は少しずつよみがえる</small>';return;}
@@ -1977,7 +1998,7 @@ function showLibrary(back){const n=UNL.notes||{},got=NOTES.map((_,i)=>i).filter(
 /* 手記を1枚ずつ大きく読む。‹ › で前後へ */
 function showNote(i,got,back){const k=got.indexOf(i),pv=got[k-1],nx=got[k+1];
   openModal(`${pgHead('📜 その'+(i+1),'古民家')}<div class="note">${NOTES[i].t.replace(/([。？])(?!$)/g,'$1<br>')}</div>
-    <div class="npager"><button id="nPv" ${pv==null?'disabled':''}>‹</button><span>${k+1} / ${got.length}</span><button id="nNx" ${nx==null?'disabled':''}>›</button></div>`);
+    <div class="npager">${k+1} / ${got.length}</div><button class="nav tofoot" id="nPv" ${pv==null?'disabled':''}>◀</button><button class="nav tofoot after" id="nNx" ${nx==null?'disabled':''}>▶</button>`);
   $('pgBack').onclick=back;if(pv!=null)$('nPv').onclick=()=>showNote(pv,got,back);if(nx!=null)$('nNx').onclick=()=>showNote(nx,got,back);}
 /* church: carry one relic */
 function showChurch(back){const all=Object.keys(RELICS).filter(k=>!RELICS[k].x||unlocked('s4')),seen=UNL.relSeen||{},me=()=>showChurch(back);
