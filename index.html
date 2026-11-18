@@ -430,7 +430,7 @@ function makeEnemy0(s){
   if(s.bossFlag){s.bossFlag=false;return makeBoss(s);}
   if(s.miniFlag){s.miniFlag=false;return makeMini(s);}
   const F=s.floor||1;let w;
-  if(!unlocked('s1'))w=[['skel',10],['bat',F>=2?4:0],['zombie',F>=6?3:0],['bomb',F>=8?2:0],['spider',F>=12?3:0],['ghost',F>=16?2:0],['golem',F>=21?2:0],['shaman',F>=26?2:0]];
+  if(!unlocked('s1'))w=[['skel',10],['bat',F>=2?4:0],['zombie',F>=6?3:0],['bomb',F>=8?2:0],['spider',F>=12?3:0],['ghost',F>=16?2:0],['golem',F>=21?2:0],['shaman',F>=26?2:0]].filter(([k])=>playOk(k));
   else{if(Math.random()<.004){const rp=rareAt(F);if(rp.length)return makeKind(rp[rnd(rp.length)],T);}
     w=Object.entries(rosterAt(F));}
   let x=Math.random()*w.reduce((a,b)=>a+b[1],0);
@@ -454,13 +454,20 @@ const BANDS=[
 const RARE_GATE={chick:[51,0],duck:[51,0],cat:[51,0],skel_g:[51,0],mimic:[61,0],nanika:[51,1],star:[101,0],snowman:[101,0],ufo:[51,3]};
 function firstFloor(k){if(RARE_GATE[k])return RARE_GATE[k][0]+.5+RARE_GATE[k][1]*20;for(const [f,o] of BANDS)if(o[k]!==undefined){const v=o[k];return f+(Array.isArray(v)?v[1]*20:0);}return 999;}
 const clearsN=()=>(ACH&&ACH.st&&ACH.st.clears)||0;
-function rosterAt(F){let r=BANDS[0][1];for(const [f,o] of BANDS)if(F>=f)r=o;const m={},cl=clearsN();
-  for(const k in r){const v=r[k],w=Array.isArray(v)?v[0]:v,need=Array.isArray(v)?v[1]:0;if(cl>=need)m[k]=w;}return m;}
+/* 冒険の回数で、出会う魔物の種類がだんだん増える（1〜2回目はスケルトン・コウモリ・ゾンビだけ） */
+const PLAY_GATE={bomb:3,spider:4,ghost:5,golem:6,shaman:7,rat:5,snake:5,slime:5,mush:5,imp:6,fencer:6,scorp:7,wolf:7,crab:7,egg:7,eye:8};
+const playsN=()=>Math.max(1,(ACH&&ACH.st&&ACH.st.games)||1);
+const playOk=k=>playsN()>=(PLAY_GATE[k]||0);
+/* まだ出会えない魔物の枠は、おなじみの魔物で埋める */
+const FAMILIAR={skel:4,bat:2,zombie:3,bomb:2,spider:3,ghost:3,golem:3,shaman:2};
+function rosterAt(F){let r=BANDS[0][1];for(const [f,o] of BANDS)if(F>=f)r=o;const m={},cl=clearsN();let cut=0;
+  for(const k in r){const v=r[k],w=Array.isArray(v)?v[0]:v,need=Array.isArray(v)?v[1]:0;if(cl>=need&&playOk(k))m[k]=w;else if(cl>=need)cut+=w;}
+  if(cut>0){const fb=Object.entries(FAMILIAR).filter(([k])=>playOk(k)),tot=fb.reduce((x,y)=>x+y[1],0);for(const [k,v] of fb)m[k]=(m[k]||0)+cut*v/tot;}return m;}
 function rareAt(F){const cl=clearsN();return Object.keys(RARE_GATE).filter(k=>F>=RARE_GATE[k][0]&&cl>=RARE_GATE[k][1]);}
 /* where a monster can first be met, for the bestiary hint */
 function gateText(k){if(BOSS_KINDS.includes(k))return 'ボス';if(EK[k]&&EK[k].mini)return '中ボス';
   if(RARE_GATE[k]){const [f,c]=RARE_GATE[k];return `★レア・B${f}F以降${c?`・元凶を${c}回倒すと`:''}`;}
-  for(const [f,o] of BANDS)if(o[k]!==undefined){const c=Array.isArray(o[k])?o[k][1]:0;return `B${f}F以降${c?`・元凶を${c}回倒すと`:''}`;}
+  for(const [f,o] of BANDS)if(o[k]!==undefined){const c=Array.isArray(o[k])?o[k][1]:0;return `B${f}F以降${c?`・元凶を${c}回倒すと`:''}${PLAY_GATE[k]?`・冒険${PLAY_GATE[k]}回目から`:''}`;}
   return '何かから生まれるらしい';}
 function makeMini(s){const F=s.floor||1,k=MINI_ORDER[Math.floor(F/20)%MINI_ORDER.length],e=makeKind(k,s.turn);
   e.mini=true;e.hp=e.maxHp=Math.round(e.hp*3.6+8);e.atk+=2;e.armor+=2;s.bossAnnounce=EK[k].icon+' 中ボス「'+EK[k].name+'」';return e;}
@@ -1482,7 +1489,7 @@ function flashFloor(){const e=$('tTurn');e.classList.remove('flash');void e.offs
 function advanceFloor(msgs){
   if(TUT||S.bossFlag||bossAlive())return;
   S.fprog=(S.fprog||0)+1;if(S.fprog<2)return;
-  S.fprog=0;S.floor=floorOf()+1;const F=S.floor;flashFloor();maybeEvent(F);rollAnomaly(F,msgs);checkNotes(F);
+  S.fprog=0;S.floor=floorOf()+1;const F=S.floor;if(S.kk)checkClassKills();flashFloor();maybeEvent(F);rollAnomaly(F,msgs);checkNotes(F);
   if(F%20===10&&unlocked('s2')){S.miniFlag=true;msgs.push('⚠️ 強い気配がする…（中ボス）');}
   if(F%20===0){S.bossFlag=true;const k=bossKindAt(F);
     showBanner(`B${F}F`,bossFloorName(F),k==='abyss'?'世界の元凶が、目を覚ました。':`${EK[k].icon} ${EK[k].name}が待ち構えている。倒すまで先へは進めない。`,'#ff8a7a');
@@ -1871,7 +1878,7 @@ function showChurch(back){const seen=Object.keys(UNL.relSeen||{}).filter(k=>RELI
 /* tavern: class roster */
 function showTavern(back){const ks=Object.keys(CLASSES);
   openModal(`<h2>🍺 酒場</h2><p style="text-align:center;font-size:12px;color:#a99fae">旅の仲間 ${ks.filter(classOk).length} / ${ks.length}</p><div class="alist">${ks.map(k=>{const c=CLASSES[k],ok=classOk(k);
-    const how=c.hidden===2?'元凶を倒すと、まれに現れるらしい':c.kill?`1回の冒険で${EK[c.kill[0]].name}を${c.kill[1]}体倒すと…`:STAGES.find(s=>s.id===c.stage)?'条件：'+STAGES.find(s=>s.id===c.stage).hint:'';
+    const how=c.hidden===2?'元凶を倒すと、まれに現れるらしい':c.kill?`1回の冒険で${EK[c.kill[0]].name}を${c.kill[1]}体倒し${c.floor?`、B${c.floor}Fまでたどり着く`:''}と…`:STAGES.find(s=>s.id===c.stage)?'条件：'+STAGES.find(s=>s.id===c.stage).hint:'';
     return ok?`<div class="ach"><span class="ai">${c.ic}</span><span><b>${c.n}</b><small>${c.fx}</small></span></div>`:`<div class="ach lock"><span class="ai">❔</span><span><b>${c.hidden?'？？？':c.n}</b><small>${c.hidden?'噂：'+how:how}</small></span></div>`;}).join('')}</div>
     <button class="opt" id="tvB" style="text-align:center;position:sticky;bottom:0;background:#2e2535">戻る</button>`);$('tvB').onclick=back;}
 /* tailor: board themes */
@@ -1898,7 +1905,7 @@ function noteMet(k){if(TUT||UNL.met[k])return;UNL.met[k]=1;unlSave();const D=EK[
 function noteKills(list){if(TUT||!list.length)return;for(const t of list){const k=kindOf(t);UNL.kills[k]=(UNL.kills[k]||0)+1;UNL.met[k]=1;if(S){S.kk=S.kk||{};S.kk[k]=(S.kk[k]||0)+1;const D=EK[k]||{};if(D.dh||D.dg||D.dx||D.sp||D.db||D.fz)(S._dq=S._dq||[]).push(k);if(t.mini&&unlocked('s2'))S.pending.push('relic');}}unlSave();checkClassKills();}
 function unlockClass(k){if(UNL.got['h_'+k])return false;UNL.got['h_'+k]=Date.now();unlSave();const c=CLASSES[k];
   achToast({ic:c.ic,n:`隠し職業「${c.n}」`,d:c.hidden===2?`隠し職業 ${h2Got()} / ${H2().length}（あと${H2().length-h2Got()}種類）`:'次の冒険から選べるようになった',secret:0,custom:'隠し職業が解放された'});return true;}
-function checkClassKills(){if(!S||TUT||!S.kk)return;for(const k in CLASSES){const c=CLASSES[k];if(c.kill&&(S.kk[c.kill[0]]||0)>=c.kill[1])unlockClass(k);}}
+function checkClassKills(){if(!S||TUT||!S.kk)return;for(const k in CLASSES){const c=CLASSES[k];if(c.kill&&(S.kk[c.kill[0]]||0)>=c.kill[1]&&(S.floor||1)>=(c.floor||0))unlockClass(k);}}
 const H2=()=>Object.keys(CLASSES).filter(k=>CLASSES[k].hidden===2),h2Got=()=>H2().filter(k=>UNL.got['h_'+k]).length;
 function rewardHtml(k){const n=h2Got(),t=H2().length;
   const head=k?`🎁 隠し職業「${CLASSES[k].ic}${CLASSES[k].n}」を獲得！`:'🎁 隠し職業はすべて獲得済み';
@@ -1931,9 +1938,9 @@ const CLASSES={
   mage:{ic:'🔮',n:'魔術師',d:'古い術を受け継ぐ、線の細い学者。',fx:'最初から🔥火球を習得・スキルの再使用ターン25%短縮・最大HP40',stage:'s3'},
   cleric:{ic:'📿',n:'僧侶',d:'祈りで傷を癒やしてきた、穏やかな巡礼者。',fx:'🧪の回復量3（通常2）・回復の余りは経験値に・基礎攻撃力が伸びやすく（+7）、剣は伸びにくい（+1）',stage:'s2'},
   vampire:{ic:'🧛',n:'ヴァンパイア',hidden:1,d:'血の渇きに導かれ、地の底へ還る夜の貴族。',fx:'🧪では回復できない（💰に変わる）・敵を倒すたびに血を吸ってHP回復（レベルで増加）・最大HP46',
-    kill:['vampire',1],cond:()=>false},
+    kill:['vampire',1],floor:95,cond:()=>false},
   zombie:{ic:'🧟',n:'ゾンビ',hidden:1,d:'何度倒れても、なぜか起き上がってくる者。',fx:'最大HP74だが防具は使えない（🛡️は傷をふさいでHP回復）・🧪の回復量1・冒険中に一度だけ蘇る',
-    kill:['zombie',20],cond:()=>false},
+    kill:['zombie',20],floor:90,cond:()=>false},
   hunter:{ic:'🏹',n:'狩人',hidden:2,d:'獲物の最後の一匹を、決して逃さない射手。',fx:'チェーンの最後につないだ敵に2倍ダメージ・最初から🎯狙撃を習得・最大HP45',cond:()=>false},
   dragoon:{ic:'🐉',n:'竜騎士',hidden:2,d:'竜の背で戦った、一撃に全てを懸ける騎士。',fx:'5つ以上のチェーンは倍率がさらに伸びる・4つ以下の攻撃は威力半分・最大HP55',cond:()=>false},
   gambler:{ic:'🃏',n:'ギャンブラー',hidden:2,d:'迷宮の宝も、命も、すべて賭けの種。',fx:'攻撃のダメージが毎回0.5〜2倍に揺れる・💰の価値3・最大HP50',cond:()=>false},
