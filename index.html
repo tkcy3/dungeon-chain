@@ -71,34 +71,53 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 #modal{z-index:15}
 .vz-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0 4px}
 .vz-tile{background:#2a2230;border:1px solid #3d3242;border-radius:10px;padding:7px 6px;text-align:center;display:flex;flex-direction:column;gap:2px}
-.vz-tile small{font-size:10.5px;color:#a99fae}.vz-tile b{font-size:19px;color:#ece4d8;font-variant-numeric:tabular-nums}.vz-tile b span{font-size:11px;font-weight:600;margin-left:1px;color:#c9bfcf}
+.vz-tile small{font-size:12.5px;color:#b9adc0}.vz-tile b{font-size:21px;color:#ece4d8;font-variant-numeric:tabular-nums}.vz-tile b span{font-size:11px;font-weight:600;margin-left:1px;color:#c9bfcf}
 .vz-tile .up{color:#7fd88a}.vz-tile .dn{color:#e9a08a}
-.vz-h{font-size:13.5px;margin:14px 0 4px;color:#d9cfc2;font-family:var(--mincho);font-weight:600;letter-spacing:.05em}
+.vz-h{font-size:15.5px;margin:16px 0 6px;color:#d9cfc2;font-family:var(--mincho);font-weight:600;letter-spacing:.05em}
 .vz-svg{width:100%;height:auto;display:block}
-.vz-ax{font-size:9.5px;fill:#a99fae}.vz-lb{font-size:11px;fill:#ece4d8}.vz-val{font-size:10.5px;fill:#c9bfcf}
+.vz-ax{font-size:11.5px;fill:#b9adc0}.vz-lb{font-size:13.5px;fill:#ece4d8}.vz-val{font-size:12.5px;fill:#d9cfc2}
 .vz-leg{display:flex;gap:14px;font-size:11px;color:#c9bfcf;margin:2px 0}.vz-leg i{display:inline-block;width:12px;height:8px;border-radius:2px;margin-right:4px;vertical-align:middle}
 .vz-cap{font-size:11.5px;color:#c9bfcf;text-align:center;min-height:34px;margin:2px 0 0}.vz-empty{font-size:12px;color:#8f8396;text-align:center;padding:10px 0}
 .nmrow{display:flex;align-items:center;gap:6px;margin:6px 0 10px}.nmrow label{font-size:12px;color:#c9bfcf;white-space:nowrap}.nmrow input{flex:1;min-width:0;background:#1a1420;border:1px solid #4a3d52;border-radius:8px;color:#ece4d8;font-size:16px;padding:8px 10px}.nmrow button{background:#2e2535;border:1px solid #4a3d52;border-radius:8px;font-size:18px;padding:6px 10px}
 .slotrow{display:flex;gap:6px;align-items:stretch}.slotrow .opt{flex:1;min-width:0}.sldel{background:#2e2535;border:1px solid #4a3d52;border-radius:10px;font-size:18px;padding:0 12px;margin:4px 0}
 .rwd{background:#2a2230;border:1px solid #6b5a3a;border-radius:10px;padding:10px;margin:8px 0;text-align:center;color:#f0d9a8;font-size:15px}.rwd small{color:#c9bfcf;font-size:12px}.rwbar{height:6px;background:#1a1420;border-radius:3px;margin:8px 0 4px;overflow:hidden}.rwbar div{height:100%;background:#c98500;border-radius:3px}
+/* village pages: shared parts (readable sizes, few words) */
+.phead{position:sticky;top:-16px;z-index:3;background:#211a25;margin:-16px -16px 12px;padding:8px 12px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;border-bottom:1px solid #2f2733}
+.phead h2{margin:0!important;font-family:var(--mincho);font-size:19px!important;white-space:nowrap}
+.pback{justify-self:start;background:none;border:0;color:#c9bfcf;font-size:14.5px;padding:8px 8px 8px 0;min-height:42px;white-space:nowrap}
+.meter{display:flex;align-items:center;gap:10px;margin:0 2px 12px}.meter div{flex:1;height:8px;background:#2f2733;border-radius:4px;overflow:hidden}.meter i{display:block;height:100%;background:#e8b33a;border-radius:4px}.meter span{font-size:15px;color:#e6dccb;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tgrid{display:grid;grid-template-columns:repeat(var(--c,4),1fr);gap:8px}
+.tile{position:relative;background:#2a2230;border:1px solid #4a3d52;border-radius:12px;padding:10px 2px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#ece4d8;min-width:0;min-height:58px}
+.tile .ti{font-size:30px;line-height:1.1}.tile small{font-size:13px;color:#e0d6ca;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}.tile em{font-style:normal;font-size:13px;color:#e8b33a}
+.tile.big{padding:16px 2px 12px}.tile.big .ti{font-size:36px}
+.tile.lock{opacity:.33;border-style:dashed;filter:grayscale(1)}
+.tile.sel{border-color:#e8b33a;box-shadow:0 0 10px rgba(232,179,58,.3)}
+.tile .badge{position:absolute;top:3px;right:5px;font-size:11px;line-height:1}
+.tile:active{background:#3a2f42}
+.pcard{background:#2a2230;border:1px solid #6b5a3a;border-radius:12px;padding:12px;margin:0 0 12px;display:flex;gap:12px;align-items:center;min-height:86px}
+.pcard .ci{font-size:42px;line-height:1}.pcard b{display:block;font-size:18px;font-family:var(--mincho);color:#f0d9a8}.pcard p{word-break:auto-phrase;font-size:14.5px!important;color:#e0d6ca!important;margin:4px 0 0!important;line-height:1.6!important}
+.note{word-break:auto-phrase;text-wrap:balance;font-family:var(--mincho);font-size:17px;line-height:2.15;color:#e6dccb;text-align:center;padding:24px 4px;background:linear-gradient(#2c2431,#241d29);border:1px solid #4a3d52;border-radius:12px;letter-spacing:.01em}
+.npager{display:flex;align-items:center;justify-content:center;gap:26px;margin-top:14px}.npager button{width:60px;height:50px;border-radius:12px;background:#2e2535;border:1px solid #5d4a69;color:#eee;font-size:26px}.npager button:disabled{opacity:.2}.npager span{font-size:15px;color:#c9bfcf;font-variant-numeric:tabular-nums}
+.sw{display:grid;grid-template-columns:repeat(3,15px);gap:3px;margin:2px 0 2px}.sw i{width:15px;height:15px;border-radius:3px;display:block}
+.gsep{margin:16px 0 8px;font-size:13px;color:#c9a2ff;letter-spacing:.2em;text-align:center}
 .vgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:8px 0 4px}
 .vhead{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;margin-bottom:2px}.vhead h2{margin:0;font-family:var(--mincho)}
 .vback{justify-self:start;background:none;border:0;color:#a99fae;font-size:12.5px;padding:8px 6px 8px 0;min-height:36px}
-.vflav{text-align:center;font-size:12px!important;color:#a99fae!important;margin:0 0 8px!important}
-.vstat{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;font-size:12.5px;color:#c9bfcf}
+.vflav{text-align:center;font-size:14px!important;color:#a99fae!important;margin:0 0 8px!important}
+.vstat{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;font-size:14px;color:#c9bfcf}
 .vprog{display:flex;align-items:center;gap:6px}.vprog i{display:flex;gap:2px}.vprog i b{width:9px;height:9px;border-radius:2px;background:#3a3040;border:1px solid #4a3d52}.vprog i b.on{background:#e8b33a;border-color:#e8b33a}.vprog i b.new{animation:vfresh 1.6s ease-in-out 3}
-.vcls{background:#2a2230;border:1px solid #4a3d52;border-radius:999px;padding:4px 12px;min-height:32px;color:#ece4d8;font-size:12.5px}.vcls.can{border-color:#8a6f3a}
-.vgo{display:block;width:100%;margin-top:4px;padding:11px 10px 9px;background:linear-gradient(#3f321c,#2a2114);border:1px solid #c9a24a;border-radius:12px;color:#f6e6bf;font-size:16px;font-family:var(--mincho);box-shadow:0 0 14px rgba(232,179,58,.18)}
-.vgo small{display:block;font-family:inherit;font-size:11.5px;color:#cdb98e;margin-top:2px}.vgo:active{background:#4a3b20}
+.vcls{background:#2a2230;border:1px solid #4a3d52;border-radius:999px;padding:4px 12px;min-height:36px;color:#ece4d8;font-size:14px}.vcls.can{border-color:#8a6f3a}
+.vgo{display:block;width:100%;margin-top:4px;padding:12px 10px 10px;background:linear-gradient(#3f321c,#2a2114);border:1px solid #c9a24a;border-radius:12px;color:#f6e6bf;font-size:18px;font-family:var(--mincho);box-shadow:0 0 14px rgba(232,179,58,.18)}
+.vgo small{display:block;font-family:inherit;font-size:13px;color:#cdb98e;margin-top:2px}.vgo:active{background:#4a3b20}
 .vcell{background:#2a2230;border:1px solid #4a3d52;border-radius:12px;padding:9px 1px 7px;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;color:#ece4d8}
-.vcell .vic{font-size:28px;line-height:1.1}.vcell small{font-size:11px;color:#c9bfcf;white-space:nowrap}.vcell.ruin{opacity:.4;filter:grayscale(.8);border-style:dashed}.vcell.ruin.sel{opacity:.8;border-style:solid}
-.vinfo{font-size:12px;color:#c9bfcf;text-align:center;min-height:38px;margin:4px 0 2px;line-height:1.5}.vinfo i{font-style:normal;color:#8f8396}.vinfo b{color:#f0d9a8;font-weight:normal}.vnews small{display:block;font-size:11.5px;color:#cdb98e;line-height:1.5;margin-bottom:2px}
+.vcell .vic{font-size:30px;line-height:1.1}.vcell small{font-size:12.5px;color:#c9bfcf;white-space:nowrap}.vcell.ruin{opacity:.4;filter:grayscale(.8);border-style:dashed}.vcell.ruin.sel{opacity:.8;border-style:solid}
+.vinfo{font-size:14px;color:#d9cfc2;text-align:center;min-height:38px;margin:4px 0 2px;line-height:1.5}.vinfo i{font-style:normal;color:#8f8396}.vinfo b{color:#f0d9a8;font-weight:normal}.vnews small{display:block;font-size:13px;color:#cdb98e;line-height:1.5;margin-bottom:2px}
 .vcell.fresh{border-color:#e8b33a;animation:vfresh 1.6s ease-in-out 3}.vcell.sel{border-color:#e8b33a}
 @keyframes vfresh{0%,100%{box-shadow:0 0 0 rgba(232,179,58,0)}50%{box-shadow:0 0 18px rgba(232,179,58,.55)}}
-.vnews{background:#2a2230;border:1px solid #6b5a3a;border-radius:10px;padding:8px 10px;margin:0 0 8px;font-size:12.5px;line-height:1.7;color:#f0d9a8;text-align:center}
+.vnews{background:#2a2230;border:1px solid #6b5a3a;border-radius:10px;padding:8px 10px;margin:0 0 8px;font-size:14.5px;line-height:1.7;color:#f0d9a8;text-align:center}
 .tmap{position:relative;margin:8px 0 8px 14px;border-left:2px dashed #5a4a62;padding-left:14px}
-.tnode{position:relative;display:flex;gap:8px;margin:0 0 12px;opacity:.55}.tnode.on{opacity:1}.tnode i{position:absolute;left:-29px;top:0;font-style:normal;font-size:18px;background:#211a25}
-.tnode small{display:block;font-size:10.5px;color:#e8b33a}.tnode b{display:block;font-size:14px}.tnode span{display:block;font-size:11.5px;color:#c9bfcf}
+.tnode{position:relative;display:flex;gap:8px;margin:0 0 18px;opacity:.4}.tnode.on{opacity:1}.tnode i{position:absolute;left:-31px;top:2px;font-style:normal;font-size:20px;background:#211a25}
+.tnode small{display:block;font-size:13px;color:#e8b33a}.tnode b{display:block;font-size:17px;font-family:var(--mincho)}.tnode span{display:block;font-size:14px;color:#d9cfc2;line-height:1.5}
 .vz-note{font-size:10.5px;color:#8f8396;text-align:center;margin-top:10px}
 #achToast{position:fixed;left:50%;top:8px;transform:translate(-50%,-140%);z-index:40;display:flex;gap:10px;align-items:center;min-width:250px;max-width:92vw;background:linear-gradient(#2c2416,#1d1810);border:1px solid #a8843a;border-radius:12px;padding:8px 14px;color:#f0e2c0;box-shadow:0 6px 20px rgba(0,0,0,.6);transition:transform .45s cubic-bezier(.2,.9,.3,1.2);pointer-events:none}
 #achToast.show{transform:translate(-50%,0)}
@@ -117,7 +136,7 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 .box h2{font-size:18px;margin-bottom:6px;text-align:center}
 .box p{font-size:13px;color:#cbb;margin:4px 0;line-height:1.55}
 .box .opt{display:block;width:100%;text-align:left;background:#2e2535;border:1px solid #5d4a69;color:#eee;border-radius:10px;padding:10px 12px;margin-top:8px;font-size:15px}
-.box .opt small{display:block;color:#bba9c4;font-size:12px;margin-top:2px}
+.box .opt small{display:block;color:#c4b4cc;font-size:13px;margin-top:2px}
 .box .opt:active{background:#40324a}
 .box textarea{width:100%;height:110px;background:#151017;color:#ddd;border:1px solid #4d3f57;border-radius:8px;font-size:11px;padding:6px;margin-top:8px;user-select:text;-webkit-user-select:text}
 .box ul{font-size:13px;color:#cbb;padding-left:18px;line-height:1.6}
@@ -157,8 +176,8 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 #ver{font-size:10.5px;color:#5c545e;margin-top:6px;background:none;border:0;padding:4px 8px;font-family:inherit}#ver.new{color:#e8b33a}
 .chg h3{font-size:14px;margin:12px 0 4px;color:#f0d9a8}.chg h3 small{color:#8f8396;font-weight:400;margin-left:6px}.chg ul{margin:0;padding-left:18px;font-size:12.5px;line-height:1.65;color:#d9d0dc}
 .big{font-size:44px}
-#tip{position:fixed;z-index:20;max-width:270px;background:#2b2131;border:1px solid #7a6488;border-radius:10px;padding:8px 10px;font-size:13px;line-height:1.55;color:#eee;pointer-events:none;box-shadow:0 6px 18px rgba(0,0,0,.6)}
-#tip .th{font-weight:700;font-size:14px;margin-bottom:3px}
+#tip{position:fixed;z-index:20;max-width:290px;background:#2b2131;border:1px solid #7a6488;border-radius:10px;padding:10px 12px;font-size:14.5px;line-height:1.6;color:#eee;pointer-events:none;box-shadow:0 6px 18px rgba(0,0,0,.6)}
+#tip .th{font-weight:700;font-size:16px;margin-bottom:4px}#tip small{color:#b9a9bd;font-size:13px}
 .bar,#stats,.sk,#itFloor{touch-action:none;-webkit-touch-callout:none}
 .sk.off{opacity:.45}
 </style>
@@ -994,11 +1013,10 @@ const villageReady=()=>!!best||((ACH&&ACH.st&&ACH.st.games)||0)>0;
 function villageStairs(back){const f=[0,1,2].filter(i=>slotJson(i));
   const fresh=()=>{NG_BACK=back;showNewGameMenu();};
   if(!f.length)return fresh();
-  openModal(`<h2>🪦 墓地の階段</h2><p style="text-align:center;font-size:12px;color:#a99fae">苔むした石棺の下へ、階段が続いている。</p>
-    <button class="opt" id="sa1">📖 続きから<small>${f.length===1?slotLine(f[0]).replace(/<[^>]+>/g,' '):'途中の冒険を選んで再開する'}</small></button>
-    <button class="opt" id="sa2">⚔️ 新しい冒険<small>地の底へ、もう一度</small></button>
-    <button class="opt" id="sa3" style="text-align:center">戻る</button>`);
-  $('sa1').onclick=()=>{if(f.length===1)loadSlot(f[0]);else showSlots('load',loadSlot,()=>villageStairs(back));};$('sa2').onclick=fresh;$('sa3').onclick=back;}
+  openModal(`${pgHead('🪦 墓地の階段','村')}
+    <button class="opt" id="sa1">📖 続きから<small>${f.length===1?(i=>{const c=CLASSES[i.cls]||CLASSES.warrior;return `${c.ic} ${c.n}・B${i.floor||1}F`;})(slotInfo(f[0])||{}):`途中の冒険 ${f.length}つ`}</small></button>
+    <button class="opt" id="sa2">⚔️ 新しい冒険</button>`);
+  $('sa1').onclick=()=>{if(f.length===1)loadSlot(f[0]);else showSlots('load',loadSlot,()=>villageStairs(back));};$('sa2').onclick=fresh;$('pgBack').onclick=back;}
 function goVillage(){showVillage(()=>{closeModal();refreshTitle();});}
 $('btnNew').onclick=()=>{if(villageReady())goVillage();else showNewGameMenu();};
 $('tutSkip').onclick=e=>{e.stopPropagation();tutSkip();};
@@ -1733,17 +1751,16 @@ function achBoss(kind,turns){
   if(TUT)return;achStat('bosses');if(['ogre','dragon','vampire','kraken'].includes(kind))unlock(kind);
   if(turns<=3)unlock('s_fastboss');if(kind==='ogre'&&S.level-S.pending.filter(x=>x==='level').length<=1)unlock('s_bare');
 }
-function showAchievements(back){
-  const got=achCount(),sec=ACHS.filter(a=>a.secret&&ACH.u[a.id]).length;
-  const row=a=>{const u=ACH.u[a.id];if(!u&&a.secret)return `<div class="ach lock"><span class="ai">❔</span><span><b>？？？</b><small>シークレット実績</small></span></div>`;
-    const d=u?new Date(u):null;return `<div class="ach ${u?'':'lock'}"><span class="ai">${a.ic}</span><span><b>${a.n}</b><small>${a.d}${u?`　<i>${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}</i>`:''}</small></span></div>`;};
-  openModal(`<h2>🏆 実績</h2><p style="text-align:center">${got} / ${ACH_N()} 解除（シークレット ${sec} / ${ACH_SN()}）</p>
-    <div class="abar"><div style="width:${got/ACH_N()*100}%"></div></div>
-    <div class="alist">${ACHS.filter(a=>!a.secret).map(row).join('')}<div class="asep">シークレット</div>${ACHS.filter(a=>a.secret).map(row).join('')}</div>
-    <button class="opt" id="achClose" style="text-align:center;position:sticky;bottom:0;background:#2e2535;box-shadow:0 -8px 12px #211a25">閉じる</button>`);
-  $('achClose').onclick=back||closeModal;
+function showAchievements(back,bl){
+  const got=achCount();
+  const tile=a=>{const u=ACH.u[a.id];return `<button class="tile ${u?'':'lock'}" data-a="${a.id}"><span class="ti">${!u&&a.secret?'❔':a.ic}</span></button>`;};
+  openModal(`${pgHead('🏆 実績',bl)}${meter(got,ACH_N())}<div class="tgrid" style="--c:5">${ACHS.filter(a=>!a.secret).map(tile).join('')}</div>
+    <div class="gsep">シークレット</div><div class="tgrid" style="--c:5">${ACHS.filter(a=>a.secret).map(tile).join('')}</div>`);
+  bindTiles('.tile[data-a]',b=>{const a=ACHS.find(x=>x.id===b.dataset.a),u=ACH.u[a.id];
+    if(!u&&a.secret)return tapTip(b,'<div class="th">❔ ？？？</div>');
+    const d=u?new Date(u):null;tapTip(b,`<div class="th">${a.ic} ${a.n}</div>${a.d}${d?`<br><small>✅ ${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}</small>`:''}`);});
+  $('pgBack').onclick=back||closeModal;
 }
-
 /* ---------- copy helper ---------- */
 async function copyText(text){
   try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(text);return true;}}catch(e){}
@@ -1761,8 +1778,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshA
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='1.1.1';
+const VERSION='1.1.2';
 const CHANGELOG=[
+  {v:'1.1.2',d:'2026-11-19',items:['村の建物の中を、大きな文字とアイコンで見やすくしました','手記は1枚ずつ大きく読めるようになりました']},
   {v:'1.1.1',d:'2026-11-19',items:['村の画面を見やすく整理しました。冒険へは、いちばん下の「墓地の階段へ」から出発できます','墓地の階段のボタンに、途中の冒険が出るようにしました']},
   {v:'1.1.0',d:'2026-11-19',items:['冒険に出る職業は、村の酒場で選ぶようになりました。一度選べば、次からはそのまま出発できます','よみがえった建物は、村に戻ったときにまとめてお知らせするようにしました','拾った手記は、村の古民家で読めるようになりました','村が冒険の拠点になりました。冒険に出るときも、冒険から戻ったときも、村に立ち寄ります','冒険の記録や魔物図鑑は、村の建物で見られるようになりました','冒険中のメニューの「タイトルへ戻る」を「村に戻る」に変えました。途中の冒険は、墓地の階段から続きを始められます']},
   {v:'1.0.3',d:'2026-11-19',items:['元凶を倒して手に入る隠し職業が、集めるほど手に入りにくくなるようにしました']},
@@ -1865,6 +1883,13 @@ function showStages(back){
     <button class="opt" id="sgBack" style="text-align:center;position:sticky;bottom:0;background:#2e2535;box-shadow:0 -8px 12px #211a25">戻る</button>`);
   $('sgBack').onclick=back||closeModal;
 }
+/* ---------- village pages: shared parts ---------- */
+const pgHead=(title,bl,id='pgBack')=>`<div class="phead"><button class="pback" id="${id}">‹ ${bl||'戻る'}</button><h2>${title}</h2><span></span></div>`;
+const meter=(n,N)=>`<div class="meter"><div><i style="width:${N?n/N*100:0}%"></i></div><span>${n} / ${N}</span></div>`;
+/* タップで小さな説明を出す。次にどこかを触ると消える */
+function tapTip(el,html){const r=el.getBoundingClientRect();showTip(html,r.left+r.width/2,r.top+6);
+  setTimeout(()=>{const off=()=>{document.removeEventListener('pointerdown',off,true);hideTip();};document.addEventListener('pointerdown',off,true);},0);}
+const bindTiles=(sel,fn)=>document.querySelectorAll('#mbox '+sel).forEach(b=>b.onclick=()=>fn(b));
 /* ---------- the village (unlock hub) ---------- */
 const VIL=[
   {id:'tower',ic:'🔭',n:'見張り台',fx:'扉の地図・実績・戦績が見られる',cond:()=>achCount()>=1,hint:'実績を1つ解除する',easy:1},
@@ -1899,7 +1924,7 @@ function showVillage(back){checkVillage();const me=()=>showVillage(back);
   const sv=[0,1,2].filter(i=>slotJson(i)),si=sv.length===1?slotInfo(sv[0]):null;
   const goSub=sv.length>1?`途中の冒険が ${sv.length}つ ある`:si&&!si.broken?`続きから　${(CLASSES[si.cls]||CLASSES.warrior).ic} ${(CLASSES[si.cls]||CLASSES.warrior).n}・B${si.floor||1}F`:'地の底へ降りる';
   const wellOk=vilOk('well'),n=vilCount(),N=vilTotal(),c=CLASSES[partyCls()],canCls=vilOk('tavern');
-  openModal(`<div class="vhead"><button class="vback" id="vBack">‹ タイトル</button><h2>🏘️ 村</h2><span></span></div>
+  openModal(`${pgHead('🏘️ 村','タイトル','vBack')}
     <p class="vflav">${wellOk?'井戸は澄み、村に灯りが戻った。':'井戸は濁り、村は眠っている。'}</p>
     <div class="vstat"><span class="vprog">復興<i>${Array.from({length:N},(_,i)=>`<b class="${i<n?'on':''} ${i<n&&i>=n-fresh.length?'new':''}"></b>`).join('')}</i>${n}/${N}</span>
       <button class="vcls ${canCls?'can':''}" id="vCls">${c.ic} ${c.n}${canCls?' ›':''}</button></div>
@@ -1916,18 +1941,17 @@ function showVillage(back){checkVillage();const me=()=>showVillage(back);
   $('vCls').onclick=()=>{if(canCls)return showTavern(me);$('vInfo').innerHTML='いまの冒険者の職業。<br><small style="color:#a99fae">村の建物がよみがえると、変えられるようになる</small>';};
   $('vBack').onclick=back||closeModal;}
 /* tower: doors map, achievements, stats */
-function showTowerMenu(back){const me=()=>showTowerMenu(back);
-  openModal(`<h2>🔭 見張り台</h2><p style="text-align:center;font-size:12px;color:#a99fae">ここからは、地の底へ続く扉と、これまでの歩みが見渡せる。</p>
-    <button class="opt" id="tw1">🚪 扉の地図<small>扉 ${STAGES.filter(s=>unlocked(s.id)).length} / ${STAGES.length}</small></button>
-    <button class="opt" id="tw2">🏆 実績<small>${achCount()} / ${ACH_N()}</small></button>
-    <button class="opt" id="tw3">📊 戦績<small>冒険回数・クリア・記録の推移など</small></button>
-    <button class="opt" id="tw4" style="text-align:center">戻る</button>`);
-  $('tw1').onclick=()=>showTower(me);$('tw2').onclick=()=>showAchievements(me);$('tw3').onclick=()=>showStats(me);$('tw4').onclick=back;}
+function showTowerMenu(back){const me=()=>showTowerMenu(back),d=STAGES.filter(s=>unlocked(s.id)).length,g=Math.max((ACH.st&&ACH.st.games)||0,RUNS.length);
+  openModal(`${pgHead('🔭 見張り台','村')}<div class="tgrid" style="--c:3">
+    <button class="tile big" id="tw1"><span class="ti">🚪</span><small>扉</small><em>${d} / ${STAGES.length}</em></button>
+    <button class="tile big" id="tw2"><span class="ti">🏆</span><small>実績</small><em>${achCount()} / ${ACH_N()}</em></button>
+    <button class="tile big" id="tw3"><span class="ti">📊</span><small>戦績</small><em>${g}回</em></button></div>`);
+  $('tw1').onclick=()=>showTower(me);$('tw2').onclick=()=>showAchievements(me,'見張り台');$('tw3').onclick=()=>showStats(me,'見張り台');$('pgBack').onclick=back;}
 /* tower: dungeon map of the doors */
 function showTower(back){
   const depth={s0:'地上',s1:'B20F',s2:'B40F',s3:'B100F',s4:'呪いの底'};
-  const nodes=STAGES.map(st=>{const g=unlocked(st.id);return `<div class="tnode ${g?'on':''}"><i>${g?'🚪':'🔒'}</i><div><small>${depth[st.id]||''}</small><b>${st.n}</b><span>${g?itemsTxt(st):'条件：'+st.hint}</span></div></div>`;}).join('');
-  openModal(`<h2>🔭 見張り台</h2><p style="text-align:center;font-size:12px;color:#a99fae">見張り台から、地の底へ続く扉が見える。</p><div class="tmap">${nodes}</div><button class="opt" id="twB" style="text-align:center">戻る</button>`);$('twB').onclick=back;}
+  const nodes=STAGES.map(st=>{const g=unlocked(st.id);return `<div class="tnode ${g?'on':''}"><i>${g?'🚪':'🔒'}</i><div><small>${depth[st.id]||''}</small><b>${g?st.n:'？？？'}</b>${g?`<span>${itemsTxt(st)}</span>`:''}</div></div>`;}).join('');
+  openModal(`${pgHead('🚪 扉','見張り台')}${meter(STAGES.filter(s=>unlocked(s.id)).length,STAGES.length)}<div class="tmap">${nodes}</div>`);$('pgBack').onclick=back;}
 /* library: lost notes */
 const NOTES=[
   {f:5,t:'井戸が濁る前の晩、地の底から鐘の音がした。誰も信じなかったが、私は数えた。十三回。'},
@@ -1947,24 +1971,30 @@ const NOTES=[
 const NOTES_PER_RUN=1;
 function checkNotes(F){if(TUT||!S)return;UNL.notes=UNL.notes||{};let got=0;NOTES.forEach((n,i)=>{if(F>=n.f&&!UNL.notes[i]&&(S.notesGot||0)<NOTES_PER_RUN){UNL.notes[i]=1;S.notesGot=(S.notesGot||0)+1;got++;}});
   if(got){unlSave();if(inGame)achToast({ic:'📜',n:'失われた手記を拾った',d:'村の古民家で読める',secret:0,custom:`手記 ${Object.keys(UNL.notes).length} / ${NOTES.length}`});checkVillage();}}
-function showLibrary(back){const n=UNL.notes||{};
-  openModal(`<h2>🛖 古民家</h2><p style="text-align:center;font-size:12px;color:#a99fae">誰かが暮らしていた家。棚に、拾い集めた手記が並んでいる。<br>失われた手記 ${Object.keys(n).length} / ${NOTES.length}</p><div class="alist">${NOTES.map((x,i)=>n[i]?`<div class="ach"><span class="ai">📜</span><span><b>手記 その${i+1}</b><small style="font-family:var(--mincho);line-height:1.8">${x.t}</small></span></div>`:`<div class="ach lock"><span class="ai">❔</span><span><b>？？？</b><small>B${x.f}F付近に落ちているらしい</small></span></div>`).join('')}</div>
-    <button class="opt" id="lbB" style="text-align:center;position:sticky;bottom:0;background:#2e2535">戻る</button>`);$('lbB').onclick=back;}
+function showLibrary(back){const n=UNL.notes||{},got=NOTES.map((_,i)=>i).filter(i=>n[i]),me=()=>showLibrary(back);
+  openModal(`${pgHead('🛖 古民家','村')}${meter(got.length,NOTES.length)}<div class="tgrid" style="--c:4">${NOTES.map((x,i)=>n[i]?`<button class="tile" data-i="${i}"><span class="ti">📜</span><small>${i+1}</small></button>`:`<div class="tile lock"><span class="ti">📜</span><small>&nbsp;</small></div>`).join('')}</div>`);
+  $('pgBack').onclick=back;bindTiles('.tile[data-i]',b=>showNote(+b.dataset.i,got,me));}
+/* 手記を1枚ずつ大きく読む。‹ › で前後へ */
+function showNote(i,got,back){const k=got.indexOf(i),pv=got[k-1],nx=got[k+1];
+  openModal(`${pgHead('📜 その'+(i+1),'古民家')}<div class="note">${NOTES[i].t.replace(/([。？])(?!$)/g,'$1<br>')}</div>
+    <div class="npager"><button id="nPv" ${pv==null?'disabled':''}>‹</button><span>${k+1} / ${got.length}</span><button id="nNx" ${nx==null?'disabled':''}>›</button></div>`);
+  $('pgBack').onclick=back;if(pv!=null)$('nPv').onclick=()=>showNote(pv,got,back);if(nx!=null)$('nNx').onclick=()=>showNote(nx,got,back);}
 /* church: carry one relic */
-function showChurch(back){const seen=Object.keys(UNL.relSeen||{}).filter(k=>RELICS[k]&&(!RELICS[k].x||unlocked('s4')));
-  openModal(`<h2>⛪ 教会</h2><p style="text-align:center;font-size:12px;color:#a99fae">一度手にした遺物を1つ、祈りとともに冒険へ持ち込める。</p>
-    <button class="opt chs" data-k="" style="${!UNL.carry?'border-color:#e8b33a':''}">持ち込まない</button>
-    ${seen.length?seen.map(k=>`<button class="opt chs" data-k="${k}" style="${UNL.carry===k?'border-color:#e8b33a':''}">${RELICS[k].ic} ${RELICS[k].n}${UNL.carry===k?'（選択中）':''}<small>${RELICS[k].d}</small></button>`).join(''):'<p class="vz-empty">まだ遺物を手にしたことがない。中ボスを倒そう。</p>'}
-    <button class="opt" id="chB" style="text-align:center">戻る</button>`);
-  document.querySelectorAll('#mbox .chs').forEach(b=>b.onclick=()=>{UNL.carry=b.dataset.k||null;unlSave();showChurch(back);});$('chB').onclick=back;}
+function showChurch(back){const all=Object.keys(RELICS).filter(k=>!RELICS[k].x||unlocked('s4')),seen=UNL.relSeen||{},me=()=>showChurch(back);
+  const cur=UNL.carry&&seen[UNL.carry]&&all.includes(UNL.carry)?UNL.carry:null,R=cur&&RELICS[cur];
+  openModal(`${pgHead('⛪ 教会','村')}<div class="pcard"><span class="ci">${R?R.ic:'🙏'}</span><div><b>${R?R.n:'持ち込まない'}</b>${R?`<p>${R.d}</p>`:''}</div></div>
+    <div class="tgrid" style="--c:5"><button class="tile ${cur?'':'sel'}" data-k=""><span class="ti">🚫</span></button>${all.map(k=>seen[k]?`<button class="tile ${cur===k?'sel':''}" data-k="${k}"><span class="ti">${RELICS[k].ic}</span></button>`:`<div class="tile lock"><span class="ti">❔</span></div>`).join('')}</div>`);
+  bindTiles('.tile[data-k]',b=>{UNL.carry=b.dataset.k||null;unlSave();me();});$('pgBack').onclick=back;}
 /* tavern: class roster */
 const partyCls=()=>{if(UNL.cls&&classOk(UNL.cls))return UNL.cls;const l=RUNS.length&&RUNS[RUNS.length-1].c;return l&&classOk(l)?l:'warrior';};
-function showTavern(back){const ks=Object.keys(CLASSES),cur=partyCls();
-  openModal(`<h2>🍺 酒場</h2><p style="text-align:center;font-size:12px;color:#a99fae">いっしょに地の底へ降りる職業を選ぶ。次の冒険から、この職業で出発する。<br>旅の仲間 ${ks.filter(classOk).length} / ${ks.length}</p><div class="alist">${ks.map(k=>{const c=CLASSES[k],ok=classOk(k);
-    const how=c.hidden===2?'元凶を倒すと、まれに現れるらしい':c.kill?`1回の冒険で${EK[c.kill[0]].name}を${c.kill[1]}体倒し${c.floor?`、B${c.floor}Fまでたどり着く`:''}と…`:STAGES.find(s=>s.id===c.stage)?'条件：'+STAGES.find(s=>s.id===c.stage).hint:'';
-    return ok?`<button class="opt tvc" data-k="${k}" style="${k===cur?'border-color:#e8b33a;':''}text-align:left">${c.ic} <b>${c.n}</b>${k===cur?' <span style="color:#e8b33a;font-size:12px">（この職業で出発）</span>':''}<small>${c.d}<br>${c.fx}</small></button>`:`<div class="ach lock"><span class="ai">❔</span><span><b>${c.hidden?'？？？':c.n}</b><small>${c.hidden?'噂：'+how:how}</small></span></div>`;}).join('')}</div>
-    <button class="opt" id="tvB" style="text-align:center;position:sticky;bottom:0;background:#2e2535">村に戻る</button>`);
-  document.querySelectorAll('#mbox .tvc').forEach(b=>b.onclick=()=>{UNL.cls=b.dataset.k;unlSave();showTavern(back);});$('tvB').onclick=back;}
+function showTavern(back,peek){const ks=Object.keys(CLASSES),cur=partyCls(),me=p=>showTavern(back,p);
+  const how=c=>c.hidden===2?'元凶を倒すと、まれに現れるらしい':c.kill?`${EK[c.kill[0]].name}を${c.kill[1]}体倒し${c.floor?`、B${c.floor}Fまでたどり着く`:''}と…`:'';
+  const pk=peek&&!classOk(peek)?CLASSES[peek]:null,c=CLASSES[cur];
+  const card=pk?`<span class="ci">${pk.hidden?'❔':pk.ic}</span><div><b>${pk.hidden?'？？？':pk.n}</b><p>${pk.hidden?'🗨️ '+how(pk):'🔒'}</p></div>`
+    :`<span class="ci">${c.ic}</span><div><b>${c.n}</b><p>${c.fx}</p></div>`;
+  openModal(`${pgHead('🍺 酒場','村')}${meter(ks.filter(classOk).length,ks.length)}<div class="pcard">${card}</div>
+    <div class="tgrid" style="--c:3">${ks.map(k=>{const x=CLASSES[k],ok=classOk(k);return `<button class="tile ${ok?'':'lock'} ${ok&&k===cur?'sel':''}" data-k="${k}"><span class="ti">${ok||!x.hidden?x.ic:'❔'}</span>${ok||!x.hidden?`<small>${x.n}</small>`:''}</button>`;}).join('')}</div>`);
+  bindTiles('.tile[data-k]',b=>{const k=b.dataset.k;if(classOk(k)){UNL.cls=k;unlSave();me();}else me(k);});$('pgBack').onclick=back;}
 /* tailor: board themes */
 const BG0={...BG};
 const THEMES={def:{n:'いつもの迷宮',need:0,bg:BG0},
@@ -1973,11 +2003,10 @@ const THEMES={def:{n:'いつもの迷宮',need:0,bg:BG0},
   ember:{n:'灰と炎',need:50,bg:{skull:'#4a1410',sword:'#3a2c26',shield:'#2c2a34',potion:'#4a1f2c',coin:'#5a3a0e'}},
   gold:{n:'黄金郷',need:65,bg:{skull:'#4a2a14',sword:'#4a3e22',shield:'#3a3a26',potion:'#4a2e2e',coin:'#6a5210'}}};
 function applyTheme(){const t=THEMES[UNL.theme]||THEMES.def;Object.assign(BG,t.bg);}
-function showTailor(back){
-  openModal(`<h2>🧵 仕立て屋</h2><p style="text-align:center;font-size:12px;color:#a99fae">迷宮の色合いを選べる。実績を集めると柄が増える。</p>${Object.entries(THEMES).map(([k,t])=>{const ok=achCount()>=t.need,sel=(UNL.theme||'def')===k;
-    return `<button class="opt thm" data-k="${k}" ${ok?'':'disabled style="opacity:.45"'} style="${sel?'border-color:#e8b33a':''}"><span style="display:inline-flex;gap:3px;vertical-align:middle;margin-right:6px">${['skull','sword','shield','potion','coin'].map(x=>`<i style="width:14px;height:14px;border-radius:3px;background:${t.bg[x]};display:inline-block"></i>`).join('')}</span>${t.n}${sel?'（使用中）':''}<small>${ok?'':'実績'+t.need+'個で解放'}</small></button>`;}).join('')}
-    <button class="opt" id="tlB" style="text-align:center">戻る</button>`);
-  document.querySelectorAll('#mbox .thm').forEach(b=>{if(!b.disabled)b.onclick=()=>{UNL.theme=b.dataset.k;unlSave();applyTheme();showTailor(back);};});$('tlB').onclick=back;}
+function showTailor(back){const me=()=>showTailor(back),K=['skull','sword','shield','potion','coin'];
+  openModal(`${pgHead('🧵 仕立て屋','村')}<div class="tgrid" style="--c:2">${Object.entries(THEMES).map(([k,t])=>{const ok=achCount()>=t.need,sel=(UNL.theme||'def')===k;
+    return `<button class="tile ${ok?'':'lock'} ${sel?'sel':''}" data-k="${k}" ${ok?'':'disabled'}><span class="sw">${[0,1,2,3,4,0,2,4,1].map(i=>`<i style="background:${t.bg[K[i]]}"></i>`).join('')}</span><small>${ok?t.n:'🔒 🏆'+t.need}</small></button>`;}).join('')}</div>`);
+  bindTiles('.tile[data-k]:not([disabled])',b=>{UNL.theme=b.dataset.k;unlSave();applyTheme();me();});$('pgBack').onclick=back;}
 /* start-of-adventure perks from the village */
 function villagePerks(s){if(TUT)return;if(vilOk('smith'))s.weaponDmg+=1;}
 function applyCarry(){if(TUT||!vilOk('church')||!UNL.carry||!RELICS[UNL.carry]||!(UNL.relSeen||{})[UNL.carry])return;if(RELICS[UNL.carry].x&&!unlocked('s4'))return;S.relics=[UNL.carry];if(RELICS[UNL.carry].on)RELICS[UNL.carry].on();}
@@ -2000,25 +2029,22 @@ function rewardHtml(k){const n=h2Got(),t=H2().length;
   return `<div class="rwd">${head}<div class="rwbar"><div style="width:${n/t*100}%"></div></div><small>隠し職業 ${n} / ${t}${n<t?`（あと${t-n}種類）<br>次は元凶を${h2Need()}回倒すと手に入る`:'　コンプリート！'}</small></div>`;}
 function clearReward(force){const pool=Object.keys(CLASSES).filter(k=>CLASSES[k].hidden===2&&!UNL.got['h_'+k]);if(!pool.length)return null;
   if(!force){UNL.h2p=(UNL.h2p||0)+1;if(UNL.h2p<h2Need()){unlSave();return false;}}UNL.h2p=0;const k=pool[rnd(pool.length)];unlockClass(k);return k;}
-function showBestiary(back){
+function showBestiary(back,bl){
   const seen=BEAST_ORDER.filter(k=>UNL.met[k]).length;
-  const row=k=>{const e=EK[k],m=UNL.met[k],boss=BOSS_KINDS.includes(k),tag=boss?'ボス':e.mini?'中ボス':e.rare?'★レア':'';
-    if(!m)return `<div class="ach lock"><span class="ai">❔</span><span><b>？？？</b><small>${gateText(k)}</small></span></div>`;
-    return `<div class="ach"><span class="ai" style="${e.flt?'filter:'+e.flt:''}">${e.icon}</span><span><b>${e.name}${tag?`<span style="font-size:11px;color:${e.rare?'#ffd54a':'#ff9ad9'}">（${tag}）</span>`:''}</b><small>${e.desc}<br><i>倒した数：${UNL.kills[k]||0}</i></small></span></div>`;};
-  openModal(`<h2>📖 魔物図鑑</h2><p style="text-align:center">${seen} / ${BEAST_ORDER.length} 種と遭遇</p><div class="alist">${BEAST_ORDER.map(row).join('')}</div>
-    <button class="opt" id="bsBack" style="text-align:center;position:sticky;bottom:0;background:#2e2535;box-shadow:0 -8px 12px #211a25">戻る</button>`);
-  $('bsBack').onclick=back||closeModal;
+  const tile=k=>{const e=EK[k],m=UNL.met[k],boss=BOSS_KINDS.includes(k);
+    return m?`<button class="tile" data-k="${k}"><span class="ti" style="${e.flt?'filter:'+e.flt:''}">${e.icon}</span>${boss?'<span class="badge">👑</span>':e.mini?'<span class="badge">◆</span>':e.rare?'<span class="badge" style="color:#ffd54a">★</span>':''}</button>`:`<button class="tile lock" data-k="${k}"><span class="ti">❔</span></button>`;};
+  openModal(`${pgHead('📖 魔物図鑑',bl||'村')}${meter(seen,BEAST_ORDER.length)}<div class="tgrid" style="--c:5">${BEAST_ORDER.map(tile).join('')}</div>`);
+  bindTiles('.tile[data-k]',b=>{const k=b.dataset.k,e=EK[k];if(!UNL.met[k])return tapTip(b,'<div class="th">？？？</div>');
+    const tag=BOSS_KINDS.includes(k)?'👑 ボス':e.mini?'◆ 中ボス':e.rare?'★ めずらしい':'';
+    tapTip(b,`<div class="th">${e.icon} ${e.name}</div>${tag?`<small>${tag}</small><br>`:''}${e.desc}<br><small>⚔️ ${UNL.kills[k]||0}体</small>`);});
+  $('pgBack').onclick=back||closeModal;
 }
 function showRecords(back){
-  const b=back||closeModal,tw=vilOk('tower'),bd=vilOk('library');
-  openModal(`<h2>📜 冒険の記録</h2>
-    ${tw?`<button class="opt" id="rc0">📊 戦績<small>冒険回数・クリア・記録の推移など</small></button>
-    <button class="opt" id="rc1">🏆 実績<small>${achCount()} / ${ACH_N()}</small></button>`:''}
-    ${bd?`<button class="opt" id="rc2">📖 魔物図鑑<small>${BEAST_ORDER.filter(k=>UNL.met[k]).length} / ${BEAST_ORDER.length} 種</small></button>`:''}
-    ${tw||bd?'':'<p style="text-align:center;color:#a99fae">まだ記録を見られる場所がない。<br>村がよみがえると見られるようになる。</p>'}
-    <button class="opt" id="rc4" style="text-align:center">閉じる</button>`);
-  const me=()=>showRecords(back);
-  if(tw){$('rc0').onclick=()=>showStats(me);$('rc1').onclick=()=>showAchievements(me);}if(bd)$('rc2').onclick=()=>showBestiary(me);$('rc4').onclick=b;
+  const b=back||closeModal,tw=vilOk('tower'),bd=vilOk('library'),me=()=>showRecords(back);
+  openModal(`${pgHead('📜 冒険の記録','戻る')}<div class="tgrid" style="--c:3">
+    ${tw?`<button class="tile big" id="rc0"><span class="ti">📊</span><small>戦績</small></button><button class="tile big" id="rc1"><span class="ti">🏆</span><small>実績</small><em>${achCount()} / ${ACH_N()}</em></button>`:''}
+    ${bd?`<button class="tile big" id="rc2"><span class="ti">📖</span><small>図鑑</small><em>${BEAST_ORDER.filter(k=>UNL.met[k]).length} / ${BEAST_ORDER.length}</em></button>`:''}</div>`);
+  if(tw){$('rc0').onclick=()=>showStats(me);$('rc1').onclick=()=>showAchievements(me);}if(bd)$('rc2').onclick=()=>showBestiary(me,'戻る');$('pgBack').onclick=b;
 }
 /* classes */
 const CLASSES={
@@ -2167,14 +2193,14 @@ function chartFloors(){
 }
 function chartRows(rows,unit,valW=96){
   if(!rows.length)return '<p class="vz-empty">まだ記録がありません。</p>';
-  const W=340,rh=24,L=104,iw=W-L-valW,max=Math.max(1,...rows.map(r=>r.v));
+  const W=320,rh=30,L=118,iw=W-L-valW,max=Math.max(1,...rows.map(r=>r.v));
   let s='';rows.forEach((r,i)=>{const yy=i*rh+4,w=r.v/max*iw;
-    s+=`<text x="${L-6}" y="${yy+13}" text-anchor="end" class="vz-lb">${esc(r.label)}</text>`+
-      (r.v>0?`<path d="${hbarPath(L,yy+3,Math.max(2,w),rh-10,3)}" fill="${r.col||VC.c1}"/>`:'')+
-      `<text x="${L+Math.max(2,w)+6}" y="${yy+13}" class="vz-val">${esc(r.txt!==undefined?r.txt:r.v+unit)}</text>`;});
+    s+=`<text x="${L-6}" y="${yy+17}" text-anchor="end" class="vz-lb">${esc(r.label)}</text>`+
+      (r.v>0?`<path d="${hbarPath(L,yy+5,Math.max(2,w),rh-12,3)}" fill="${r.col||VC.c1}"/>`:'')+
+      `<text x="${L+Math.max(2,w)+6}" y="${yy+17}" class="vz-val">${esc(r.txt!==undefined?r.txt:r.v+unit)}</text>`;});
   return `<svg viewBox="0 0 ${W} ${rows.length*rh+6}" class="vz-svg">${s}</svg>`;
 }
-function showStats(back){
+function showStats(back,bl){
   const runs=RUNS,games=Math.max(ACH.st.games||0,runs.length),clears=Math.max(runs.filter(r=>r.cl).length,best&&best.cleared?1:0);
   const kills=ACH.st.kills||0,bf=bestFloor(),chainMax=Math.max(best&&best.chain||0,...runs.map(r=>r.ch),0);
   const last10=runs.slice(-10),prev10=runs.slice(-20,-10),avg=a=>a.length?a.reduce((x,r)=>x+r.f,0)/a.length:0;
@@ -2182,26 +2208,24 @@ function showStats(back){
   const tile=(lab,val,sub)=>`<div class="vz-tile"><small>${lab}</small><b>${val}</b>${sub?`<small>${sub}</small>`:''}</div>`;
   const ks=Object.keys(CLASSES).filter(k=>!CLASSES[k].hidden||classOk(k)||RUNS.some(r=>r.c===k));
   const clsRows=ks.map(k=>{const c=CLASSES[k],rr=runs.filter(r=>r.c===k),ok=classOk(k);
-    return {label:`${ok?c.ic:'🔒'} ${c.n}`,v:rr.length,col:CLS_COL[k],txt:!ok?'未解放':rr.length?`${rr.length}回・👑${rr.filter(r=>r.cl).length}・最深B${Math.max(...rr.map(r=>r.f))}F`:'未プレイ'};});
+    return {label:`${c.ic} ${c.n}`,v:rr.length,col:CLS_COL[k],txt:!ok?'🔒':rr.length?`${rr.length}回・B${Math.max(...rr.map(r=>r.f))}F${rr.some(r=>r.cl)?'・👑'+rr.filter(r=>r.cl).length:''}`:'—'};});
   const monRows=BEAST_ORDER.filter(k=>UNL.kills[k]).map(k=>({label:`${EK[k].icon} ${EK[k].name}`,v:UNL.kills[k]})).sort((a,b)=>b.v-a.v);
   const deathMap={};runs.filter(r=>!r.e&&!(r.cl&&r.f<=100)).forEach(r=>{const p=placeOf(r.f);deathMap[p]=(deathMap[p]||0)+1;});
   const deathRows=Object.entries(deathMap).map(([p,v])=>({label:p,v,col:VC.c2})).sort((a,b)=>b.v-a.v).slice(0,8);
-  openModal(`<h2>📊 戦績</h2><p style="text-align:center;margin:0 0 4px;color:#c9bfcf">冒険者：${esc(getName())}</p>
-    <div class="vz-tiles">${tile('冒険回数',games+'<span>回</span>')}${tile('クリア',clears+'<span>回</span>',clears?'👑 元凶討伐':'')}${tile('最深記録',bf?`B${bf}F`:'-')}
-      ${tile('総撃破数',kills+'<span>体</span>')}${tile('最長チェーン',chainMax+'<span>つ</span>')}
-      ${tile('直近10回の平均',last10.length?`B${Math.round(a1)}F`:'-',diff===null?'':diff>0?`<span class="up">▲ 前の10回よりB${diff}F深い</span>`:diff<0?`<span class="dn">▼ 前の10回より${-diff}F浅い</span>`:'前の10回と同じ')}</div>
-    <h3 class="vz-h">到達階層の推移（直近30回）</h3>${chartFloors()}
-    <h3 class="vz-h">職業別</h3>${chartRows(clsRows,'回',150)}
-    <h3 class="vz-h">魔物の討伐数</h3>${chartRows(monRows,'体')}
-    <h3 class="vz-h">倒れた場所</h3>${chartRows(deathRows,'回')}
-    <p class="vz-note">職業別・推移・倒れた場所は、この機能を入れた後の冒険から記録しています。</p>
-    <button class="opt" id="vzRep" style="text-align:center">📝 戦績をメモ用にコピー<small>メモ帳などに貼って、自分の記録として残せます</small></button>
-    <button class="opt" id="vzBack" style="text-align:center;position:sticky;bottom:0;background:#2e2535;box-shadow:0 -8px 12px #211a25">戻る</button>`);
+  openModal(`${pgHead('📊 戦績',bl)}<p style="text-align:center;margin:0 0 4px;color:#d9cfc2;font-size:14.5px">👤 ${esc(getName())}</p>
+    <div class="vz-tiles">${tile('冒険',games+'<span>回</span>')}${tile('👑 クリア',clears+'<span>回</span>')}${tile('最深',bf?`B${bf}F`:'-')}
+      ${tile('撃破',kills+'<span>体</span>')}${tile('🔗 最長',chainMax+'<span>つ</span>')}
+      ${tile('最近10回',last10.length?`B${Math.round(a1)}F`:'-',diff===null?'':diff>0?`<span class="up">▲ ${diff}F</span>`:diff<0?`<span class="dn">▼ ${-diff}F</span>`:'')}</div>
+    <h3 class="vz-h">📈 到達階層</h3>${chartFloors()}
+    <h3 class="vz-h">🧑‍🤝‍🧑 職業</h3>${chartRows(clsRows,'回',118)}
+    <h3 class="vz-h">⚔️ 倒した魔物</h3>${chartRows(monRows,'体')}
+    <h3 class="vz-h">🪦 倒れた場所</h3>${chartRows(deathRows,'回')}
+    <button class="opt" id="vzRep" style="text-align:center">📝 戦績をコピー</button>`);
   const R=RUNS.slice(-30),fl=$('vzFloors');
   if(fl)fl.querySelectorAll('rect[data-run]').forEach(el=>el.onclick=()=>{const r=R[+el.dataset.run],c=CLASSES[r.c]||CLASSES.warrior;
     fl.querySelectorAll('rect[data-run]').forEach(x=>x.setAttribute('fill','transparent'));el.setAttribute('fill','rgba(255,255,255,.08)');
     $('vzRun').innerHTML=`${fmtD(r.d)}　${c.ic}${c.n}　<b>B${r.f}F</b>（${placeOf(r.f)}）${r.cl?'　👑':''}<br>${r.t}ターン・撃破${r.k}・Lv${r.l}・最長${r.ch}チェーン${r.e?'・あきらめた':''}`;});
-  copyBtn('vzRep',reportText);$('vzBack').onclick=back||closeModal;
+  copyBtn('vzRep',reportText);$('pgBack').onclick=back||closeModal;
 }
 
 /* ---------- long-press info ---------- */
