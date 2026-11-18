@@ -515,7 +515,9 @@ function enemyPhase(msgs){
   if(sum>0){const bl=Math.min(S.armor,total);S.armor-=bl;let d=total-bl+pierce;if(d>0&&hasR('greed'))d++;if(d>0&&hasR('amulet'))d--;S.hp-=d;
     if(d>1&&hasR('mirror')){const es=all().map(x=>x[0]).filter(x=>!x.fresh);if(es.length){const t=es[rnd(es.length)],rd=Math.floor(d/2);applyDmg(t,rd);t.hit=performance.now();msgs.push(`🪞 ${rd}ダメージを返した`);}}
     msgs.push(`敵の攻撃${sum}`+(bl?`（防御${bl}）`:'')+(pierce?`（すり抜け${pierce}）`:'')+(d?` → HP-${d}`:''));
-    if(d>0){const hr=d/Math.max(1,S.maxHp),hl=hr>=.25?2:hr>=.1?1:0;const hd=hurtDelay()*1000;HURT_AT=performance.now()+hd;setTimeout(()=>{shake();flash('bHp');sfx('hurt',hl);},hd);}else sfx('block');if(bl)flash('bAr');}
+    {const hd=hurtDelay()*1000,gd=bl&&d>0?90:0;HURT_AT=performance.now()+hd+gd;
+     if(bl||d<=0)setTimeout(()=>{if(bl)flash('bAr');sfx('guard');},hd);
+     if(d>0){const hr=d/Math.max(1,S.maxHp),hl=hr>=.25?2:hr>=.1?1:0;setTimeout(()=>{shake();flash('bHp');sfx('hurt',hl);},hd+gd);}}}
   if(exploded.size){sfx('boom');S._boom=true;removeAndFill(exploded);}
   const live=all();
   for(const [e,r,c] of live){
@@ -1216,6 +1218,8 @@ const SFX={
     else{tone(988,t,.08,{gain:.06});tone(1319,t+.07,.22,{gain:.06});}},
   kill(n=1){const t=T0(),lv=n>=4?2:n>=2?1:0,v=[1,1.25,1.5][lv],L=[1,1.2,1.5][lv],R=[1,1.2,1.45][lv];busyTo(t+.2+.12*L);withVar(()=>{air3(t,.27,.1*v,400,{type:'bandpass',q:1.5,to:6000,toAt:.21,peak:.2});air3(t+.2,.87*L,.2*v,7000,{to:300,toAt:.73*L,peak:.006,rv:R});if(lv>=1)air3(t+.2,.6*L,.1*v,9000,{type:'highpass',to:3000,toAt:.5*L,peak:.01,rv:R});if(lv>=2)air3(t+.21,1.1,.22,1200,{to:120,toAt:1,peak:.02,rv:1.2});});},
   hurt(lv=1){const t=T0(),v=[.55,1,1.4][lv]||1,L=[.8,1,1.3][lv]||1;withVar(()=>{gruff(t,55,26,.42*L,520,v);tone(44,t,.46*L,{type:'sine',gain:.42*v,slideTo:26,attack:.002});noise(t,.1*L,.26*v,350,{type:'lowpass'});if(lv>=2)air3(t+.02,.7,.14,260,{to:50,peak:.01,rv:.8});});},
+  guard(){const t=T0();withVar(()=>{noise(t,.025,.1,3500,{type:'bandpass',q:1.5});[[2350,.05,.12],[3720,.035,.09],[5150,.022,.07]].forEach(([f,g,d])=>tone(f,t,d,{type:'triangle',gain:g,attack:.001}));
+    noise(t+.035,.15,.06,6000,{type:'bandpass',q:2.5,sweepTo:4200,attack:.004});[[2900,.028],[4400,.02],[6300,.012]].forEach(([f,g])=>tone(f,t+.035,.17,{type:'sine',gain:g,attack:.002}));});},
   block(){const t=T0()+.22;tone(1400,t,.09,{type:'triangle',gain:.1});tone(1000,t+.04,.12,{type:'triangle',gain:.07});},
   skill(){const t=T0();busyTo(t+.4);tone(220,t,.4,{type:'sine',gain:.16,slideTo:1300});noise(t,.35,.08,2000);},
   level(){const t=T0();busyTo(t+.5);[72,76,79,84].forEach((m,i)=>tone(mf(m),t+i*.09,.22,{type:'square',gain:.06,filter:4000}));},
