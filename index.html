@@ -142,6 +142,8 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 .tsub button{flex:1;max-width:76px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0 6px;border-radius:10px;border:1px solid #3a2f3e;background:#241c27;color:#bba9c4;font-size:11px}
 .tsub button span{font-size:20px;filter:saturate(.75)}
 #cloud{font-size:10.5px;color:#6f6670;margin-top:14px}
+#ver{font-size:10.5px;color:#5c545e;margin-top:6px;background:none;border:0;padding:4px 8px;font-family:inherit}#ver.new{color:#e8b33a}
+.chg h3{font-size:14px;margin:12px 0 4px;color:#f0d9a8}.chg h3 small{color:#8f8396;font-weight:400;margin-left:6px}.chg ul{margin:0;padding-left:18px;font-size:12.5px;line-height:1.65;color:#d9d0dc}
 .big{font-size:44px}
 #tip{position:fixed;z-index:20;max-width:270px;background:#2b2131;border:1px solid #7a6488;border-radius:10px;padding:8px 10px;font-size:13px;line-height:1.55;color:#eee;pointer-events:none;box-shadow:0 6px 18px rgba(0,0,0,.6)}
 #tip .th{font-weight:700;font-size:14px;margin-bottom:3px}
@@ -193,6 +195,7 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
       <button id="btnImport"><span>📥</span>読み込み</button>
     </div>
     <div id="cloud">セーブ: 確認中…</div>
+    <button id="ver"></button>
     </div>
   </div>
 </div>
@@ -893,7 +896,7 @@ function endStory(){
 $('story').addEventListener('click',e=>{if(e.target.id==='storySkip')return;storyNext();});
 $('storySkip').onclick=()=>{storyPage=STORY.length;endStory();};
 /* ---------- screens ---------- */
-function refreshTitle(){
+function refreshTitle(){refreshVer();
   {const show=!!(RUNS.length||best||achCount()>1);$('btnAch').style.display=show?'':'none';}
   const has=anySave(),n=[0,1,2].filter(i=>slotJson(i)).length;$('btnCont').style.display=has?'':'none';$('btnNew').classList.toggle('pri',!has);$('btnNew').textContent=has?'新しい冒険':'冒険に出る';
   let info='';if(has){let L=null;[0,1,2].forEach(i=>{const s=slotInfo(i);if(s&&!s.broken&&(!L||(s.ts||0)>(L.ts||0)))L=s;});
@@ -976,6 +979,7 @@ $('btnNew').onclick=()=>showNewGameMenu();
 $('tutSkip').onclick=e=>{e.stopPropagation();tutSkip();};
 $('btnAch').onclick=()=>showRecords();
 $('btnSet').onclick=()=>showSettings(null);
+$('ver').onclick=()=>showChangelog(null);
 
 $('btnImport').onclick=showImport;
 $('menuBtn').onclick=()=>{if(!modalOpen&&inGame)showMenu();};
@@ -1732,12 +1736,33 @@ function resetTutFlag(){try{localStorage.removeItem(LS_TUT);}catch(e){}}
 function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshAudioBtns();}
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
+/* ---------- version & changelog ---------- */
+const VERSION='1.0.0';
+const CHANGELOG=[
+  {v:'1.0.0',d:'2026-11-18',items:[
+    '剣・撃破・ダメージ・盾の効果音を新しくした。撃破音はまとめて倒した数で、ダメージ音は受けたダメージの大きさで、それぞれ3段階に変わる',
+    'ダメージ音は、こちらの攻撃の音のすぐあとに鳴るようにした。盾で防いだときは「カシャン」と鳴る',
+    '魔物を30種類ほどに整理した。色違いの強い魔物はB101F以降に出る',
+    '冒険の回数に応じて、出会う魔物の種類がだんだん増えるようにした。B51F以降は顔ぶれを増やした',
+    '盗賊（冒険3回目以降）・僧侶（6回目以降）・村の建物・失われた手記（1回の冒険で1つ）の解放ペースをゆっくりにした',
+    '隠し職業ゾンビはB90F、ヴァンパイアはB95Fまでたどり着くことも条件にした',
+    'バージョン表示と、この「更新内容」を追加した']}
+];
+const LS_VER='dchain_seen_ver';
+function verUnseen(){let v=null;try{v=localStorage.getItem(LS_VER);}catch(e){}
+  if(v===VERSION)return false;if(!v&&!((ACH&&ACH.st&&ACH.st.games)||0)){try{localStorage.setItem(LS_VER,VERSION);}catch(e){}return false;}return true;}
+function refreshVer(){const b=$('ver');if(!b)return;const n=verUnseen();b.textContent=`v${VERSION}`+(n?' ・ 更新内容を見る':'');b.classList.toggle('new',n);}
+function showChangelog(back){try{localStorage.setItem(LS_VER,VERSION);}catch(e){}refreshVer();
+  openModal(`<h2>📋 更新内容</h2><p style="text-align:center;font-size:12px;color:#a99fae">いまのバージョン：v${VERSION}</p><div class="chg">${CHANGELOG.map(c=>`<h3>v${c.v}<small>${c.d.replace(/-/g,'/')}</small></h3><ul>${c.items.map(x=>`<li>${x}</li>`).join('')}</ul>`).join('')}</div>
+    <button class="opt" id="chgB" style="text-align:center;position:sticky;bottom:0;background:#2e2535;margin-top:12px">戻る</button>`);
+  $('chgB').onclick=()=>{if(back)back();else closeModal();};}
 function showSettings(back,msg){
   if(back!==undefined)settingsBack=back;
   const tg=(id,label,on)=>`<button class="opt" id="${id}">${label}<span style="float:right;font-weight:700;color:${on?'#8fe08f':'#f08a8a'}">${on?'ON':'OFF'}</span></button>`;
   const bf=best?(best.floor||1+Math.floor(best.turn/2)):0;
   openModal(`<h2>⚙️ 設定</h2>
     <div class="asep">音と振動</div>${tg('st1','🎵 BGM',AU.on.bgm)}${tg('st2','🔊 効果音',AU.on.sfx)}${tg('st3',(VIB_IC==='振動'?'':VIB_IC+' ')+'振動',AU.on.vib)}
+    <div class="asep">このゲームについて</div><button class="opt" id="stVer">📋 更新内容<small>いまのバージョン v${VERSION}${verUnseen()?' ・ 新しい更新があります':''}</small></button>
     <div class="asep">データのリセット</div>`+(inGame?'<p style="text-align:center">リセットは、タイトル画面の「⚙️ 設定」から行えます。</p>':`
     <button class="opt" id="rs1">🏆 実績をリセット<small>解除済みの ${achCount()} / ${ACH_N()} と、累計撃破数などの記録を消します</small></button>
     <button class="opt" id="rs2">🥇 最高記録と戦績をリセット<small>${best?`最深記録 B${bf}F・最長${best.chain||0}チェーンを消します`:'記録はまだありません'}</small></button>
@@ -1747,6 +1772,7 @@ function showSettings(back,msg){
     `<p id="stMsg" style="text-align:center;color:#8fe08f">${msg||''}</p>
     <button class="opt" id="stClose" style="text-align:center;position:sticky;bottom:0;background:#2e2535;box-shadow:0 -8px 12px #211a25">閉じる</button>`);
   const flip=k=>{AU.on[k]=!AU.on[k];saveAudio();refreshAudioBtns();if(k==='bgm'&&AU.on.bgm&&inGame)bgmStart();if(k==='vib'&&AU.on.vib)vib(30);showSettings();};
+  $('stVer').onclick=()=>showChangelog(()=>showSettings());
   $('st1').onclick=()=>flip('bgm');$('st2').onclick=()=>flip('sfx');$('st3').onclick=()=>flip('vib');
   if(!inGame){
     $('rs1').onclick=()=>confirmReset('実績をリセット','解除した実績と、累計撃破数・スキル使用回数などの記録がすべて未解除に戻ります。',resetAch);
