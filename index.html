@@ -1777,8 +1777,8 @@ function unlSave(){try{localStorage.setItem(LS_UNL,JSON.stringify(UNL));}catch(e
 const bestFloor=()=>best?(best.floor||1+Math.floor((best.turn||0)/2)):0;
 const STAGES=[
   {id:'s0',n:'はじまり',hint:'最初から',items:['職業「戦士」','魔物図鑑'],cond:()=>true},
-  {id:'s1',n:'第一の扉',hint:'B20Fのボスを倒す',items:['イベント部屋','職業「盗賊」'],cond:()=>!!ACH.u.ogre||bestFloor()>=21||(S&&!TUT&&floorOf()>=21)},
-  {id:'s2',n:'第二の扉',hint:'B40Fに到達する',items:['職業「僧侶」','遺物','中ボス'],cond:()=>!!ACH.u.f40||bestFloor()>=40||(S&&!TUT&&floorOf()>=40)},
+  {id:'s1',n:'第一の扉',hint:'冒険3回目以降に B20Fのボスを倒す',items:['イベント部屋','職業「盗賊」'],cond:()=>playsN()>=3&&(!!ACH.u.ogre||bestFloor()>=21||(S&&!TUT&&floorOf()>=21))},
+  {id:'s2',n:'第二の扉',hint:'冒険6回目以降に B40Fに到達する',items:['職業「僧侶」','遺物','中ボス'],cond:()=>playsN()>=6&&(!!ACH.u.f40||bestFloor()>=40||(S&&!TUT&&floorOf()>=40))},
   {id:'s3',n:'第三の扉',hint:'世界の元凶を倒す',items:['職業「魔術師」','呪いLv（難易度段階）','階ごとの「異変」','失われた手記'],cond:()=>!!ACH.u.clear||!!(best&&best.cleared)},
   {id:'s4',n:'第四の扉',hint:'呪いLv1以上でクリアする',items:['遺物の追加（6種）'],cond:()=>(UNL.curseClear||0)>=1}
 ];
@@ -1824,9 +1824,11 @@ const VIL=[
 const vilOk=id=>!!(UNL.vil&&UNL.vil[id]);
 /* 村の建物は、1回の冒険につき1つずつよみがえる（全部そろうのは5回目くらい） */
 const VIL_ORDER=['tower','tavern','smith','church','tailor','library'];
+/* 建物ごとの、よみがえるのに必要な冒険の回数 */
+const VIL_MIN={tavern:3,smith:6,church:10,tailor:15,library:20};
 function checkVillage(){UNL.vil=UNL.vil||{};let ch=false;const g=(ACH&&ACH.st&&ACH.st.games)||0;
   const ord=[...VIL.filter(x=>x.id!=='well').sort((a,b)=>VIL_ORDER.indexOf(a.id)-VIL_ORDER.indexOf(b.id)),VIL.find(x=>x.id==='well')];
-  for(const v of ord){if(v.deco||UNL.vil[v.id]||!v.cond())continue;
+  for(const v of ord){if(v.deco||UNL.vil[v.id]||!v.cond()||g<(VIL_MIN[v.id]||0))continue;
     if(v.id!=='tower'&&v.id!=='well'){if(g<=(UNL.vilRun||0))continue;UNL.vilRun=g;}
     UNL.vil[v.id]=Date.now();ch=true;
     if(v.id==='tower')continue;
@@ -1843,7 +1845,7 @@ function showVillage(back){checkVillage();const me=()=>showVillage(back);
     <p id="vInfo" class="vz-cap">建物をタップ</p>
     <button class="opt" id="vBack" style="text-align:center">戻る</button>`);
   document.querySelectorAll('#mbox .vcell').forEach(b=>b.onclick=()=>{const v=VIL.find(x=>x.id===b.dataset.v),ok=v.deco||vilOk(v.id);
-    if(!ok){$('vInfo').innerHTML=`🏚️ 崩れた建物。<br>よみがえらせる条件：<b>${v.hint}</b>`+(v.id!=='well'?`<br><small style="color:#a99fae">建物は 1回の冒険につき1つずつ よみがえる</small>`:'');return;}
+    if(!ok){$('vInfo').innerHTML=`🏚️ 崩れた建物。<br>よみがえらせる条件：<b>${VIL_MIN[v.id]?`冒険${VIL_MIN[v.id]}回目以降に `:''}${v.hint}</b>`+(v.id!=='well'?`<br><small style="color:#a99fae">建物は 1回の冒険につき1つずつ よみがえる</small>`:'');return;}
     if(v.id==='tower')return showTower(me);if(v.id==='library')return showLibrary(me);if(v.id==='church')return showChurch(me);
     if(v.id==='tavern')return showTavern(me);if(v.id==='tailor')return showTailor(me);
     if(v.id==='stairs'){closeModal();showNewGameMenu();return;}
@@ -1870,8 +1872,8 @@ const NOTES=[
   {f:170,t:'ここまで来ると、魔物たちのほうが道を譲る。私も、もう向こう側なのかもしれない。'},
   {f:200,t:'――この手記を拾った者へ。井戸の水は澄んだか？ それだけが、知りたい。'}
 ];
-/* 1回の冒険で拾える手記は2つまで（全部そろうのは5〜6回目くらい） */
-const NOTES_PER_RUN=2;
+/* 1回の冒険で拾える手記は1つまで（全部そろうのは25〜30回目くらい） */
+const NOTES_PER_RUN=1;
 function checkNotes(F){if(TUT||!S)return;UNL.notes=UNL.notes||{};let got=0;NOTES.forEach((n,i)=>{if(F>=n.f&&!UNL.notes[i]&&(S.notesGot||0)<NOTES_PER_RUN){UNL.notes[i]=1;S.notesGot=(S.notesGot||0)+1;got++;}});
   if(got){unlSave();if(inGame)achToast({ic:'📜',n:'失われた手記を拾った',d:vilOk('library')?'村の図書館で読める':'村の図書館がよみがえれば読める',secret:0,custom:`手記 ${Object.keys(UNL.notes).length} / ${NOTES.length}`});}}
 function showLibrary(back){const n=UNL.notes||{};
