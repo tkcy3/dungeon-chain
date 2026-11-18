@@ -445,11 +445,11 @@ const BANDS=[
   [12,{skel:7,bat:1,zombie:3,spider:4,ghost:3,bomb:2}],
   [21,{skel:5,zombie:2,spider:3,ghost:3,bomb:2,golem:3}],
   [36,{skel:4,zombie:2,spider:2,ghost:3,bomb:2,golem:3,shaman:3}],
-  [51,{skel:4,zombie:2,ghost:2,golem:2,shaman:2,rat:3,snake:3,slime:3,mush:1}],
-  [61,{skel:3,bat:2,ghost:2,shaman:2,slime:2,snake:2,imp:3,fencer:3}],
-  [71,{skel:3,golem:2,imp:2,fencer:2,scorp:3,wolf:3,crab:3,egg:2}],
-  [81,{skel:3,ghost:2,shaman:2,crab:3,scorp:2,eye:3,lich:[2,1]}],
-  [91,{skel:3,ghost:2,crab:2,eye:3,wolf:2,lich:[3,1],demon:[3,2]}],
+  [51,{skel:4,bat:2,zombie:2,spider:2,ghost:2,bomb:1,golem:2,shaman:2,rat:3,snake:3,slime:3,mush:1}],
+  [61,{skel:3,bat:2,zombie:1,spider:1,ghost:2,bomb:1,golem:1,shaman:2,rat:2,snake:2,slime:2,mush:1,imp:3,fencer:3}],
+  [71,{skel:3,bat:1,zombie:1,ghost:1,golem:2,shaman:1,rat:1,snake:1,slime:2,mush:1,imp:2,fencer:2,scorp:3,wolf:3,crab:3,egg:2}],
+  [81,{skel:3,ghost:2,golem:1,shaman:2,slime:1,snake:1,imp:1,fencer:1,scorp:2,wolf:2,crab:3,egg:1,eye:3,lich:[2,1]}],
+  [91,{skel:3,ghost:2,golem:1,shaman:1,slime:1,imp:1,fencer:1,scorp:1,wolf:2,crab:2,egg:1,eye:3,lich:[3,1],demon:[3,2]}],
   [101,{skel_r:3,skel_b:3,zombie_g:3,spider_r:3,ghost_b:3,golem_r:2,bomb_b:2,boomsh:1,eye:2,crab:2,lich:[2,1],demon:[2,2]}]];
 const RARE_GATE={chick:[51,0],duck:[51,0],cat:[51,0],skel_g:[51,0],mimic:[61,0],nanika:[51,1],star:[101,0],snowman:[101,0],ufo:[51,3]};
 function firstFloor(k){if(RARE_GATE[k])return RARE_GATE[k][0]+.5+RARE_GATE[k][1]*20;for(const [f,o] of BANDS)if(o[k]!==undefined){const v=o[k];return f+(Array.isArray(v)?v[1]*20:0);}return 999;}
