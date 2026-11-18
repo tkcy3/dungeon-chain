@@ -261,7 +261,7 @@ function newState(cls){
 }
 function randTile(s,noEnemy){
   const aw=t=>{const a=s.anom&&ANOMS[s.anom];return a&&a.w&&a.w[t]||1;};
-  const w=[['skull',noEnemy?0:(17+Math.min(8,s.turn/40))*aw('skull')*(s.relics&&s.relics.includes('bell')?.82:1)],['sword',20*aw('sword')],['shield',19*aw('shield')],['potion',17*aw('potion')],['coin',20*aw('coin')]];
+  const w=[['skull',noEnemy?0:(17+Math.min(8,s.turn/40))*aw('skull')*(!TUT&&unlocked('s1')?.92:1)*(s.relics&&s.relics.includes('bell')?.82:1)],['sword',20*aw('sword')],['shield',19*aw('shield')],['potion',17*aw('potion')],['coin',20*aw('coin')]];
   let x=Math.random()*w.reduce((a,b)=>a+b[1],0);
   for(const [t,v] of w){if((x-=v)<0)return t==='skull'?makeEnemy(s):{t};}
   return {t:'coin'};
@@ -336,12 +336,12 @@ function relicKills(k){if(k<=0)return;if(hasR('ring')){const h=Math.min(k,S.maxH
 const EK={
   skel:{icon:'💀',name:'スケルトン',desc:'ふつうの敵。'},
   bat:{icon:'🦇',name:'コウモリ',desc:'弱いが 毎ターン となりのパネルと 入れ替わって 飛び回る。'},
-  zombie:{icon:'🧟',name:'ゾンビ',desc:'毎ターン HPが1回復する。早めに倒そう。'},
+  zombie:{icon:'🧟',name:'ゾンビ',desc:'倒すと 骨の山が残る。骨の山は4ターンで スケルトンに戻る。',sp:['bones',1]},
   bomb:{icon:'💣',name:'爆弾',desc:'左下の数字が0になると 爆発して 大ダメージ！ それまでに倒そう。'},
   spider:{icon:'🕷️',name:'毒グモ',desc:'攻撃が 防御を すり抜けて HPに直接当たる。'},
   ghost:{icon:'👻',name:'ゴースト',desc:'剣の攻撃が 半分しか効かない。スキルは普通に効く。'},
   golem:{icon:'🗿',name:'ゴーレム',desc:'硬くて強いが 2ターンに1回しか 攻撃しない（💤のときは次が休み）。'},
-  shaman:{icon:'🧙',name:'呪術師',desc:'毎ターン まわりの敵の HPを2回復する。最優先で倒そう。'},
+  shaman:{icon:'🧙',name:'呪術師',desc:'まわりの敵を守る。呪術師の隣にいる敵は、剣の攻撃が半分しか効かない（「護」の印）。先に倒そう。',gd:1},
   ogre:{icon:'👹',name:'オーガ王',desc:'とにかく 硬くて 攻撃が重い。'},
   dragon:{icon:'🐉',name:'ドラゴン',desc:'3ターンごとに 3倍の ブレス攻撃。🔥の数字を見て 防御を固めよう。'},
   vampire:{icon:'🧛',name:'ヴァンパイア',desc:'毎ターン HPを3回復し、2ターンごとに コウモリを呼ぶ。'},
@@ -364,6 +364,7 @@ Object.assign(EK,{
   mimic:{icon:'🎁',name:'ミミック',desc:'宝箱のふりをした魔物。攻撃は重いが 倒すと 💰+30。',from:12,w:.3,rare:1,at:2,hp:1.3,dg:30},
   snake:{icon:'🐍',name:'大ヘビ',desc:'4ターンごとに 攻撃力が1上がる。放っておくと危険。',from:10,w:1.6,gr:4},
   slime:{icon:'🦠',name:'スライム',desc:'倒すと 2匹のちびスライムに 分裂する。',from:14,w:1.3,hp:1.1,sp:['slime_s',2]},
+  bones:{icon:'🦴',name:'骨の山',desc:'攻撃しない。4ターンたつと スケルトンに戻る。',w:0,z:1,hp:.4,hc:['skel',4]},
   slime_s:{icon:'🦠',name:'ちびスライム',desc:'スライムの かけら。弱い。',w:0,hp:.35,flt:HUE(60)},
   star:{icon:'🌟',name:'流れ星の精',desc:'とても硬いが HPは1。4ターンで消える。倒すと 経験値+25。',from:15,w:.2,rare:1,z:1,fl:4,ar:12,hp:.1,dx:25},
   boomsh:{icon:'🍄',name:'爆ぜダケ',desc:'倒すと 胞子が弾けて すべての敵に5ダメージ。',from:18,w:1.4,flt:HUE(150),z:1,db:5},
@@ -377,16 +378,16 @@ Object.assign(EK,{
   egg:{icon:'🥚',name:'謎の卵',desc:'攻撃しない。4ターンたつと 何かが 生まれる…',from:40,w:.9,z:1,hp:1.2,hc:['wyrm',4]},
   wyrm:{icon:'🦎',name:'子竜',desc:'卵から生まれた竜の子。攻撃力が高い。',w:0,at:2,hp:1.3},
   snowman:{icon:'⛄',name:'雪だるま',desc:'攻撃しない。倒すと すべての敵が1ターン凍る。',from:40,w:.3,rare:1,z:1,fz:1},
-  zombie_g:{icon:'🧟',name:'屍鬼',desc:'ゾンビの上位種。毎ターン HPが2回復する。',from:42,w:2,b:'zombie',flt:HUE(110),rg:1,hp:1.2},
+  zombie_g:{icon:'🧟',name:'屍鬼',desc:'ゾンビの上位種。倒すと 骨の山が2つ残る。',from:42,w:2,b:'zombie',flt:HUE(110),hp:1.2,sp:['bones',2]},
   bomb_b:{icon:'💣',name:'大爆弾',desc:'爆発までが長いが 威力は1.7倍。',from:45,w:1.2,b:'bomb',flt:HUE(200),bm:1.7},
-  crab:{icon:'🦀',name:'大ガニ',desc:'毎ターン 装甲が1増える（最大4）。',from:46,w:1.8,au:4},
+  crab:{icon:'🦀',name:'大ガニ',desc:'硬い甲羅。最初から装甲3。長いチェーンでないと倒しきれない。',from:46,w:1.8,ar:3},
   skel_b:{icon:'💀',name:'青スケルトン',desc:'凍てついた骸骨。最初から装甲+2。',from:50,w:2.5,flt:HUE(180),ar:2},
   spider_r:{icon:'🕷️',name:'紅グモ',desc:'防御をすり抜ける毒。攻撃力+1。',from:52,w:1.6,b:'spider',flt:HUE(-60),at:1},
   ghost_b:{icon:'👻',name:'鬼火',desc:'剣が半分しか効かず、攻撃は防御をすり抜ける。',from:56,w:1.2,b:'ghost',flt:HUE(190),pc:1},
   ufo:{icon:'🛸',name:'未確認飛行物体',desc:'2ターンごとに 何かを呼ぶ。5ターンで去っていく。',from:58,w:.2,rare:1,z:1,fl:5,sm:['?',2]},
   golem_r:{icon:'🗿',name:'溶岩ゴーレム',desc:'2ターンに1回の攻撃が とても重い。',from:62,w:1.4,b:'golem',flt:'sepia(1) hue-rotate(-30deg) saturate(4)',at:3},
-  eye:{icon:'👀',name:'見張りの目',desc:'2ターンごとに 攻撃力が1上がる。',from:84,w:1.6,gr:2},
-  lich:{icon:'☠️',name:'リッチ',desc:'3ターンごとに 骸骨を呼び、まわりの敵を癒やす。',from:90,w:1.2,sm:['skel',3],hl:2,hp:1.3},
+  eye:{icon:'👀',name:'見張りの目',desc:'生きているあいだ、すべての敵の攻撃力+1（「怒」の印）。見つけたら先に倒そう。',from:84,w:1.6,ag:1},
+  lich:{icon:'☠️',name:'リッチ',desc:'3ターンごとに 骸骨を呼び、まわりの敵を守る（剣の攻撃が半分）。',from:90,w:1.2,sm:['skel',3],gd:1,hp:1.3},
   demon:{icon:'👿',name:'悪魔',desc:'攻撃は防御をすり抜け、3ターンごとに強くなる。',from:95,w:1.2,pc:1,gr:3,hp:1.2},
   m_wolf:{icon:'🐺',name:'群れの長',desc:'中ボス。2ターンごとに オオカミを呼ぶ。',mini:1,w:0,flt:HUE(-30),sm:['wolf',2]},
   m_queen:{icon:'🕷️',name:'女王グモ',desc:'中ボス。毒は防御をすり抜け、子グモを呼ぶ。',mini:1,w:0,flt:HUE(90),pc:1,sm:['spider',3]},
@@ -401,7 +402,7 @@ const icoOf=e=>e.ic||EK[kindOf(e)].icon;
 const SHAPES=['🐸','🐙','🦔','🪼','🦩','🐌','🦥','🐡','🦖','🧸','🪆','🥸'];
 
 const xpOf=e=>e.boss?6:e.mini?4:(bhOf(e)==='golem'?2:1)+(e.elite?1:0);
-const dmgTo=(e,d)=>{d=relicTgt(e,d);return bhOf(e)==='ghost'?Math.ceil(d/2):d;};
+const dmgTo=(e,d)=>{d=relicTgt(e,d);if(bhOf(e)==='ghost')d=Math.ceil(d/2);if(!e.boss&&guarded(e))d=Math.ceil(d/2);return d;};
 function makeKind(k,T){
   const e={t:'skull',kind:k,hp:Math.round(3+(T/7+T*T/5000)*1.5)+(Math.random()<.4?1:0),atk:1+Math.floor(T/40)+(T>60&&Math.random()<.2?1:0),armor:0,fresh:true};
   const D=EK[k]||{};const B=D.b||k,SS=MK_S||S;
@@ -428,12 +429,29 @@ function makeEnemy0(s){
   const T=s.turn;
   if(s.bossFlag){s.bossFlag=false;return makeBoss(s);}
   if(s.miniFlag){s.miniFlag=false;return makeMini(s);}
-  const F=s.floor||1,w=[['skel',10],['bat',F>=2?4:0],['zombie',F>=6?3:0],['bomb',F>=8?2:0],['spider',F>=12?3:0],['ghost',F>=16?2:0],['golem',F>=21?2:0],['shaman',F>=26?2:0]];
-  if(unlocked('s1'))for(const k in EK){const d=EK[k];if(d.from&&F>=d.from&&d.w)w.push([k,d.w]);}
+  const F=s.floor||1;let w;
+  if(!unlocked('s1'))w=[['skel',10],['bat',F>=2?4:0],['zombie',F>=6?3:0],['bomb',F>=8?2:0],['spider',F>=12?3:0],['ghost',F>=16?2:0],['golem',F>=21?2:0],['shaman',F>=26?2:0]];
+  else{if(F>=10&&Math.random()<.004){const rp=Object.keys(EK).filter(k=>EK[k].rare&&(EK[k].from||1)<=F);if(rp.length)return makeKind(rp[rnd(rp.length)],T);}
+    w=Object.entries(rosterAt(F));}
   let x=Math.random()*w.reduce((a,b)=>a+b[1],0);
   for(const [k,v] of w){if((x-=v)<0)return makeKind(k,T);}
   return makeKind('skel',T);
 }
+/* each depth band has its own small cast; new faces arrive a couple at a time */
+const BANDS=[
+  [1,{skel:10,bat:4,rat:3}],
+  [6,{skel:9,bat:3,zombie:3,bomb:1.5,rat:2,mush:1.2}],
+  [12,{skel:7,zombie:2.5,spider:3.5,ghost:3,bomb:1.5}],
+  [16,{skel:5,zombie:2,spider:3,ghost:3,bomb:2,snake:3}],
+  [21,{skel:5,golem:3,ghost:2,spider:2,scorp:3,bomb:2,boomsh:1}],
+  [26,{skel:4,shaman:3,zombie:3,golem:2,slime:3,scorp:2}],
+  [33,{skel:3,shaman:3,imp:3,slime:3,golem:2,fencer:2,boomsh:1}],
+  [41,{skel_r:3,wolf:3,crab:3,egg:2,bomb_b:2,golem_r:2,zombie_g:2,spider_r:2}],
+  [61,{skel_b:3,imp:3,ghost_b:3,fencer:3,zombie_g:2,snake:2,wolf:2,shaman:2}],
+  [81,{eye:3,lich:2,crab:3,slime:2,ghost_b:2,golem_r:2,skel_b:2}],
+  [95,{eye:3,lich:3,demon:3,crab:2,ghost_b:2,golem_r:2,skel_b:2}]];
+function rosterAt(F){if(F>100){const m={};BANDS.slice(7).forEach(([,o])=>{for(const k in o)m[k]=(m[k]||0)+o[k];});return m;}
+  let r=BANDS[0][1];for(const [f,o] of BANDS)if(F>=f)r=o;return r;}
 function makeMini(s){const F=s.floor||1,k=MINI_ORDER[Math.floor(F/20)%MINI_ORDER.length],e=makeKind(k,s.turn);
   e.mini=true;e.hp=e.maxHp=Math.round(e.hp*3.6+8);e.atk+=2;e.armor+=2;s.bossAnnounce=EK[k].icon+' 中ボス「'+EK[k].name+'」';return e;}
 function makeBoss(s){
@@ -453,14 +471,17 @@ function enemyAtk(e){
   if(e.fresh||e.frz>0)return {d:0,p:0};
   const k=bhOf(e),D=EK[kindOf(e)]||{};
   if(D.z)return {d:0,p:0};
-  if(D.pc)return {d:0,p:e.atk};
+  if(D.pc)return {d:0,p:e.atk+(D.ag?0:auraN())};
   if(k==='golem'&&e.rest)return {d:0,p:0};
   if(k==='bomb')return (e.cnt||0)<=1?{d:e.boom||0,p:0}:{d:0,p:0};
   if(k==='dragon')return {d:(e.ch||0)+1>=3?e.atk*3:e.atk,p:0};
   if(k==='abyss')return {d:(e.ch||0)+1>=3?Math.round(e.atk*2.5):e.atk,p:0};
-  if(k==='spider')return {d:0,p:e.atk};
-  return {d:e.atk,p:0};
+  const ag=D.ag?0:auraN();
+  if(k==='spider')return {d:0,p:e.atk+ag};
+  return {d:e.atk+ag,p:0};
 }
+function guarded(e){const p=findTile(e);if(!p)return false;for(const q of neighbors(p[0],p[1])){const t=tileAt(q);if(t!==e&&isEnemy(t)&&(EK[kindOf(t)]||{}).gd)return true;}return false;}
+function auraN(){let n=0;for(let r=0;r<N;r++)for(let c=0;c<N;c++){const t=S.board[r][c];if(isEnemy(t)&&(EK[kindOf(t)]||{}).ag)n++;}return n;}
 function findTile(e){for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(S.board[r][c]===e)return [r,c];return null;}
 function summon(k){
   const cells=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(!isEnemy(S.board[r][c]))cells.push([r,c]);
@@ -489,10 +510,8 @@ function enemyPhase(msgs){
   const live=all();
   for(const [e,r,c] of live){
     if(e.fresh||e.frz>0)continue;const k=bhOf(e);
-    if(k==='zombie')e.hp=Math.min(e.maxHp,e.hp+1);
     if(k==='kraken')e.armor=Math.min(10,e.armor+1);
     if(k==='abyss'){e.armor=Math.min(10,e.armor+1);e.sm=(e.sm||0)+1;if(e.sm>=2){e.sm=0;const pool=['skel','zombie','spider','ghost','golem','shaman'];summon(pool[rnd(pool.length)]);msgs.push('👁️ 手下を呼び出した！');}}
-    if(k==='shaman')for(const q of neighbors(r,c)){const t=tileAt(q);if(isEnemy(t))t.hp=Math.min(t.maxHp,t.hp+2);}
     if(k==='vampire'){e.hp=Math.min(e.maxHp,e.hp+3);e.sm=(e.sm||0)+1;if(e.sm>=2){e.sm=0;summon('bat');msgs.push('🧛 コウモリを呼んだ！');}}
   }
   for(const [e,r,c] of live){
@@ -1075,6 +1094,8 @@ function draw(now){
       if(!fog){const hs=String(Math.max(0,t.hp));label(hs,x+cs-pad*2.2,y+cs-pad*2,'#ff6b6b',hs.length>=3?fs*.8:fs,'right');}
       if(t.armor>0&&!fog)label(String(t.armor),x+cs-pad*2.2,y+pad*2+fs*.8,'#7fc4ff',fs,'right');
       if(t.mini)label('中',x+cs/2,y+pad*2+fs*.55,'#ff9ad9',fs*.7,'center');
+      else if(!t.boss&&guarded(t))label('護',x+cs/2,y+pad*2+fs*.55,'#b9a0ff',fs*.7,'center');
+      if((EK[kindOf(t)]||{}).ag)label('怒',x+pad*2.4,y+pad*2+fs*.55,'#ff7a6a',fs*.7,'center');
       if(t.elite)label('⭐',x+cs/2,y+pad*2+fs*.55,'#fff',fs*.6,'center');
       const bx=x+pad*2.2,by=y+pad*2+fs*.7;
       if(t.fresh)label('new',bx,by-fs*.1,'#ccc',fs*.6,'left');
@@ -1404,7 +1425,7 @@ const ZONES=[
   {f:6,minor:1,name:'腐臭の回廊',desc:'死者が起き上がり、火薬の匂いが漂う。',tint:'#131a15',tr:-2,bpm:72},
   {f:12,minor:1,name:'蜘蛛の巣窟',desc:'毒グモが巣を張り、亡霊が壁をすり抜けていく。',tint:'#1a1523',tr:1,bpm:73},
   {f:21,name:'石像の迷宮',desc:'動く石像が通路をふさぐ、古代の迷宮。',tint:'#19191d',tr:-3,bpm:75},
-  {f:26,minor:1,name:'呪術師の祭壇',desc:'呪いの声が、傷ついた魔物を癒やし続ける。',tint:'#21131a',tr:2,bpm:76},
+  {f:26,minor:1,name:'呪術師の祭壇',desc:'呪いの声が、魔物たちを見えない盾で守っている。',tint:'#21131a',tr:2,bpm:76},
   {f:41,name:'竜骨の谷',desc:'巨大な骨が転がる谷。焼けた岩がまだ熱い。',tint:'#231610',tr:-1,bpm:78},
   {f:61,name:'血塗られた城',desc:'地の底に築かれた、吸血鬼の居城。',tint:'#220e14',tr:3,bpm:80},
   {f:81,name:'深淵の神殿',desc:'水没した神殿。世界の元凶の気配がすぐそこにある。',tint:'#0e1724',tr:-4,bpm:84}
@@ -1583,7 +1604,7 @@ const firstRun=()=>!TUT&&!RUNS.length&&!best&&(ACH.st.games||0)<=1;
 function heldAchHtml(){const h=ACH_HELD;ACH_HELD=null;if(!h||!h.length)return '';return `<div class="rwd" style="text-align:left"><div style="text-align:center">🏆 この冒険で実績を${h.length}個解除</div><small>${h.slice(0,6).map(a=>`${a.ic} ${a.secret?'（シークレット）':''}${a.n}`).join('<br>')}${h.length>6?`<br>ほか${h.length-6}個`:''}</small></div>`;}
 function achNext(){
   const a=achQ.shift();if(!a){achShowing=false;return;}achShowing=true;
-  const t=$('achToast');t.innerHTML=`<span class="ai">${a.ic}</span><span><small>${a.custom||((a.secret?'シークレット実績を解除':'実績を解除')+`（${achCount()}/${ACH_N()}）`)}</small><b>${a.n}</b><br><small>${a.d}</small></span>`;
+  const t=$('achToast');t.innerHTML=`<span class="ai" style="${a.flt?'filter:'+a.flt:''}">${a.ic}</span><span><small>${a.custom||((a.secret?'シークレット実績を解除':'実績を解除')+`（${achCount()}/${ACH_N()}）`)}</small><b>${a.n}</b><br><small>${a.d}</small></span>`;
   t.classList.remove('show');void t.offsetWidth;t.classList.add('show');sfx('ach');vib([15,40,15]);
   setTimeout(()=>{t.classList.remove('show');setTimeout(achNext,450);},achQ.length?1900:3200);
 }
@@ -1838,7 +1859,8 @@ function applyCarry(){if(TUT||!vilOk('church')||!UNL.carry||!RELICS[UNL.carry]||
 /* bestiary */
 const BOSS_KINDS=['ogre','dragon','vampire','kraken','abyss'];
 const BEAST_ORDER=[...['skel','bat','zombie','bomb','spider','ghost','golem','shaman'],...Object.keys(EK).filter(k=>EK[k].from||(!BOSS_KINDS.includes(k)&&!EK[k].mini&&!['skel','bat','zombie','bomb','spider','ghost','golem','shaman'].includes(k))).sort((a,b)=>(EK[a].from||99)-(EK[b].from||99)),...MINI_ORDER,...BOSS_KINDS];
-function noteMet(k){if(TUT||UNL.met[k])return;UNL.met[k]=1;unlSave();}
+function noteMet(k){if(TUT||UNL.met[k])return;UNL.met[k]=1;unlSave();const D=EK[k];if(!D||k==='skel'||BOSS_KINDS.includes(k)||D.mini||typeof firstRun==='undefined'||firstRun()||!inGame)return;
+  achToast({ic:D.icon,n:D.name,d:D.desc.replace(/\s+/g,''),secret:0,custom:D.rare?'★ めずらしい魔物に出会った':'はじめて出会った魔物',flt:D.flt});}
 function noteKills(list){if(TUT||!list.length)return;for(const t of list){const k=kindOf(t);UNL.kills[k]=(UNL.kills[k]||0)+1;UNL.met[k]=1;if(S){S.kk=S.kk||{};S.kk[k]=(S.kk[k]||0)+1;const D=EK[k]||{};if(D.dh||D.dg||D.dx||D.sp||D.db||D.fz)(S._dq=S._dq||[]).push(k);if(t.mini&&unlocked('s2'))S.pending.push('relic');}}unlSave();checkClassKills();}
 function unlockClass(k){if(UNL.got['h_'+k])return false;UNL.got['h_'+k]=Date.now();unlSave();const c=CLASSES[k];
   achToast({ic:c.ic,n:`隠し職業「${c.n}」`,d:c.hidden===2?`隠し職業 ${h2Got()} / ${H2().length}（あと${H2().length-h2Got()}種類）`:'次の冒険から選べるようになった',secret:0,custom:'隠し職業が解放された'});return true;}
