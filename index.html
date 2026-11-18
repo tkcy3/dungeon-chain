@@ -92,7 +92,7 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 .vgo small{display:block;font-family:inherit;font-size:11.5px;color:#cdb98e;margin-top:2px}.vgo:active{background:#4a3b20}
 .vcell{background:#2a2230;border:1px solid #4a3d52;border-radius:12px;padding:9px 1px 7px;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;color:#ece4d8}
 .vcell .vic{font-size:28px;line-height:1.1}.vcell small{font-size:11px;color:#c9bfcf;white-space:nowrap}.vcell.ruin{opacity:.4;filter:grayscale(.8);border-style:dashed}.vcell.ruin.sel{opacity:.8;border-style:solid}
-.vinfo{font-size:12px;color:#c9bfcf;text-align:center;min-height:56px;margin:4px 0 2px;line-height:1.5}.vinfo i{font-style:normal;color:#8f8396}.vinfo b{color:#f0d9a8;font-weight:normal}.vnews small{display:block;font-size:11.5px;color:#cdb98e;line-height:1.5;margin-bottom:2px}
+.vinfo{font-size:12px;color:#c9bfcf;text-align:center;min-height:38px;margin:4px 0 2px;line-height:1.5}.vinfo i{font-style:normal;color:#8f8396}.vinfo b{color:#f0d9a8;font-weight:normal}.vnews small{display:block;font-size:11.5px;color:#cdb98e;line-height:1.5;margin-bottom:2px}
 .vcell.fresh{border-color:#e8b33a;animation:vfresh 1.6s ease-in-out 3}.vcell.sel{border-color:#e8b33a}
 @keyframes vfresh{0%,100%{box-shadow:0 0 0 rgba(232,179,58,0)}50%{box-shadow:0 0 18px rgba(232,179,58,.55)}}
 .vnews{background:#2a2230;border:1px solid #6b5a3a;border-radius:10px;padding:8px 10px;margin:0 0 8px;font-size:12.5px;line-height:1.7;color:#f0d9a8;text-align:center}
@@ -1763,7 +1763,7 @@ let settingsBack=null;
 /* ---------- version & changelog ---------- */
 const VERSION='1.1.1';
 const CHANGELOG=[
-  {v:'1.1.1',d:'2026-11-19',items:['村の画面を見やすく整理しました。冒険へは、いちばん下の「墓地の階段へ」から出発できます','村の画面に、次の目標と途中の冒険が出るようにしました']},
+  {v:'1.1.1',d:'2026-11-19',items:['村の画面を見やすく整理しました。冒険へは、いちばん下の「墓地の階段へ」から出発できます','墓地の階段のボタンに、途中の冒険が出るようにしました']},
   {v:'1.1.0',d:'2026-11-19',items:['冒険に出る職業は、村の酒場で選ぶようになりました。一度選べば、次からはそのまま出発できます','よみがえった建物は、村に戻ったときにまとめてお知らせするようにしました','拾った手記は、村の古民家で読めるようになりました','村が冒険の拠点になりました。冒険に出るときも、冒険から戻ったときも、村に立ち寄ります','冒険の記録や魔物図鑑は、村の建物で見られるようになりました','冒険中のメニューの「タイトルへ戻る」を「村に戻る」に変えました。途中の冒険は、墓地の階段から続きを始められます']},
   {v:'1.0.3',d:'2026-11-19',items:['元凶を倒して手に入る隠し職業が、集めるほど手に入りにくくなるようにしました']},
   {v:'1.0.2',d:'2026-11-18',items:['オープニングの文章を、スマホでも読みやすい改行に整えました','冒険を始めたときの案内文を変えました']},
@@ -1889,11 +1889,6 @@ function checkVillage(){UNL.vil=UNL.vil||{};let ch=false;const g=(ACH&&ACH.st&&A
     UNL.vil[v.id]=Date.now();ch=true;(UNL.vilFresh=UNL.vilFresh||[]).push(v.id);}
   if(ch)unlSave();}
 const vilCount=()=>VIL.filter(v=>!v.deco&&vilOk(v.id)).length,vilTotal=()=>VIL.filter(v=>!v.deco).length;
-/* 次の目標（村の画面の下に出す）。すでに条件を満たしていれば「冒険を重ねると」とだけ伝える */
-function vilNext(){const g=(ACH&&ACH.st&&ACH.st.games)||0;
-  const v=VIL_ORDER.map(id=>VIL.find(x=>x.id===id)).find(x=>!vilOk(x.id))||(vilOk('well')?null:VIL.find(x=>x.id==='well'));
-  if(!v)return '';if(v.cond())return '冒険を重ねると、また村がよみがえる';
-  return `<i>🎯 次の目標</i><br><b>${VIL_MIN[v.id]&&g<VIL_MIN[v.id]?`冒険${VIL_MIN[v.id]}回目以降に `:''}${v.hint}</b>`;}
 function showVillage(back){checkVillage();const me=()=>showVillage(back);
   const fresh=UNL.vilFresh||[],intro=!UNL.vilSeen;UNL.vilFresh=[];UNL.vilSeen=1;unlSave();if(fresh.length)setTimeout(()=>sfx('ach'),200);
   const news=(intro?'村に帰ってきた。<br>冒険から戻るたびに、<br>村は少しずつよみがえる。':'')+(intro&&fresh.length?'<br>':'')+fresh.map(id=>{const v=VIL.find(x=>x.id===id);return id==='well'?'⛲ 井戸の水が、澄んだ。<br><small>村に、光が戻った。</small>':`✨ ${v.ic} ${v.n}がよみがえった<br><small>${v.fx}</small>`;}).join('<br>');
@@ -1903,18 +1898,17 @@ function showVillage(back){checkVillage();const me=()=>showVillage(back);
   const order=['tower','house','church','tavern','smith','well','tailor','library'].map(id=>VIL.find(v=>v.id===id));
   const sv=[0,1,2].filter(i=>slotJson(i)),si=sv.length===1?slotInfo(sv[0]):null;
   const goSub=sv.length>1?`途中の冒険が ${sv.length}つ ある`:si&&!si.broken?`続きから　${(CLASSES[si.cls]||CLASSES.warrior).ic} ${(CLASSES[si.cls]||CLASSES.warrior).n}・B${si.floor||1}F`:'地の底へ降りる';
-  const goal=vilNext()||'<i>建物をタップすると、くわしく見られる</i>';
   const wellOk=vilOk('well'),n=vilCount(),N=vilTotal(),c=CLASSES[partyCls()],canCls=vilOk('tavern');
   openModal(`<div class="vhead"><button class="vback" id="vBack">‹ タイトル</button><h2>🏘️ 村</h2><span></span></div>
     <p class="vflav">${wellOk?'井戸は澄み、村に灯りが戻った。':'井戸は濁り、村は眠っている。'}</p>
     <div class="vstat"><span class="vprog">復興<i>${Array.from({length:N},(_,i)=>`<b class="${i<n?'on':''} ${i<n&&i>=n-fresh.length?'new':''}"></b>`).join('')}</i>${n}/${N}</span>
       <button class="vcls ${canCls?'can':''}" id="vCls">${c.ic} ${c.n}${canCls?' ›':''}</button></div>
     ${news?`<div class="vnews" style="margin:8px 0 0">${news}</div>`:''}<div class="vgrid">${order.map(cell).join('')}</div>
-    <p id="vInfo" class="vinfo">${goal}</p>
+    <p id="vInfo" class="vinfo"></p>
     <button class="vgo" id="vGo">🪦 墓地の階段へ<small>${goSub}</small></button>`);
   document.querySelectorAll('#mbox .vcell').forEach(b=>b.onclick=()=>{const v=VIL.find(x=>x.id===b.dataset.v),ok=v.deco||vilOk(v.id);
     document.querySelectorAll('#mbox .vcell').forEach(x=>x.classList.toggle('sel',x===b));
-    if(!ok){$('vInfo').innerHTML=`${v.id==='well'?'🕳️ 濁った井戸':'🏚️ 崩れた建物'}：<b>${VIL_MIN[v.id]?`冒険${VIL_MIN[v.id]}回目以降に `:''}${v.hint}</b>`+(v.id!=='well'&&!v.easy?`<br><small style="color:#a99fae">建物は 1回の冒険につき1つずつ よみがえる</small>`:'');return;}
+    if(!ok){$('vInfo').innerHTML=v.id==='well'?'🕳️ 黒く濁った井戸。底は見えない。':'🏚️ 崩れた建物。<br><small style="color:#a99fae">冒険から戻るたびに、村は少しずつよみがえる</small>';return;}
     if(v.id==='tower')return showTowerMenu(me);if(v.id==='library')return showBestiary(me);if(v.id==='house')return showLibrary(me);if(v.id==='church')return showChurch(me);
     if(v.id==='tavern')return showTavern(me);if(v.id==='tailor')return showTailor(me);
     $('vInfo').innerHTML=v.id==='well'?'澄んだ水が、静かに湧いている。<br>この村は、もう大丈夫だ。':`${v.ic} ${v.n}：${v.fx}`;});
