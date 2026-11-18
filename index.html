@@ -1737,15 +1737,15 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshA
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='1.0.0';
+const VERSION='1.0.1';
 const CHANGELOG=[
+  {v:'1.0.1',d:'2026-11-18',items:['一部の職業が解放されるタイミングを調整した']},
   {v:'1.0.0',d:'2026-11-18',items:[
-    '剣・撃破・ダメージ・盾の効果音を新しくした。撃破音はまとめて倒した数で、ダメージ音は受けたダメージの大きさで、それぞれ3段階に変わる',
-    'ダメージ音は、こちらの攻撃の音のすぐあとに鳴るようにした。盾で防いだときは「カシャン」と鳴る',
-    '魔物を30種類ほどに整理した。色違いの強い魔物はB101F以降に出る',
-    '冒険の回数に応じて、出会う魔物の種類がだんだん増えるようにした。B51F以降は顔ぶれを増やした',
-    '盗賊（冒険3回目以降）・僧侶（6回目以降）・村の建物・失われた手記（1回の冒険で1つ）の解放ペースをゆっくりにした',
-    '隠し職業ゾンビはB90F、ヴァンパイアはB95Fまでたどり着くことも条件にした',
+    '敵を倒したとき・ダメージを受けたとき・盾で防いだときなどの効果音を新しくした',
+    '戦いの効果音が重ならず、聞き分けやすい順番で鳴るようにした',
+    '冒険を重ねるごとに、出会う魔物が少しずつ増えていくようにした',
+    '魔物の顔ぶれを整理し、それぞれの特徴がわかりやすくなるようにした',
+    '職業・村・手記などが、冒険を重ねながらゆっくり解放されるようにした',
     'バージョン表示と、この「更新内容」を追加した']}
 ];
 const LS_VER='dchain_seen_ver';
@@ -1805,7 +1805,7 @@ const STAGES=[
   {id:'s0',n:'はじまり',hint:'最初から',items:['職業「戦士」','魔物図鑑'],cond:()=>true},
   {id:'s1',n:'第一の扉',hint:'冒険3回目以降に B20Fのボスを倒す',items:['イベント部屋','職業「盗賊」'],cond:()=>playsN()>=3&&(!!ACH.u.ogre||bestFloor()>=21||(S&&!TUT&&floorOf()>=21))},
   {id:'s2',n:'第二の扉',hint:'冒険6回目以降に B40Fに到達する',items:['職業「僧侶」','遺物','中ボス'],cond:()=>playsN()>=6&&(!!ACH.u.f40||bestFloor()>=40||(S&&!TUT&&floorOf()>=40))},
-  {id:'s3',n:'第三の扉',hint:'世界の元凶を倒す',items:['職業「魔術師」','呪いLv（難易度段階）','階ごとの「異変」','失われた手記'],cond:()=>!!ACH.u.clear||!!(best&&best.cleared)},
+  {id:'s3',n:'第三の扉',hint:'冒険3回目以降に 世界の元凶を倒す',items:['職業「魔術師」','呪いLv（難易度段階）','階ごとの「異変」','失われた手記'],cond:()=>playsN()>=3&&(!!ACH.u.clear||!!(best&&best.cleared))},
   {id:'s4',n:'第四の扉',hint:'呪いLv1以上でクリアする',items:['遺物の追加（6種）'],cond:()=>(UNL.curseClear||0)>=1}
 ];
 const isSoon=x=>x[0]==='*',itemNm=x=>x.replace(/^\*/,''),itemsTxt=st=>st.items.map(x=>isSoon(x)?itemNm(x)+'（近日追加）':x).join('・');
