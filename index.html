@@ -515,7 +515,7 @@ function enemyPhase(msgs){
   if(sum>0){const bl=Math.min(S.armor,total);S.armor-=bl;let d=total-bl+pierce;if(d>0&&hasR('greed'))d++;if(d>0&&hasR('amulet'))d--;S.hp-=d;
     if(d>1&&hasR('mirror')){const es=all().map(x=>x[0]).filter(x=>!x.fresh);if(es.length){const t=es[rnd(es.length)],rd=Math.floor(d/2);applyDmg(t,rd);t.hit=performance.now();msgs.push(`🪞 ${rd}ダメージを返した`);}}
     msgs.push(`敵の攻撃${sum}`+(bl?`（防御${bl}）`:'')+(pierce?`（すり抜け${pierce}）`:'')+(d?` → HP-${d}`:''));
-    if(d>0){shake();flash('bHp');sfx('hurt');}else sfx('block');if(bl)flash('bAr');}
+    if(d>0){shake();flash('bHp');const hr=d/Math.max(1,S.maxHp);sfx('hurt',hr>=.25?2:hr>=.1?1:0);}else sfx('block');if(bl)flash('bAr');}
   if(exploded.size){sfx('boom');S._boom=true;removeAndFill(exploded);}
   const live=all();
   for(const [e,r,c] of live){
@@ -1206,7 +1206,7 @@ const SFX={
     else if(g==='potion'){tone(380,t,.28,{type:'sine',gain:.16,slideTo:950});tone(600,t+.08,.2,{type:'sine',gain:.08,slideTo:1300});}
     else{tone(988,t,.08,{gain:.06});tone(1319,t+.07,.22,{gain:.06});}},
   kill(){const t=T0();withVar(()=>{air3(t,.27,.1,400,{type:'bandpass',q:1.5,to:6000,toAt:.21,peak:.2});air3(t+.2,.87,.2,7000,{to:300,toAt:.73,peak:.006,rv:1});});},
-  hurt(){const t=T0()+.22;withVar(()=>{tone(85,t,.28,{type:'sine',gain:.32,slideTo:55,attack:.003});tone(110,t,.18,{type:'triangle',gain:.14,slideTo:90,attack:.003,filter:700});noise(t,.16,.28,700,{type:'lowpass'});noise(t,.05,.12,1500,{type:'bandpass',q:1});});},
+  hurt(lv=1){const t=T0()+.22,v=[.55,1,1.45][lv]||1,L=[.8,1,1.35][lv]||1;withVar(()=>{tone(85,t,.28*L,{type:'sine',gain:.32*v,slideTo:55,attack:.003});tone(110,t,.18*L,{type:'triangle',gain:.14*v,slideTo:90,attack:.003,filter:700});noise(t,.16*L,.28*v,700,{type:'lowpass'});noise(t,.05,.12*v,1500,{type:'bandpass',q:1});if(lv>=2){tone(60,t+.01,.5,{type:'sine',gain:.22,slideTo:38,attack:.004});noise(t+.02,.35,.12,300,{type:'lowpass',echo:.15});}});},
   block(){const t=T0()+.22;tone(1400,t,.09,{type:'triangle',gain:.1});tone(1000,t+.04,.12,{type:'triangle',gain:.07});},
   skill(){const t=T0();tone(220,t,.4,{type:'sine',gain:.16,slideTo:1300});noise(t,.35,.08,2000);},
   level(){const t=T0();[72,76,79,84].forEach((m,i)=>tone(mf(m),t+i*.09,.22,{type:'square',gain:.06,filter:4000}));},
