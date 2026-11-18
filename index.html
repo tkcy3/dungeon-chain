@@ -1,0 +1,2126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Dungeon Chain</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#0b0a0c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Dungeon Chain">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&display=swap" rel="stylesheet">
+<style>
+
+:root{--mincho:"Hiragino Mincho ProN","Yu Mincho","YuMincho","Noto Serif JP","Noto Serif CJK JP","Source Han Serif JP",serif}
+@keyframes flick{0%,100%{opacity:.88}23%{opacity:1}41%{opacity:.8}58%{opacity:.96}77%{opacity:.84}}
+#story{position:fixed;inset:0;z-index:30;background:#040304;display:flex;align-items:center;justify-content:center;padding:28px;transition:opacity 1.4s}
+#story.fade{opacity:0}
+#story .lantern{position:absolute;left:50%;top:48%;width:150vmin;height:150vmin;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(255,168,84,.15) 0,rgba(255,140,60,.06) 26%,transparent 58%);animation:flick 3.2s infinite;pointer-events:none}
+#storyText{position:relative;font-family:var(--mincho);font-size:18px;line-height:2.2;color:#d8cdbd;text-align:center;max-width:22em;letter-spacing:.07em;transition:opacity .9s}
+#storyText.out{opacity:0}
+#storyText .ln{opacity:0;animation:lnIn 1.8s ease forwards}
+#mbox .em{color:#f0d9a8;font-size:17px}
+#storyText .em{font-size:22px;color:#f0d9a8;text-shadow:0 0 14px rgba(255,170,90,.35)}
+@keyframes lnIn{from{opacity:0;transform:translateY(8px);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}
+#storyHint{position:absolute;bottom:42px;left:0;right:0;text-align:center;font-size:12px;color:#6d6458;opacity:0;transition:opacity 1.2s;letter-spacing:.2em}
+#storySkip{position:absolute;top:14px;right:14px;background:none;border:1px solid #352e2b;color:#81776b;border-radius:8px;padding:6px 12px;font-size:13px;z-index:2}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50% 0%,#1b1916 0%,#0f0e10 55%,#08080a 100%) fixed;color:#eee;font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;overflow:hidden;user-select:none;-webkit-user-select:none}
+#app{height:100dvh;height:100vh;display:flex;flex-direction:column;align-items:center;padding:6px 8px;gap:5px;max-width:520px;margin:0 auto}
+@supports(height:100dvh){#app{height:100dvh}}
+#top{width:100%;display:flex;align-items:center;gap:5px;font-size:13px}
+#top .st{flex:1;display:flex;align-items:center;gap:8px;min-width:0}
+#top .it{display:inline-flex;align-items:baseline;gap:4px;height:24px;line-height:24px;white-space:nowrap}
+#top .it i{font-style:normal;font-size:12px;color:#cbb;line-height:24px}
+#top .it b.fl{min-width:3.3em;color:#ffe08a}
+#top .it b.flash{animation:fl .6s}
+#top .it b{color:#fff;font-size:16px;line-height:24px;font-variant-numeric:tabular-nums;font-family:system-ui,-apple-system,"Roboto",sans-serif;display:inline-block;min-width:1.9em;text-align:left}
+.ibtn{position:relative;background:#2a2230;color:#eee;border:1px solid #4a3d52;border-radius:8px;padding:5px 7px;font-size:15px;flex:none}
+.ibtn.offx::after{content:'';position:absolute;left:18%;right:18%;top:50%;height:2px;background:#f77;transform:rotate(-35deg)}
+#bars{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.bar{position:relative;height:20px;background:#241c27;border-radius:6px;overflow:hidden;border:1px solid #3a2f3e}
+.bar .fill{position:absolute;inset:0 auto 0 0;width:0;transition:width .25s}
+.bar span{position:relative;display:block;text-align:center;font-size:11.5px;line-height:18px;font-weight:600;text-shadow:0 1px 2px #000}
+.bar.hp{grid-column:1/3;height:22px}.bar.hp span{line-height:20px;font-size:12.5px}
+.hp .fill{background:linear-gradient(#d0434f,#8e1f2b)}
+.ar .fill{background:linear-gradient(#4f8fd6,#24527f)}
+.xp .fill{background:linear-gradient(#5cc46b,#2c7a39)}
+.gd .fill{background:linear-gradient(#e0b844,#8f6b12)}
+.sh .fill{background:linear-gradient(#55c6d3,#21707a)}
+.bar.flash{animation:fl .4s}
+@keyframes fl{0%{filter:brightness(2.2)}100%{filter:none}}
+#stats{width:100%;font-size:11px;white-space:nowrap;overflow:hidden;color:#b9a9bd;display:flex;justify-content:space-between;flex-wrap:wrap;gap:2px 8px}
+#preview{width:100%;height:42px;overflow:hidden;font-size:12.5px;white-space:nowrap;text-align:center;background:#1c161f;border-radius:8px;padding:3px 6px;display:flex;flex-direction:column;justify-content:center;line-height:1.35}
+#preview .sub{font-size:11.5px;color:#c9a}
+#wrap{position:relative}
+#tutSkip{position:absolute;bottom:-30px;right:0;z-index:3;background:rgba(22,18,24,.92);border:1px solid #5a4a63;color:#d7c9b8;border-radius:8px;padding:4px 10px;font-size:12px}
+#board{display:block;touch-action:none;border-radius:12px;background:#1a141c;box-shadow:0 0 0 2px #2c2330}
+#wrap.shake{animation:sh .35s}
+@keyframes sh{0%,100%{transform:none}20%{transform:translate(-5px,2px)}40%{transform:translate(5px,-2px)}60%{transform:translate(-3px,1px)}80%{transform:translate(3px,0)}}
+#log{width:100%;font-size:11.5px;color:#e9a;text-align:center;height:16px;line-height:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#skills{width:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.sk{position:relative;background:#2a2230;border:1px solid #574663;border-radius:10px;color:#eee;padding:5px 2px;font-size:11px;min-height:50px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+.sk .ic{font-size:20px;line-height:1.1}
+.sk:disabled{opacity:.45}
+.sk.empty{border-style:dashed;color:#665}
+.sk .cd{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);border-radius:10px;font-size:13px;font-weight:700}
+.ov{position:fixed;inset:0;background:rgba(8,5,10,.82);display:flex;align-items:center;justify-content:center;padding:14px;z-index:10}
+#modal{z-index:15}
+.vz-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0 4px}
+.vz-tile{background:#2a2230;border:1px solid #3d3242;border-radius:10px;padding:7px 6px;text-align:center;display:flex;flex-direction:column;gap:2px}
+.vz-tile small{font-size:10.5px;color:#a99fae}.vz-tile b{font-size:19px;color:#ece4d8;font-variant-numeric:tabular-nums}.vz-tile b span{font-size:11px;font-weight:600;margin-left:1px;color:#c9bfcf}
+.vz-tile .up{color:#7fd88a}.vz-tile .dn{color:#e9a08a}
+.vz-h{font-size:13.5px;margin:14px 0 4px;color:#d9cfc2;font-family:var(--mincho);font-weight:600;letter-spacing:.05em}
+.vz-svg{width:100%;height:auto;display:block}
+.vz-ax{font-size:9.5px;fill:#a99fae}.vz-lb{font-size:11px;fill:#ece4d8}.vz-val{font-size:10.5px;fill:#c9bfcf}
+.vz-leg{display:flex;gap:14px;font-size:11px;color:#c9bfcf;margin:2px 0}.vz-leg i{display:inline-block;width:12px;height:8px;border-radius:2px;margin-right:4px;vertical-align:middle}
+.vz-cap{font-size:11.5px;color:#c9bfcf;text-align:center;min-height:34px;margin:2px 0 0}.vz-empty{font-size:12px;color:#8f8396;text-align:center;padding:10px 0}
+.nmrow{display:flex;align-items:center;gap:6px;margin:6px 0 10px}.nmrow label{font-size:12px;color:#c9bfcf;white-space:nowrap}.nmrow input{flex:1;min-width:0;background:#1a1420;border:1px solid #4a3d52;border-radius:8px;color:#ece4d8;font-size:16px;padding:8px 10px}.nmrow button{background:#2e2535;border:1px solid #4a3d52;border-radius:8px;font-size:18px;padding:6px 10px}
+.slotrow{display:flex;gap:6px;align-items:stretch}.slotrow .opt{flex:1;min-width:0}.sldel{background:#2e2535;border:1px solid #4a3d52;border-radius:10px;font-size:18px;padding:0 12px;margin:4px 0}
+.rwd{background:#2a2230;border:1px solid #6b5a3a;border-radius:10px;padding:10px;margin:8px 0;text-align:center;color:#f0d9a8;font-size:15px}.rwd small{color:#c9bfcf;font-size:12px}.rwbar{height:6px;background:#1a1420;border-radius:3px;margin:8px 0 4px;overflow:hidden}.rwbar div{height:100%;background:#c98500;border-radius:3px}
+.vgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0}
+.vcell{background:#2a2230;border:1px solid #4a3d52;border-radius:12px;padding:10px 2px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;color:#ece4d8}
+.vcell .vic{font-size:30px;line-height:1.1}.vcell small{font-size:11px;color:#c9bfcf}.vcell.ruin{opacity:.55;filter:grayscale(.7)}
+.tmap{position:relative;margin:8px 0 8px 14px;border-left:2px dashed #5a4a62;padding-left:14px}
+.tnode{position:relative;display:flex;gap:8px;margin:0 0 12px;opacity:.55}.tnode.on{opacity:1}.tnode i{position:absolute;left:-29px;top:0;font-style:normal;font-size:18px;background:#211a25}
+.tnode small{display:block;font-size:10.5px;color:#e8b33a}.tnode b{display:block;font-size:14px}.tnode span{display:block;font-size:11.5px;color:#c9bfcf}
+.vz-note{font-size:10.5px;color:#8f8396;text-align:center;margin-top:10px}
+#achToast{position:fixed;left:50%;top:8px;transform:translate(-50%,-140%);z-index:40;display:flex;gap:10px;align-items:center;min-width:250px;max-width:92vw;background:linear-gradient(#2c2416,#1d1810);border:1px solid #a8843a;border-radius:12px;padding:8px 14px;color:#f0e2c0;box-shadow:0 6px 20px rgba(0,0,0,.6);transition:transform .45s cubic-bezier(.2,.9,.3,1.2);pointer-events:none}
+#achToast.show{transform:translate(-50%,0)}
+#achToast .ai{font-size:28px}#achToast small{display:block;font-size:11px;color:#c9b48a}#achToast b{font-family:var(--mincho);font-size:16px}
+.alist{margin-top:8px}.ach{display:flex;gap:10px;align-items:center;padding:7px 4px;border-bottom:1px solid #2f2733}
+.ach .ai{font-size:24px;width:32px;text-align:center}.ach b{font-size:14px}.ach small{display:block;font-size:11.5px;color:#b9a9bd}.ach i{color:#8f8070;font-style:normal}
+.ach.lock{opacity:.42;filter:grayscale(1)}.asep{margin:12px 0 4px;font-size:12px;color:#c9a2ff;letter-spacing:.2em;text-align:center}
+.abar{height:6px;background:#2a2230;border-radius:4px;overflow:hidden}.abar div{height:100%;background:linear-gradient(90deg,#a8843a,#ffd54a)}
+#preview.tut{border:1px solid #c9a23a;background:#2a2214}
+.coach{white-space:normal;font-size:13.5px;font-weight:700;color:#ffe08a;line-height:1.3}
+.pulse{animation:pl 1s infinite;position:relative;z-index:1}
+@keyframes pl{50%{box-shadow:0 0 0 3px #ffd54a,0 0 16px #ffd54a}}
+.hidden{display:none!important}
+.box{background:#211a25;border:1px solid #4d3f57;border-radius:14px;padding:16px;width:100%;max-width:420px;max-height:90vh;overflow:auto}
+.box h2{font-size:18px;margin-bottom:6px;text-align:center}
+.box p{font-size:13px;color:#cbb;margin:4px 0;line-height:1.55}
+.box .opt{display:block;width:100%;text-align:left;background:#2e2535;border:1px solid #5d4a69;color:#eee;border-radius:10px;padding:10px 12px;margin-top:8px;font-size:15px}
+.box .opt small{display:block;color:#bba9c4;font-size:12px;margin-top:2px}
+.box .opt:active{background:#40324a}
+.box textarea{width:100%;height:110px;background:#151017;color:#ddd;border:1px solid #4d3f57;border-radius:8px;font-size:11px;padding:6px;margin-top:8px;user-select:text;-webkit-user-select:text}
+.box ul{font-size:13px;color:#cbb;padding-left:18px;line-height:1.6}
+#title h1{font-size:28px;letter-spacing:.1em;white-space:nowrap;margin:2px 0 6px;font-family:var(--mincho);font-weight:600;color:#e6dccb;text-shadow:0 0 18px rgba(255,170,90,.25)}
+#title .tag{color:#a3978a;font-size:13px;margin-bottom:10px;font-family:var(--mincho);letter-spacing:.05em}
+#title{background:#0b0a0c radial-gradient(ellipse 120% 70% at 50% 0%,#1b1916 0%,#0f0e10 55%,#08080a 100%);overflow:hidden;z-index:10;padding:0;align-items:stretch}
+#title .tin{position:relative;z-index:2;width:100%;max-width:420px;margin:0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:min(9vh,72px);padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 16px)}
+.tbg{position:absolute;left:50%;top:50%;transform:translate(-50%,-62%);width:min(96vw,420px);aspect-ratio:6/8;z-index:0;-webkit-mask-image:linear-gradient(transparent 0,#000 14%,#000 38%,transparent 64%);mask-image:linear-gradient(transparent 0,#000 14%,#000 38%,transparent 64%)}
+.tboard{position:absolute;inset:0;display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(8,1fr);gap:5px;padding:5px;filter:brightness(.5) saturate(.65)}
+.tboard i{font-style:normal;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:min(7.6vw,34px);transition:filter .3s,transform .3s,opacity .35s;box-shadow:inset 0 -2px 0 rgba(0,0,0,.35)}
+.tboard i.on{filter:brightness(2) saturate(1.3);transform:scale(1.05);box-shadow:inset 0 0 0 2px rgba(255,255,255,.85),0 0 12px rgba(255,255,255,.25)}
+.tboard i.gone{opacity:0;transform:scale(.6)}
+.ttrace{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;filter:drop-shadow(0 0 5px rgba(255,255,255,.45))}
+.tshade{position:absolute;inset:0;z-index:1;pointer-events:none;background:
+  radial-gradient(ellipse at 50% 35%,transparent 40%,rgba(0,0,0,.6) 100%)}
+.tlogo{position:relative;text-align:center;padding:18px 0;animation:tIn 1.4s ease-out both}
+.tl1,.tl2{font-family:"Cinzel","Trajan Pro","Times New Roman",serif;font-weight:900;line-height:.95;letter-spacing:.12em;padding-left:.12em;
+  background:linear-gradient(180deg,#fbeec8 0%,#e8b33a 55%,#a97a1c 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 2px 0 #000) drop-shadow(0 0 16px rgba(0,0,0,.9))}
+.tl1{font-size:min(13.5vw,58px)}.tl2{font-size:min(17vw,74px);letter-spacing:.2em;padding-left:.2em}
+.torn{display:flex;align-items:center;justify-content:center;gap:10px;margin:12px auto 8px;width:78%}
+.torn i{flex:1;height:1px;background:linear-gradient(90deg,transparent,#c9a060,transparent)}.torn b{color:#d9b06a;font-size:10px}
+.tsubt{font-family:var(--mincho);font-size:14px;letter-spacing:.42em;padding-left:.42em;color:#d8c8b0;text-shadow:0 1px 6px #000}
+.tlogo::before{content:'';position:absolute;left:-12%;right:-12%;top:-10%;bottom:-10%;z-index:-1;background:radial-gradient(ellipse 50% 50% at 50% 50%,rgba(10,9,11,.88),rgba(10,9,11,.45) 60%,transparent 75%)}
+@keyframes tIn{from{opacity:0;transform:translateY(-10px);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
+.tlow{width:100%;display:flex;flex-direction:column;align-items:center}
+#bestLine{font-size:12.5px;color:#cbbfa8;min-height:18px;margin:0 0 12px;letter-spacing:.04em}
+.tmain{width:100%;max-width:300px;display:flex;flex-direction:column;gap:10px}
+.tbtn{width:100%;padding:12px;border-radius:12px;border:1px solid #5d4a69;background:#2e2535;color:#eee;font-size:16px;letter-spacing:.08em}
+.tbtn small{display:block;font-family:inherit;font-size:11.5px;color:#bba9c4;letter-spacing:.02em;margin-top:3px}
+.tbtn.pri{padding:15px;font-size:19px;border:1.5px solid #e8b33a;background:#2e2535;color:#fff;box-shadow:0 0 18px rgba(232,179,58,.18)}
+.tbtn:active{filter:brightness(1.2)}
+.tsub{display:flex;gap:8px;justify-content:center;margin-top:18px;width:100%;max-width:320px}
+.tsub button{flex:1;max-width:76px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0 6px;border-radius:10px;border:1px solid #3a2f3e;background:#241c27;color:#bba9c4;font-size:11px}
+.tsub button span{font-size:20px;filter:saturate(.75)}
+#cloud{font-size:10.5px;color:#6f6670;margin-top:14px}
+.big{font-size:44px}
+#tip{position:fixed;z-index:20;max-width:270px;background:#2b2131;border:1px solid #7a6488;border-radius:10px;padding:8px 10px;font-size:13px;line-height:1.55;color:#eee;pointer-events:none;box-shadow:0 6px 18px rgba(0,0,0,.6)}
+#tip .th{font-weight:700;font-size:14px;margin-bottom:3px}
+.bar,#stats,.sk,#itFloor{touch-action:none;-webkit-touch-callout:none}
+.sk.off{opacity:.45}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="top">
+    <div class="st"><span class="it" id="itFloor"><i>階層</i><b id="tTurn" class="fl">B1F</b></span><span class="it"><i>撃破</i><b id="tKill">0</b></span><span class="it"><i>Lv</i><b id="tLv">1</b></span></div>
+    <button class="ibtn" id="bgmBtn">🎵</button><button class="ibtn" id="sfxBtn">🔊</button><button class="ibtn" id="vibBtn">🫨</button><button class="ibtn" id="menuBtn">☰</button>
+  </div>
+  <div id="bars">
+    <div class="bar hp" id="bHp"><div class="fill"></div><span></span></div>
+    <div class="bar ar" id="bAr"><div class="fill"></div><span></span></div>
+    <div class="bar xp" id="bXp"><div class="fill"></div><span></span></div>
+    <div class="bar gd" id="bGd"><div class="fill"></div><span></span></div>
+    <div class="bar sh" id="bSh"><div class="fill"></div><span></span></div>
+  </div>
+  <div id="stats" onclick="if(event.target.closest('#relicBtn'))showRelics()"></div>
+  <div id="preview"></div>
+  <div id="wrap"><canvas id="board"></canvas><button id="tutSkip" class="hidden">チュートリアルを飛ばす ›</button></div>
+  <div id="log"></div>
+  <div id="skills"></div>
+</div>
+
+<div id="story" class="hidden"><div class="lantern"></div><div id="storyText"></div><div id="storyHint">― タップで進む ―</div><button id="storySkip">スキップ ›</button></div>
+<div id="achToast"></div>
+<div id="tip" class="hidden"></div>
+<div class="ov hidden" id="modal"><div class="box" id="mbox"></div></div>
+
+<div class="ov" id="title">
+  <div class="tbg"><div class="tboard" id="tBoard"></div><svg id="tTrace" class="ttrace"></svg></div>
+  <div class="tshade"></div>
+  <div class="tin">
+    <div class="tlogo">
+      <div class="tl1">DUNGEON</div><div class="tl2">CHAIN</div>
+    </div>
+    <div class="tlow">
+    <div id="bestLine"></div>
+    <div class="tmain">
+      <button class="tbtn pri" id="btnCont">続きから</button>
+      <button class="tbtn" id="btnNew">冒険に出る</button>
+    </div>
+    <div class="tsub">
+      <button id="btnAch"><span>📜</span>記録</button>
+      <button id="btnSet"><span>⚙️</span>設定</button>
+      <button id="btnImport"><span>📥</span>読み込み</button>
+    </div>
+    <div id="cloud">セーブ: 確認中…</div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+const N=6;
+const ICON={skull:'💀',sword:'⚔️',shield:'🛡️',potion:'🧪',coin:'💰'};
+const BG={skull:'#3d1a1f',sword:'#2e3443',shield:'#1a3148',potion:'#3a1f41',coin:'#4a3b14'};
+const LS_SAVE='dchain_save_v1',LS_BEST='dchain_best_v1';
+const SKILLS={
+  fire:{name:'火球',icon:'🔥',cd:14,desc:'全ての敵にダメージ',scale:1},
+  heal:{name:'治癒',icon:'💚',cd:18,desc:'HPを最大値の40%回復'},
+  wall:{name:'鉄壁',icon:'🧱',cd:14,desc:'防御を最大まで回復'},
+  alchemy:{name:'錬金',icon:'⚗️',cd:12,desc:'盤面の🛡️を全て💰に変える'},
+  arm:{name:'武装',icon:'🗡️',cd:12,desc:'盤面の🧪を全て⚔️に変える'},
+  quake:{name:'地殻変動',icon:'🌀',cd:10,desc:'敵以外のタイルを全て入れ替える'},
+  execute:{name:'処刑',icon:'☠️',cd:14,desc:'弱った敵を全て倒す（装甲無視・ボス以外）。経験値1.5倍',scale:1},
+  thunder:{name:'雷撃',icon:'⚡',cd:12,desc:'ランダムな敵3体にダメージ',scale:1},
+  magnet:{name:'磁力',icon:'🧲',cd:14,desc:'盤面の💰を全て回収する'},
+  freeze:{name:'凍結',icon:'❄️',cd:16,desc:'全ての敵を2ターン 動けなくする'},
+  snipe:{name:'狙撃',icon:'🎯',cd:12,desc:'いちばん硬い敵にダメージ',scale:1},
+  crush:{name:'粉砕',icon:'🔨',cd:10,desc:'全ての敵の装甲を0にする'},
+  bless:{name:'祝福',icon:'🌟',cd:20,desc:'3ターンの間、チェーンが3つ長い扱いになる（効果の倍率アップ）'}
+};
+
+const atkP=()=>S?S.baseDmg+3*S.weaponDmg:7;
+const SKD={fire:()=>Math.round(.6*atkP()+(S?S.turn:0)/9),thunder:()=>Math.round(atkP()+(S?S.turn:0)/5),snipe:()=>Math.round(2*atkP()+(S?S.turn:0)/3)};
+const execLine=e=>Math.max(SKD.fire(),Math.ceil(e.maxHp*.5));
+function skillDesc(k){
+  if(k==='fire')return `全ての敵に${SKD.fire()}ダメージ`;
+  if(k==='thunder')return `ランダムな敵3体に${SKD.thunder()}ダメージ`;
+  if(k==='snipe')return `いちばん硬い敵に${SKD.snipe()}ダメージ`;
+  if(k==='execute')return `残りHP${SKD.fire()}以下か半分以下の敵を全て倒す（装甲無視・ボス以外）。経験値1.5倍`;
+  return SKILLS[k].desc;
+}
+const cdOf=k=>Math.max(4,Math.round(SKILLS[k].cd*((S&&S.cdMul)||1)));
+let S=null,chain=[],dragging=false,modalOpen=false,inGame=false;
+let savedJson=null,best=null,SLOT=0;
+const NSLOT=3,LS_SLOT='dchain_slot_v1',slotKey=i=>i?LS_SAVE+'_'+(i+1):LS_SAVE;
+function slotJson(i){try{return localStorage.getItem(slotKey(i));}catch(e){return null;}}
+function setSlot(i){SLOT=i;savedJson=slotJson(i);try{localStorage.setItem(LS_SLOT,String(i));}catch(e){}}
+function slotInfo(i){const j=slotJson(i);if(!j)return null;try{const s=JSON.parse(j);return s;}catch(e){return {broken:1};}}
+const anySave=()=>[0,1,2].some(i=>slotJson(i));
+let DB=null,UID=null,cloudOn=false;
+
+const $=id=>document.getElementById(id);
+const cv=$('board'),ctx=cv.getContext('2d');
+const rnd=n=>Math.floor(Math.random()*n);
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;}
+const groupOf=t=>(t==='sword'||t==='skull')?'atk':(typeof S!=='undefined'&&S&&S.cls==='alchemist'&&!TUT&&(t==='coin'||t==='shield'||t==='potion'))?'mix':t;
+const isEnemy=t=>t&&t.t==='skull';
+
+/* ---------- state ---------- */
+function newState(cls){
+  const s={v:1,ts:Date.now(),turn:0,kills:0,level:1,xp:0,xpNeed:16,
+    hp:50,maxHp:50,armor:0,maxArmor:4,armorPer:1,
+    baseDmg:1,weaponDmg:2,healPer:2,goldPer:2,
+    gold:0,goldNeed:70,shieldPts:0,shieldNeed:30,
+    skills:[],pending:[],bossFlag:false,maxChain:0,bless:0,floor:1,fprog:0,bossUp:false,run:{hit:false,shops:0,mute:0},board:[]};
+  if(!TUT){s.curse=Math.min(UNL.curseSel||0,UNL.curseMax||0);s.relics=[];}
+  for(let r=0;r<N;r++){s.board.push([]);for(let c=0;c<N;c++){const t=randTile(s);t.ry=r;s.board[r].push(t);}}
+  applyClass(s,TUT?'warrior':(cls||(S&&S.cls)||'warrior'));villagePerks(s);
+  if(!TUT)s.name=getName();S=s;applyCarry();ensureMove();if(!TUT){achStat('games');const td=new Date().toDateString();if(ACH.st.lastDay!==td){ACH.st.lastDay=td;achStat('days');}achSave();}
+  return s;
+}
+function randTile(s,noEnemy){
+  const aw=t=>{const a=s.anom&&ANOMS[s.anom];return a&&a.w&&a.w[t]||1;};
+  const w=[['skull',noEnemy?0:(17+Math.min(8,s.turn/40))*aw('skull')*(s.relics&&s.relics.includes('bell')?.82:1)],['sword',20*aw('sword')],['shield',19*aw('shield')],['potion',17*aw('potion')],['coin',20*aw('coin')]];
+  let x=Math.random()*w.reduce((a,b)=>a+b[1],0);
+  for(const [t,v] of w){if((x-=v)<0)return t==='skull'?makeEnemy(s):{t};}
+  return {t:'coin'};
+}
+/* ---------- relics (run-only passives) ---------- */
+const RELICS={
+  trident:{ic:'🔱',n:'三叉の槍',d:'剣を3本以上含む攻撃が1.3倍'},
+  chalice:{ic:'🏆',n:'黄金の杯',d:'5つ以上のチェーンで💰+4'},
+  ring:{ic:'💍',n:'血の指輪',d:'敵を倒すたびにHP+1'},
+  amulet:{ic:'🧿',n:'魔除けの眼',d:'受けるダメージが毎ターン1減る'},
+  hourglass:{ic:'⏳',n:'砂時計',d:'スキルの再使用ターンが15%短い'},
+  clover:{ic:'🍀',n:'四つ葉',d:'5つ以上のチェーンで経験値+1'},
+  heart:{ic:'❤️‍🔥',n:'炎の心臓',d:'ボス・中ボスへのダメージ1.5倍'},
+  frost:{ic:'🧊',n:'霜の欠片',d:'7つ以上のチェーンのあと、残った敵が1ターン凍る'},
+  crest:{ic:'🎖️',n:'騎士の紋章',d:'🛡️チェーンの防御が1.5倍'},
+  urn:{ic:'⚱️',n:'錬金の壺',d:'🧪の余りが変わる量が2倍'},
+  greed:{ic:'💎',n:'欲深の宝石',d:'💰の価値+1。ただし受けるダメージ+1',on:()=>{S.goldPer++;}},
+  blade:{ic:'🗡️',n:'処刑人の刃',d:'HPが半分以下の敵へのダメージ1.5倍'},
+  dice:{ic:'🎲',n:'運命のサイコロ',d:'攻撃が15%の確率で2倍'},
+  clock:{ic:'🕰️',n:'古時計',d:'新しく出る💣の爆発までが2ターン長い'},
+  meat:{ic:'🍖',n:'骨付き肉',d:'最大HP+20',on:()=>{S.maxHp+=20;S.hp+=20;}},
+  ledger:{ic:'🧾',n:'値切りの帳面',d:'ショップの必要額が少し安くなる',on:()=>{S.goldNeed=Math.round(S.goldNeed*.85);}},
+  feather:{ic:'🪶',n:'不死鳥の羽',d:'一度だけ、倒れてもHP半分で蘇る'},
+  lantern:{ic:'🏮',n:'導きのランタン',d:'4つ以上のチェーンの倍率+0.1'},
+  /* added at stage s4 */
+  gauntlet:{ic:'🥊',n:'巨人の籠手',d:'基礎攻撃力+8',x:1,on:()=>{S.baseDmg+=8;}},
+  starfrag:{ic:'✨',n:'星のかけら',d:'長いチェーンの経験値ボーナスが2倍',x:1},
+  mirror:{ic:'🪞',n:'反射の鏡',d:'受けたダメージの半分を、敵1体に返す',x:1},
+  tome:{ic:'📖',n:'禁書',d:'スキルを使うたびに経験値+3',x:1},
+  bell:{ic:'🔔',n:'静寂の鈴',d:'新しく出る敵が少し減る',x:1},
+  purse:{ic:'👛',n:'底なしの財布',d:'敵を倒すたびに💰+1',x:1}
+};
+const hasR=id=>!!(typeof S!=='undefined'&&S&&S.relics&&S.relics.includes(id));
+function relicTgt(e,d){if(!S||!S.relics)return d;let m=1;if(hasR('heart')&&(e.boss||e.mini))m*=1.5;if(hasR('blade')&&e.hp<=e.maxHp/2)m*=1.5;return m===1?d:Math.round(d*m);}
+function relicOptions(){const pool=Object.keys(RELICS).filter(k=>!hasR(k)&&(!RELICS[k].x||unlocked('s4')));
+  return pick(pool.map(k=>({label:`${RELICS[k].ic} ${RELICS[k].n}`,desc:RELICS[k].d,apply:()=>{S.relics=S.relics||[];S.relics.push(k);UNL.relSeen=UNL.relSeen||{};UNL.relSeen[k]=1;unlSave();if(RELICS[k].on)RELICS[k].on();}})),3);}
+function showRelics(){if(modalOpen||!S.relics||!S.relics.length)return;openModal(`<h2>🏺 持っている遺物</h2><div class="alist">${S.relics.map(k=>`<div class="ach"><span class="ai">${RELICS[k].ic}</span><span><b>${RELICS[k].n}</b><small>${RELICS[k].d}</small></span></div>`).join('')}</div><p style="text-align:center;font-size:12px;color:#a99fae">遺物はこの冒険のあいだだけ有効</p><button class="opt" id="rlX" style="text-align:center">閉じる</button>`);$('rlX').onclick=closeModal;}
+function relicsHtml(){return (S.relics||[]).map(k=>RELICS[k].ic).join('');}
+
+/* ---------- floor anomalies ---------- */
+const ANOMS={
+  fog:{ic:'🌫️',n:'濃霧',d:'敵のHPと攻撃力が見えない'},
+  drought:{ic:'🏜️',n:'薬枯れ',d:'🧪が出にくい',w:{potion:.35}},
+  goldrain:{ic:'🌧️',n:'黄金の雨',d:'💰が出やすい',w:{coin:1.8}},
+  iron:{ic:'⚙️',n:'鉄の時代',d:'⚔️が出やすく、🛡️が出にくい',w:{sword:1.6,shield:.5}},
+  feast:{ic:'🎪',n:'魔物の宴',d:'敵が多い。倒すと経験値+1',w:{skull:1.45}},
+  calm:{ic:'🌙',n:'静寂の夜',d:'敵が少ない',w:{skull:.65}},
+  blood:{ic:'🩸',n:'血の月',d:'新しく出る敵のHP+25%。倒すと💰+2'},
+  wind:{ic:'🍃',n:'追い風',d:'4つ以上のチェーンの倍率+0.15'},
+  rust:{ic:'🟤',n:'腐食',d:'防御が毎ターン1ずつ錆びていく'}
+};
+function rollAnomaly(F,msgs){if(TUT||!unlocked('s3'))return;
+  if(F%10===1&&F>10){if(Math.random()<.55){const ks=Object.keys(ANOMS).filter(k=>k!==S.anom);S.anom=ks[rnd(ks.length)];S.anomTo=F+9;const a=ANOMS[S.anom];msgs.push(`${a.ic} 異変「${a.n}」：${a.d}`);}else if(S.anom){msgs.push(`${ANOMS[S.anom].ic} 異変がおさまった`);S.anom=null;}}
+  else if(S.anom&&F>S.anomTo){msgs.push(`${ANOMS[S.anom].ic} 異変がおさまった`);S.anom=null;}}
+
+/* ---------- death effects (queued, resolved after the board refills) ---------- */
+function flushDeath(msgs,depth=0){if(!S||!S._dq||!S._dq.length)return;const q=S._dq;S._dq=[];let db=0,fz=false;
+  for(const k of q){const D=EK[k]||{};
+    if(D.dh){const h=Math.min(D.dh,S.maxHp-S.hp);S.hp+=h;if(h)msgs.push(`${D.icon} 胞子でHP+${h}`);}
+    if(D.dg){addGold(D.dg);msgs.push(`${D.icon} 💰+${D.dg}`);}
+    if(D.dx){gainXp(D.dx);msgs.push(`${D.icon} 経験値+${D.dx}`);}
+    if(D.sp){for(let i=0;i<D.sp[1];i++)summon(D.sp[0]);msgs.push(`${D.icon} 分裂した！`);}
+    if(D.db)db+=D.db;if(D.fz)fz=true;}
+  if(fz){S.board.flat().filter(isEnemy).forEach(e=>e.frz=Math.max(e.frz||0,1));msgs.push('⛄ 敵が凍りついた');}
+  if(db&&depth<3){const rm=new Set(),dead=[];let xp=0;
+    for(let r=0;r<N;r++)for(let c=0;c<N;c++){const e=S.board[r][c];if(!isEnemy(e))continue;applyDmg(e,db);e.hit=performance.now();if(e.hp<=0){rm.add(r*N+c);dead.push(e);xp+=xpOf(e);}}
+    msgs.push(`🍄 胞子が弾けた！全ての敵に${db}ダメージ`+(dead.length?`、${dead.length}体撃破`:''));
+    if(dead.length){S.kills+=dead.length;if(xp)gainXp(xp);achKills(dead);relicKills(dead.length);removeAndFill(rm);flushDeath(msgs,depth+1);}}
+}
+function relicKills(k){if(k<=0)return;if(hasR('ring')){const h=Math.min(k,S.maxHp-S.hp);S.hp+=h;}if(hasR('purse'))addGold(k);if(S.anom==='blood')addGold(2*k);if(S.anom==='feast')gainXp(k);}
+/* ---------- enemy kinds ---------- */
+const EK={
+  skel:{icon:'💀',name:'スケルトン',desc:'ふつうの敵。'},
+  bat:{icon:'🦇',name:'コウモリ',desc:'弱いが 毎ターン となりのパネルと 入れ替わって 飛び回る。'},
+  zombie:{icon:'🧟',name:'ゾンビ',desc:'毎ターン HPが1回復する。早めに倒そう。'},
+  bomb:{icon:'💣',name:'爆弾',desc:'左下の数字が0になると 爆発して 大ダメージ！ それまでに倒そう。'},
+  spider:{icon:'🕷️',name:'毒グモ',desc:'攻撃が 防御を すり抜けて HPに直接当たる。'},
+  ghost:{icon:'👻',name:'ゴースト',desc:'剣の攻撃が 半分しか効かない。スキルは普通に効く。'},
+  golem:{icon:'🗿',name:'ゴーレム',desc:'硬くて強いが 2ターンに1回しか 攻撃しない（💤のときは次が休み）。'},
+  shaman:{icon:'🧙',name:'呪術師',desc:'毎ターン まわりの敵の HPを2回復する。最優先で倒そう。'},
+  ogre:{icon:'👹',name:'オーガ王',desc:'とにかく 硬くて 攻撃が重い。'},
+  dragon:{icon:'🐉',name:'ドラゴン',desc:'3ターンごとに 3倍の ブレス攻撃。🔥の数字を見て 防御を固めよう。'},
+  vampire:{icon:'🧛',name:'ヴァンパイア',desc:'毎ターン HPを3回復し、2ターンごとに コウモリを呼ぶ。'},
+  kraken:{icon:'🐙',name:'クラーケン',desc:'毎ターン 装甲が1増える（最大10）。長引くほど硬くなる。'},
+  abyss:{icon:'👁️',name:'深淵の眼',desc:'世界の元凶。毎ターン装甲+1（最大10）、2ターンごとに手下を呼び、3ターンごとに2.5倍の波動を放つ。'}
+};
+const kindOf=e=>e.kind||(e.boss?'ogre':'skel');
+/* ---------- extended bestiary (data-driven traits) ----------
+ b:base behaviour  hp:hp mult  at:atk add  ar:armor add  from:first floor  w:weight  flt:css filter (colour variant)
+ rare/mini flags  rg:regen  hl:heal neighbours  au:armor up max  sm:[kind,every]  st:steal gold  fl:flee after n turns
+ sp:[kind,n] split on death  dh/dg/dx:on death heal/gold/xp  db:on death damage all enemies  gr:atk+1 every n turns
+ z:harmless  sh:shapeshift  hc:[kind,turns] hatch  sb:breaks armor  fz:on death freeze all  bm:boom mult */
+const HUE=d=>`hue-rotate(${d}deg) saturate(1.6)`;
+Object.assign(EK,{
+  rat:{icon:'🐀',name:'ネズミ',desc:'攻撃のたびに 💰を少し かじり取っていく。',from:3,w:2,hp:.6,st:1},
+  mush:{icon:'🍄',name:'ヒカリダケ',desc:'攻撃してこない。倒すと 胞子で HPが4回復する。',from:3,w:1.2,z:1,dh:4},
+  chick:{icon:'🐥',name:'ヒヨコ',desc:'なぜか迷宮にいる。3ターンで逃げる。倒すと 経験値+8。',from:2,w:.3,rare:1,z:1,fl:3,hp:.4,dx:8},
+  skel_g:{icon:'💀',name:'黄金のスケルトン',desc:'全身が金でできている。倒すと 💰+20。',from:8,w:.35,rare:1,flt:'sepia(1) saturate(5) brightness(1.15)',dg:20},
+  duck:{icon:'🦆',name:'アヒル',desc:'攻撃しない。何もしない。ただ、いる。倒すと 💰+6。',from:6,w:.3,rare:1,z:1,dg:6},
+  mimic:{icon:'🎁',name:'ミミック',desc:'宝箱のふりをした魔物。攻撃は重いが 倒すと 💰+30。',from:12,w:.3,rare:1,at:2,hp:1.3,dg:30},
+  snake:{icon:'🐍',name:'大ヘビ',desc:'4ターンごとに 攻撃力が1上がる。放っておくと危険。',from:10,w:1.6,gr:4},
+  slime:{icon:'🦠',name:'スライム',desc:'倒すと 2匹のちびスライムに 分裂する。',from:14,w:1.3,hp:1.1,sp:['slime_s',2]},
+  slime_s:{icon:'🦠',name:'ちびスライム',desc:'スライムの かけら。弱い。',w:0,hp:.35,flt:HUE(60)},
+  star:{icon:'🌟',name:'流れ星の精',desc:'とても硬いが HPは1。4ターンで消える。倒すと 経験値+25。',from:15,w:.2,rare:1,z:1,fl:4,ar:12,hp:.1,dx:25},
+  boomsh:{icon:'🍄',name:'爆ぜダケ',desc:'倒すと 胞子が弾けて すべての敵に5ダメージ。',from:18,w:1.4,flt:HUE(150),z:1,db:5},
+  scorp:{icon:'🦂',name:'サソリ',desc:'毒針が 防御を1 削り取る。',from:22,w:1.4,sb:1},
+  nanika:{icon:'🫥',name:'ナニカ',desc:'正体不明。見るたびに姿が変わる。',from:24,w:.35,rare:1,sh:1},
+  skel_r:{icon:'💀',name:'赤スケルトン',desc:'怒りで赤く染まった骸骨。攻撃力+1。',from:28,w:1.2,flt:HUE(-40),at:1},
+  wolf:{icon:'🐺',name:'オオカミ',desc:'4ターンごとに 仲間のオオカミを呼ぶ。',from:30,w:1.1,sm:['wolf',4]},
+  cat:{icon:'🐈‍⬛',name:'黒猫',desc:'ただの猫。なぜここに？ 倒さずに見送ると💰+15。',from:20,w:.25,rare:1,z:1,fl:3,hp:.5},
+  imp:{icon:'😈',name:'インプ',desc:'💰を盗みながら 飛び回る いたずら者。',from:33,w:1.5,b:'bat',st:1},
+  fencer:{icon:'🤺',name:'亡霊剣士',desc:'鎧をまとった亡霊。剣の攻撃が半分しか効かない。',from:36,w:1.5,b:'ghost',ar:2},
+  egg:{icon:'🥚',name:'謎の卵',desc:'攻撃しない。4ターンたつと 何かが 生まれる…',from:40,w:.9,z:1,hp:1.2,hc:['wyrm',4]},
+  wyrm:{icon:'🦎',name:'子竜',desc:'卵から生まれた竜の子。攻撃力が高い。',w:0,at:2,hp:1.3},
+  snowman:{icon:'⛄',name:'雪だるま',desc:'攻撃しない。倒すと すべての敵が1ターン凍る。',from:40,w:.3,rare:1,z:1,fz:1},
+  zombie_g:{icon:'🧟',name:'屍鬼',desc:'ゾンビの上位種。毎ターン HPが2回復する。',from:42,w:2,b:'zombie',flt:HUE(110),rg:1,hp:1.2},
+  bomb_b:{icon:'💣',name:'大爆弾',desc:'爆発までが長いが 威力は1.7倍。',from:45,w:1.2,b:'bomb',flt:HUE(200),bm:1.7},
+  crab:{icon:'🦀',name:'大ガニ',desc:'毎ターン 装甲が1増える（最大4）。',from:46,w:1.8,au:4},
+  skel_b:{icon:'💀',name:'青スケルトン',desc:'凍てついた骸骨。最初から装甲+2。',from:50,w:2.5,flt:HUE(180),ar:2},
+  spider_r:{icon:'🕷️',name:'紅グモ',desc:'防御をすり抜ける毒。攻撃力+1。',from:52,w:1.6,b:'spider',flt:HUE(-60),at:1},
+  ghost_b:{icon:'👻',name:'鬼火',desc:'剣が半分しか効かず、攻撃は防御をすり抜ける。',from:56,w:1.2,b:'ghost',flt:HUE(190),pc:1},
+  ufo:{icon:'🛸',name:'未確認飛行物体',desc:'2ターンごとに 何かを呼ぶ。5ターンで去っていく。',from:58,w:.2,rare:1,z:1,fl:5,sm:['?',2]},
+  golem_r:{icon:'🗿',name:'溶岩ゴーレム',desc:'2ターンに1回の攻撃が とても重い。',from:62,w:1.4,b:'golem',flt:'sepia(1) hue-rotate(-30deg) saturate(4)',at:3},
+  eye:{icon:'👀',name:'見張りの目',desc:'2ターンごとに 攻撃力が1上がる。',from:84,w:1.6,gr:2},
+  lich:{icon:'☠️',name:'リッチ',desc:'3ターンごとに 骸骨を呼び、まわりの敵を癒やす。',from:90,w:1.2,sm:['skel',3],hl:2,hp:1.3},
+  demon:{icon:'👿',name:'悪魔',desc:'攻撃は防御をすり抜け、3ターンごとに強くなる。',from:95,w:1.2,pc:1,gr:3,hp:1.2},
+  m_wolf:{icon:'🐺',name:'群れの長',desc:'中ボス。2ターンごとに オオカミを呼ぶ。',mini:1,w:0,flt:HUE(-30),sm:['wolf',2]},
+  m_queen:{icon:'🕷️',name:'女王グモ',desc:'中ボス。毒は防御をすり抜け、子グモを呼ぶ。',mini:1,w:0,flt:HUE(90),pc:1,sm:['spider',3]},
+  m_knight:{icon:'🤺',name:'首なし騎士',desc:'中ボス。重い鎧と 剣が半分しか効かない体。',mini:1,w:0,b:'ghost',flt:HUE(160),ar:4},
+  m_hydra:{icon:'🐍',name:'ヒドラ',desc:'中ボス。毎ターン HPが4回復し、だんだん強くなる。',mini:1,w:0,flt:HUE(120),rg:4,gr:3},
+  m_ancient:{icon:'🗿',name:'古代兵器',desc:'中ボス。2ターンに1回、とてつもない一撃を放つ。',mini:1,w:0,b:'golem',flt:HUE(210),at:3},
+  m_oni:{icon:'👺',name:'炎の鬼',desc:'中ボス。3ターンごとに 3倍の炎を吐く。',mini:1,w:0,b:'dragon'}
+});
+const MINI_ORDER=['m_wolf','m_queen','m_knight','m_hydra','m_ancient','m_oni'];
+const bhOf=e=>{const k=kindOf(e);return (EK[k]&&EK[k].b)||k;};
+const icoOf=e=>e.ic||EK[kindOf(e)].icon;
+const SHAPES=['🐸','🐙','🦔','🪼','🦩','🐌','🦥','🐡','🦖','🧸','🪆','🥸'];
+
+const xpOf=e=>e.boss?6:e.mini?4:(bhOf(e)==='golem'?2:1)+(e.elite?1:0);
+const dmgTo=(e,d)=>{d=relicTgt(e,d);return bhOf(e)==='ghost'?Math.ceil(d/2):d;};
+function makeKind(k,T){
+  const e={t:'skull',kind:k,hp:Math.round(3+(T/7+T*T/5000)*1.5)+(Math.random()<.4?1:0),atk:1+Math.floor(T/40)+(T>60&&Math.random()<.2?1:0),armor:0,fresh:true};
+  const D=EK[k]||{};const B=D.b||k,SS=MK_S||S;
+  switch(B){
+    case 'skel':if(T>=25&&Math.random()<Math.min(.55,(T-15)/150))e.armor=1+Math.floor(T/50);break;
+    case 'bat':e.hp=Math.max(1,Math.round(e.hp*.45));e.atk=1+Math.floor(T/60);break;
+    case 'zombie':e.hp+=1;break;
+    case 'spider':e.hp=Math.max(1,e.hp-1);break;
+    case 'golem':e.hp=Math.round(e.hp*1.6);e.armor=2+Math.floor(T/40);e.atk=e.atk*2+1;e.rest=false;break;
+    case 'bomb':e.atk=0;e.cnt=4+(D.bm?1:0)+(SS&&SS.relics&&SS.relics.includes('clock')?2:0);e.boom=Math.round((6+Math.floor(T/8))*(D.bm||1));break;
+    case 'shaman':e.atk=Math.max(1,e.atk-1);break;
+  }
+  if(D.hp)e.hp=Math.max(1,Math.round(e.hp*D.hp));if(D.at)e.atk+=D.at;if(D.ar)e.armor+=D.ar+Math.floor(T/80);if(D.z)e.atk=0;
+  if(B==='dragon'&&D.mini){e.ch=0;}
+  if(!D.z&&!D.rare&&!D.mini&&T>=30&&B!=='bat'&&B!=='bomb'&&Math.random()<Math.min(.2,.05+(T-30)/500)){e.elite=true;e.hp=Math.round(e.hp*1.8);e.atk+=1;e.armor+=1;}
+  if(SS&&SS.curse&&!TUT){e.hp=Math.round(e.hp*(1+.12*SS.curse));if(!D.z&&B!=='bomb')e.atk+=Math.floor(SS.curse/3);}
+  if(SS&&SS.anom==='blood'&&!D.z)e.hp=Math.round(e.hp*1.25);
+  if(D.sh)e.ic=SHAPES[rnd(SHAPES.length)];
+  e.maxHp=e.hp;noteMet(k);return e;
+}
+let MK_S=null;
+function makeEnemy(s){MK_S=s;try{return makeEnemy0(s);}finally{MK_S=null;}}
+function makeEnemy0(s){
+  const T=s.turn;
+  if(s.bossFlag){s.bossFlag=false;return makeBoss(s);}
+  if(s.miniFlag){s.miniFlag=false;return makeMini(s);}
+  const F=s.floor||1,w=[['skel',10],['bat',F>=2?4:0],['zombie',F>=6?3:0],['bomb',F>=8?2:0],['spider',F>=12?3:0],['ghost',F>=16?2:0],['golem',F>=21?2:0],['shaman',F>=26?2:0]];
+  if(unlocked('s1'))for(const k in EK){const d=EK[k];if(d.from&&F>=d.from&&d.w)w.push([k,d.w]);}
+  let x=Math.random()*w.reduce((a,b)=>a+b[1],0);
+  for(const [k,v] of w){if((x-=v)<0)return makeKind(k,T);}
+  return makeKind('skel',T);
+}
+function makeMini(s){const F=s.floor||1,k=MINI_ORDER[Math.floor(F/20)%MINI_ORDER.length],e=makeKind(k,s.turn);
+  e.mini=true;e.hp=e.maxHp=Math.round(e.hp*3.6+8);e.atk+=2;e.armor+=2;s.bossAnnounce=EK[k].icon+' 中ボス「'+EK[k].name+'」';return e;}
+function makeBoss(s){
+  const T=s.turn,F=s.floor||1,n=Math.max(1,Math.round(F/20)),k=bossKindAt(n*20),m=1+Math.floor((n-1)/5)*.6;
+  if(k==='abyss'){const e={t:'skull',kind:k,boss:true,fresh:true,hp:Math.round((60+T+T*T/300)*m),atk:Math.round((5+T/25)*m),armor:Math.round(4*m),ch:0,sm:0};
+    if(s.curse){e.hp=Math.round(e.hp*(1+.12*s.curse));e.atk+=Math.floor(s.curse/3);}
+    e.maxHp=e.hp;noteMet(k);s.bossUp=true;s.bossKind=k;s.bossTurn=s.turn;s.bossAnnounce=EK[k].icon+' '+EK[k].name+(m>1?'（さらに強大）':'');return e;}
+  const e={t:'skull',kind:k,boss:true,fresh:true,hp:Math.round((22+T/2.5+T*T/2500)*m),atk:Math.round((3+T/35)*m),armor:Math.round((2+T/50)*m)};
+  if(k==='dragon'){e.hp=Math.round(e.hp*1.1);e.armor=2;e.ch=0;}
+  if(k==='vampire'){e.armor=Math.round(e.armor/2);e.sm=0;}
+  if(k==='kraken'){e.hp=Math.round(e.hp*1.2);e.armor=1;}
+  if(n===1){e.hp=Math.round(e.hp*.85);e.atk=Math.max(3,e.atk-1);}
+  if(s.curse){e.hp=Math.round(e.hp*(1+.12*s.curse));e.atk+=Math.floor(s.curse/3);}
+  e.maxHp=e.hp;noteMet(k);s.bossUp=true;s.bossKind=k;s.bossTurn=s.turn;s.bossAnnounce=EK[k].icon+' '+EK[k].name+(m>1?'（強化）':'');return e;
+}
+function enemyAtk(e){
+  if(e.fresh||e.frz>0)return {d:0,p:0};
+  const k=bhOf(e),D=EK[kindOf(e)]||{};
+  if(D.z)return {d:0,p:0};
+  if(D.pc)return {d:0,p:e.atk};
+  if(k==='golem'&&e.rest)return {d:0,p:0};
+  if(k==='bomb')return (e.cnt||0)<=1?{d:e.boom||0,p:0}:{d:0,p:0};
+  if(k==='dragon')return {d:(e.ch||0)+1>=3?e.atk*3:e.atk,p:0};
+  if(k==='abyss')return {d:(e.ch||0)+1>=3?Math.round(e.atk*2.5):e.atk,p:0};
+  if(k==='spider')return {d:0,p:e.atk};
+  return {d:e.atk,p:0};
+}
+function findTile(e){for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(S.board[r][c]===e)return [r,c];return null;}
+function summon(k){
+  const cells=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(!isEnemy(S.board[r][c]))cells.push([r,c]);
+  if(!cells.length)return;const [r,c]=cells[rnd(cells.length)];const e=makeKind(k,S.turn);e.ry=r;S.board[r][c]=e;
+}
+function popAnnounce(msgs){if(S.bossAnnounce){msgs.push(`${S.bossAnnounce} が現れた！`);sfx('boss');delete S.bossAnnounce;}}
+function enemyPhase(msgs){
+  const all=()=>{const l=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){const e=S.board[r][c];if(isEnemy(e))l.push([e,r,c]);}return l;};
+  let total=0,pierce=0;const exploded=new Set();
+  for(const [e,r,c] of all()){
+    if(e.fresh||e.frz>0)continue;
+    const a=enemyAtk(e),k=bhOf(e),D=EK[kindOf(e)]||{};total+=a.d;pierce+=a.p;
+    if(D.st&&S.gold>0){const g=Math.min(S.gold,1+Math.floor(e.atk/2));S.gold-=g;msgs.push(`${D.icon} 💰を${g}盗まれた`);}
+    if(D.sb&&S.armor>0){S.armor--;msgs.push(`${D.icon} 防御を1削られた`);}
+    if(k==='golem')e.rest=!e.rest;
+    if(k==='dragon'){e.ch=(e.ch||0)+1;if(e.ch>=3){e.ch=0;msgs.push('🐉 ブレス！');}}
+    if(k==='abyss'){e.ch=(e.ch||0)+1;if(e.ch>=3){e.ch=0;msgs.push('👁️ 深淵の波動！');}}
+    if(k==='bomb'){e.cnt=(e.cnt||4)-1;if(e.cnt<=0){exploded.add(r*N+c);msgs.push('💣 爆発！');}}
+  }
+  const sum=total+pierce;
+  if(sum>0){const bl=Math.min(S.armor,total);S.armor-=bl;let d=total-bl+pierce;if(d>0&&hasR('greed'))d++;if(d>0&&hasR('amulet'))d--;S.hp-=d;
+    if(d>1&&hasR('mirror')){const es=all().map(x=>x[0]).filter(x=>!x.fresh);if(es.length){const t=es[rnd(es.length)],rd=Math.floor(d/2);applyDmg(t,rd);t.hit=performance.now();msgs.push(`🪞 ${rd}ダメージを返した`);}}
+    msgs.push(`敵の攻撃${sum}`+(bl?`（防御${bl}）`:'')+(pierce?`（すり抜け${pierce}）`:'')+(d?` → HP-${d}`:''));
+    if(d>0){shake();flash('bHp');sfx('hurt');}else sfx('block');if(bl)flash('bAr');}
+  if(exploded.size){sfx('boom');S._boom=true;removeAndFill(exploded);}
+  const live=all();
+  for(const [e,r,c] of live){
+    if(e.fresh||e.frz>0)continue;const k=bhOf(e);
+    if(k==='zombie')e.hp=Math.min(e.maxHp,e.hp+1);
+    if(k==='kraken')e.armor=Math.min(10,e.armor+1);
+    if(k==='abyss'){e.armor=Math.min(10,e.armor+1);e.sm=(e.sm||0)+1;if(e.sm>=2){e.sm=0;const pool=['skel','zombie','spider','ghost','golem','shaman'];summon(pool[rnd(pool.length)]);msgs.push('👁️ 手下を呼び出した！');}}
+    if(k==='shaman')for(const q of neighbors(r,c)){const t=tileAt(q);if(isEnemy(t))t.hp=Math.min(t.maxHp,t.hp+2);}
+    if(k==='vampire'){e.hp=Math.min(e.maxHp,e.hp+3);e.sm=(e.sm||0)+1;if(e.sm>=2){e.sm=0;summon('bat');msgs.push('🧛 コウモリを呼んだ！');}}
+  }
+  for(const [e,r,c] of live){
+    if(e.fresh||e.frz>0||S.board[r][c]!==e)continue;const D=EK[kindOf(e)]||{};e.age=(e.age||0)+1;
+    if(D.rg)e.hp=Math.min(e.maxHp,e.hp+D.rg);
+    if(D.hl)for(const q of neighbors(r,c)){const t=tileAt(q);if(isEnemy(t))t.hp=Math.min(t.maxHp,t.hp+D.hl);}
+    if(D.au)e.armor=Math.min(D.au+(e.mini?4:0),e.armor+1);
+    if(D.gr&&e.age%D.gr===0){e.atk++;}
+    if(D.sh)e.ic=SHAPES[rnd(SHAPES.length)];
+    if(D.sm&&e.age%D.sm[1]===0){let kk=D.sm[0];if(kk==='?'){const pool=Object.keys(EK).filter(x=>EK[x].from&&EK[x].from<=floorOf()&&!EK[x].rare);kk=pool[rnd(pool.length)]||'skel';}summon(kk);msgs.push(`${D.icon} ${EK[kk].icon}${EK[kk].name}を呼んだ！`);}
+    if(D.hc&&e.age>=D.hc[1]){const n=makeKind(D.hc[0],S.turn);n.ry=e.ry;S.board[r][c]=n;msgs.push(`${D.icon} から ${EK[D.hc[0]].icon}${EK[D.hc[0]].name}が生まれた！`);continue;}
+    if(D.fl&&e.age>=D.fl){S.board[r][c]={t:'coin',ry:e.ry};msgs.push(`${D.icon} ${D.name}は去っていった`);if(kindOf(e)==='cat'){addGold(15);msgs.push('🐈‍⬛ なんだか運がいい… 💰+15');}}
+  }
+  if(S.anom==='rust'&&S.armor>0)S.armor--;
+  for(const [e] of live){
+    if(bhOf(e)!=='bat'||e.fresh||e.frz>0||!findTile(e))continue;
+    const pos=findTile(e);if(!pos)continue;
+    const opts=neighbors(pos[0],pos[1]).filter(q=>!isEnemy(tileAt(q)));if(!opts.length)continue;
+    const q=opts[rnd(opts.length)],o=tileAt(q);S.board[q[0]][q[1]]=e;S.board[pos[0]][pos[1]]=o;e.ry=q[0];o.ry=pos[0];
+  }
+  for(const [e] of live)if(e.frz>0)e.frz--;
+  for(const row of S.board)for(const t of row)if(t.fresh)delete t.fresh;
+}
+
+function applyDmg(e,d){if(e.armor>0){const a=Math.min(e.armor,d);e.armor-=a;d-=a;}e.hp-=d;}
+function wouldDie(e,d){return d>=e.hp+e.armor;}
+function gainXp(x){S.xp+=x;while(S.xp>=S.xpNeed){S.xp-=S.xpNeed;S.level++;S.xpNeed=Math.round(S.xpNeed*1.3)+8;S.pending.push('level');}}
+
+/* ---------- board helpers ---------- */
+const same=(a,b)=>a[0]===b[0]&&a[1]===b[1];
+const adj=(a,b)=>Math.max(Math.abs(a[0]-b[0]),Math.abs(a[1]-b[1]))===1;
+const tileAt=p=>S.board[p[0]][p[1]];
+function neighbors(r,c){const o=[];for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){if(!dr&&!dc)continue;const R=r+dr,C=c+dc;if(R>=0&&R<N&&C>=0&&C<N)o.push([R,C]);}return o;}
+function hasMove(){
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){const g=groupOf(S.board[r][c].t);
+    for(const a of neighbors(r,c)){if(groupOf(tileAt(a).t)!==g)continue;
+      for(const b of neighbors(a[0],a[1])){if((b[0]!==r||b[1]!==c)&&groupOf(tileAt(b).t)===g)return true;}}}
+  return false;
+}
+function rerollNonEnemies(){for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(!isEnemy(S.board[r][c])){const t=randTile(S,true);t.ry=S.board[r][c].ry??r;S.board[r][c]=t;}}}
+function ensureMove(){let i=0;while(!hasMove()&&i++<30)rerollNonEnemies();}
+function removeAndFill(set){
+  for(let c=0;c<N;c++){
+    const keep=[];
+    for(let r=N-1;r>=0;r--){if(!set.has(r*N+c)){const t=S.board[r][c];t.ry=(t.ry??r);keep.push(t);}}
+    for(let i=0;i<keep.length;i++)S.board[N-1-i][c]=keep[i];
+    const m=N-keep.length;
+    for(let r=0;r<m;r++){const t=randTile(S,!!TUT);t.ry=r-m;S.board[r][c]=t;}
+  }
+}
+
+/* ---------- turn ---------- */
+let logTimer=null;
+function log(msg){$('log').textContent=msg;clearTimeout(logTimer);logTimer=setTimeout(()=>{$('log').textContent='';},4000);}
+function flash(id){const e=$(id);e.classList.remove('flash');void e.offsetWidth;e.classList.add('flash');}
+function shake(){const w=$('wrap');w.classList.remove('shake');void w.offsetWidth;w.classList.add('shake');}
+
+const CB=[1,1,2,3,4];
+function chainBonus(n){const t=bonusTier(n);return t<0?0:CB[t];}
+function chainMult(n){const k=Math.max(0,n-3)+(S&&S.bless>0&&n>=3?3:0);return 1+.15*k+.012*k*k+(n>=4&&hasR('lantern')?.1:0)+(n>=4&&S&&S.anom==='wind'?.15:0);}
+const fmtM=m=>(Math.round(m*10)/10).toFixed(1);
+function chainDmg(cells,roll=1){const n=cells.length;let m=chainMult(n);
+  if(S.cls==='dragoon')m=n<5?m*.5:chainMult(n+2);
+  if(S.cls==='knight'&&S.maxArmor>0&&S.armor>=S.maxArmor)m*=1.5;
+  if(hasR('trident')&&cells.filter(p=>tileAt(p).t==='sword').length>=3)m*=1.3;
+  return Math.max(1,Math.round((S.baseDmg+cells.filter(p=>tileAt(p).t==='sword').length*S.weaponDmg)*m*roll));}
+const MIXLOSS=.45;
+const ROLLS=[.5,.75,1,1,1.25,1.5,2];
+const lastEnemyOf=cells=>{for(let i=cells.length-1;i>=0;i--)if(isEnemy(tileAt(cells[i])))return cells[i];return null;};
+function bonusTxtOf(n){const m=chainMult(n),b=chainBonus(n);return (m>1?`効果×${fmtM(m)}`:'')+(b?`・経験値+${b}`:'');}
+function addGold(a){S.gold+=a;while(S.gold>=S.goldNeed){S.gold-=S.goldNeed;S.goldNeed=Math.round(S.goldNeed*1.12+24*(S.cls==='thief'?.8:1));S.pending.push('shop');}}
+function commitChain(){
+  const hp0=S.hp,full0=S.hp>=S.maxHp;
+  const cells=chain.slice();chain=[];
+  const first=tileAt(cells[0]);const g=groupOf(first.t);const types=cells.map(p=>tileAt(p).t);
+  const remove=new Set();const msgs=[];const killsBefore=S.kills;const bonus=chainBonus(cells.length);let mult=chainMult(cells.length);
+  if(g==='atk'){
+    const swords=cells.filter(p=>tileAt(p).t==='sword').length;
+    let roll=S.cls==='gambler'?ROLLS[rnd(ROLLS.length)]:1;if(hasR('dice')&&Math.random()<.15){roll*=2;msgs.push('🎲 会心！');}
+    const dmg=chainDmg(cells,roll),lastE=S.cls==='hunter'?lastEnemyOf(cells):null;
+    if(roll!==1)msgs.push(`🃏 ×${roll}`+(roll>=2?' 大当たり！':roll<1?' はずれ…':''));
+    let killed=0,xp=0,hitN=0;const now=performance.now();
+    for(const p of cells){const t=tileAt(p);
+      if(t.t==='sword'){remove.add(p[0]*N+p[1]);continue;}
+      hitN++;applyDmg(t,dmgTo(t,p===lastE?dmg*2:dmg));if(p===lastE)msgs.push(`🏹 とどめの一矢 ${dmg*2}`);
+      if(t.hp<=0){remove.add(p[0]*N+p[1]);killed++;xp+=xpOf(t);}else t.hit=now;}
+    S.kills+=killed;if(xp)gainXp(xp);relicKills(killed);
+    msgs.push(hitN?`敵に${dmg}ダメージ${killed?`、${killed}体撃破`:''}`:`剣${swords}本を消費`);vampDrain(killed,msgs);
+  }else{
+    cells.forEach(p=>remove.add(p[0]*N+p[1]));
+    const eff=(g,n)=>{
+    if(g==='shield'&&S.cls==='zombie'){const h=Math.min(Math.round(n*mult),S.maxHp-S.hp);S.hp+=h;msgs.push(`🧟傷をふさいだ HP+${h}`);flash('bHp');}
+    else if(g==='shield'){const add=Math.round(n*S.armorPer*mult*(hasR('crest')?1.5:1)),used=Math.min(add,S.maxArmor-S.armor);S.armor+=used;const over=add-used;
+      if(over>0){S.shieldPts+=over;while(S.shieldPts>=S.shieldNeed){S.shieldPts-=S.shieldNeed;S.shieldNeed=Math.round(S.shieldNeed*1.25)+10;S.pending.push('shield');}}
+      msgs.push(`防御+${used}`+(over?`（超過${over}は盾ポイントへ）`:''));flash('bAr');}
+    else if(g==='potion'&&S.cls==='vampire'){const a=Math.round(n*mult);addGold(a);msgs.push(`🧪は口に合わない → 💰+${a}`);flash('bGd');}
+    else if(g==='potion'){const heal=Math.round(n*S.healPer*mult),h=Math.min(heal,S.maxHp-S.hp),cl=S.cls==='cleric',sell=Math.floor((heal-h)/(cl?3:4))*(hasR('urn')?2:1);S.hp+=h;if(sell){if(cl){gainXp(sell);flash('bXp');}else{addGold(sell);flash('bGd');}}msgs.push(`HP+${h}`+(sell?`（余り→${cl?'✨経験値':'💰'}+${sell}）`:''));flash('bHp');}
+    else if(g==='coin'){const a=Math.round(n*S.goldPer*mult);addGold(a);msgs.push(`お金+${a}`);flash('bGd');}
+    };
+    if(g==='mix'){const cnt={};cells.forEach(p=>{const t=tileAt(p).t;cnt[t]=(cnt[t]||0)+1;});const ty=Object.keys(cnt).length;if(ty>1){mult*=MIXLOSS;msgs.push('⚗️ 調合');}for(const k of ['shield','potion','coin'])if(cnt[k])eff(k,cnt[k]);}else eff(g,cells.length);
+  }
+  sfx('clear',g);if(g==='atk'&&S.kills>killsBefore)sfx('kill');
+  if(bonus){gainXp(hasR('starfrag')?bonus*2:bonus);flash('bXp');}
+  if(cells.length>=5){if(hasR('chalice')){addGold(4);msgs.push('🏆 💰+4');}if(hasR('clover'))gainXp(1);}
+  if(mult>1)msgs.unshift('✨'+bonusTxtOf(cells.length));
+  celebrate(cells,types,S.kills-killsBefore,bonus?'✨'+bonusTxtOf(cells.length):'');
+  achChain(cells.length,g,[...remove].map(i=>S.board[(i/N)|0][i%N]).filter(isEnemy),hp0,full0);
+  removeAndFill(remove);flushDeath(msgs);
+  if(cells.length>=7&&hasR('frost')){S.board.flat().filter(isEnemy).forEach(e=>e.frz=Math.max(e.frz||0,1));msgs.push('🧊 霜が敵を凍らせた');}
+  enemyPhase(msgs);popAnnounce(msgs);
+  S.turn++;S.skills.forEach(s=>{if(s.cur>0)s.cur--;});if(S.bless>0)S.bless--;
+  checkBoss(msgs);advanceFloor(msgs);achAfterTurn(hp0,S._boom);S._boom=false;
+  log(msgs.join(' ／ '));
+  if(S.hp<=0&&hasR('feather')&&!S.fUsed){S.fUsed=1;S.hp=Math.ceil(S.maxHp*.5);msgs.push('🪶 不死鳥の羽が燃え、よみがえった！');flash('bHp');}
+  if(S.hp<=0&&S.revive){S.revive=0;S.hp=Math.ceil(S.maxHp*.5);msgs.push('🧟 ……起き上がった');popAnnounce(['🧟 ……起き上がった！（もう蘇れない）']);flash('bHp');}
+  if(S.hp<=0){S.hp=0;updateAll();dying=true;setTimeout(()=>{dying=false;if(inGame)gameOver();},popLeft()+150);return;}
+  ensureMove();saveGame();updateAll();showNextPending();tutAfterCommit();
+}
+
+/* ---------- skills ---------- */
+function useSkill(i){
+  const sk=S.skills[i];if(!sk||sk.cur>0||busy()||modalOpen||(TUT&&(TUT.lock||TSTEPS[TUT.i].wait!=='skill')))return;
+  const now=performance.now();const remove=new Set();let msg='';const fx=[],kb=S.kills;
+  const eachEnemy=f=>{for(let r=0;r<N;r++)for(let c=0;c<N;c++){const t=S.board[r][c];if(isEnemy(t))f(t,r,c);}};
+  switch(sk.id){
+    case 'fire':{const d=SKD.fire();let k=0,xp=0;eachEnemy((t,r,c)=>{fx.push([r,c]);applyDmg(t,d);if(t.hp<=0){remove.add(r*N+c);k++;xp+=xpOf(t);}else t.hit=now;});S.kills+=k;if(xp)gainXp(xp);msg=`火球！全ての敵に${d}ダメージ${k?`、${k}体撃破`:''}`;break;}
+    case 'heal':{const h=Math.min(Math.ceil(S.maxHp*0.4),S.maxHp-S.hp);S.hp+=h;msg=`治癒：HP+${h}`;flash('bHp');break;}
+    case 'wall':{msg=`鉄壁：防御+${S.maxArmor-S.armor}`;S.armor=S.maxArmor;flash('bAr');break;}
+    case 'alchemy':{let k=0;for(const row of S.board)row.forEach((t,c)=>{if(t.t==='shield'){row[c]={t:'coin',ry:t.ry};k++;fx.push([S.board.indexOf(row),c]);}});msg=`錬金：${k}枚を💰に`;break;}
+    case 'arm':{let k=0;for(const row of S.board)row.forEach((t,c)=>{if(t.t==='potion'){row[c]={t:'sword',ry:t.ry};k++;fx.push([S.board.indexOf(row),c]);}});msg=`武装：${k}個を⚔️に`;break;}
+    case 'quake':{rerollNonEnemies();msg='地殻変動：盤面が入れ替わった';break;}
+    case 'thunder':{const d=SKD.thunder(),es=[];eachEnemy((t,r,c)=>es.push([t,r,c]));shuffle(es);let k=0,xp=0;const hit=es.slice(0,3);
+      hit.forEach(([t,r,c])=>{fx.push([r,c]);applyDmg(t,d);if(t.hp<=0){remove.add(r*N+c);k++;xp+=xpOf(t);}else t.hit=now;});S.kills+=k;if(xp)gainXp(xp);msg=`雷撃！${hit.length}体に${d}ダメージ${k?`、${k}体撃破`:''}`;break;}
+    case 'magnet':{let k=0;for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(S.board[r][c].t==='coin'){remove.add(r*N+c);k++;fx.push([r,c]);}const a=k*S.goldPer;addGold(a);flash('bGd');msg=`磁力：💰${k}枚を回収（+${a}）`;break;}
+    case 'freeze':{let k=0;eachEnemy((t,r,c)=>{t.frz=2;k++;fx.push([r,c]);});msg=`凍結：${k}体の敵が凍りついた`;break;}
+    case 'snipe':{const d=SKD.snipe();let tg=null,tr=0,tc=0;eachEnemy((t,r,c)=>{if(!tg||t.hp+t.armor>tg.hp+tg.armor){tg=t;tr=r;tc=c;}});
+      if(!tg)msg='狙撃：敵がいない';else{fx.push([tr,tc]);applyDmg(tg,d);if(tg.hp<=0){remove.add(tr*N+tc);S.kills++;gainXp(xpOf(tg));msg=`狙撃！${EK[kindOf(tg)].name}を撃破`;}else{tg.hit=now;msg=`狙撃！${EK[kindOf(tg)].name}に${d}ダメージ`;}}break;}
+    case 'crush':{let k=0;eachEnemy((t,r,c)=>{if(t.armor>0){t.armor=0;k++;fx.push([r,c]);}});msg=`粉砕：${k}体の装甲を破壊`;break;}
+    case 'bless':{S.bless=3;msg='祝福：3ターン チェーンが3つ長い扱いに';break;}
+    case 'execute':{let k=0,xp=0;eachEnemy((t,r,c)=>{if(!t.boss&&t.hp<=execLine(t)){fx.push([r,c]);remove.add(r*N+c);k++;xp+=xpOf(t);}});S.kills+=k;xp=Math.round(xp*1.5);if(xp)gainXp(xp);msg=k?`処刑：${k}体撃破（経験値1.5倍）`:'処刑：対象なし';break;}
+  }
+  sk.cur=hasR('hourglass')?Math.max(2,Math.round(sk.cd*.85)):sk.cd;{const dr=vampDrain(S.kills-kb);if(dr)msg+=' ／ '+dr;}sfx('skill');skillFx(sk.id,fx,S.kills-kb);
+  if(!TUT){achStat('skills');achKills([...remove].map(i=>S.board[(i/N)|0][i%N]).filter(isEnemy));
+    if(sk.id==='thunder'&&S.kills-kb>=3)unlock('thunder3');if(sk.id==='freeze'&&S.board.flat().some(e=>isEnemy(e)&&kindOf(e)==='dragon'))unlock('s_frzdragon');}
+  relicKills(S.kills-kb);if(hasR('tome')&&!TUT)gainXp(3);
+  if(remove.size)removeAndFill(remove);
+  {const m=[msg];flushDeath(m);popAnnounce(m);checkBoss(m);msg=m.join(' ／ ');}
+  if(!TUT){if(!S.board.flat().some(isEnemy))unlock('s_silence');achState();achSave();}
+  ensureMove();log(msg);saveGame();updateAll();showNextPending();if(TUT)tutDone();
+}
+
+/* ---------- upgrades ---------- */
+function pick(pool,n){return shuffle(pool.slice()).slice(0,n);}
+function levelOptions(){
+  const opts=[];
+  if(TUT){['fire','heal','wall'].forEach(k=>opts.push({label:`${SKILLS[k].icon} 新スキル「${SKILLS[k].name}」`,desc:skillDesc(k),apply:()=>S.skills.push({id:k,cd:cdOf(k),cur:0})}));return opts;}
+  {const full=S.skills.length>=4,un=shuffle(Object.keys(SKILLS).filter(k=>!S.skills.some(s=>s.id===k)&&!(S.cls==='zombie'&&(k==='wall'||k==='alchemy'))));
+    un.slice(0,full?1:2).forEach(k=>opts.push({label:`${SKILLS[k].icon} 新スキル「${SKILLS[k].name}」`+(full?'（入れ替え）':''),desc:`${skillDesc(k)}（再使用まで${cdOf(k)}ターン）`,replaceId:full?k:null,apply:()=>S.skills.push({id:k,cd:cdOf(k),cur:0})}));}
+  const stat=[
+    {label:'❤️ 体力強化',desc:'最大HP+16、HP+16',apply:()=>{S.maxHp+=16;S.hp+=16;}},
+    {label:'💪 腕力強化',desc:`基礎攻撃力+${S.baseUp||5}（現在${S.baseDmg}）<br><small>剣の本数に関係なく毎回乗る。短いチェーン向き</small>`,apply:()=>{S.baseDmg+=S.baseUp||5;}}];
+  if(S.skills.length)stat.push({label:'🧘 集中',desc:`今のスキル全部の再使用ターン-3（最低4）<br>${S.skills.map(x=>`${SKILLS[x.id].icon}${x.cd}→${Math.max(4,x.cd-3)}`).join('　')}<br>次に使った後から効く・重ねがけOK・後で覚えたスキルは対象外`,apply:()=>S.skills.forEach(s=>s.cd=Math.max(4,s.cd-3))});
+  shuffle(stat);while(opts.length<3&&stat.length)opts.push(stat.pop());
+  return opts;
+}
+function shopOptions(){
+  const p=[
+    {label:'⚔️ 武器を鍛える',desc:`剣1本あたりの攻撃力+${S.wpnUp||2}（現在${S.weaponDmg}）<br><small>剣を多くつなぐほど伸びる。長いチェーン向き</small>`,apply:()=>{S.weaponDmg+=S.wpnUp||2;}},
+    {label:'🛡️ 鎧を新調',desc:'最大防御+5、防御+5',apply:()=>{S.maxArmor+=5;S.armor+=5;}},
+    {label:'❤️ 生命の護符',desc:'最大HP+25、HP+25',apply:()=>{S.maxHp+=25;S.hp+=25;}},
+    {label:'💪 修行',desc:`基礎攻撃力+${S.baseUp||5}（現在${S.baseDmg}）<br><small>剣の本数に関係なく毎回乗る。短いチェーン向き</small>`,apply:()=>{S.baseDmg+=S.baseUp||5;}}];
+  if(S.cls==='zombie')p.splice(1,1);
+  if(S.healPer<8&&S.cls!=='vampire')p.push({label:'🧪 薬の調合',desc:`🧪1個の回復量+2（現在${S.healPer}）`,apply:()=>{S.healPer+=2;}});
+  if(S.goldPer<4)p.push({label:'🧤 盗賊の手袋',desc:`💰1枚の価値+1（現在${S.goldPer}）`,apply:()=>S.goldPer++});
+  return pick(p,3);
+}
+function shieldOptions(){
+  const p=[
+    {label:'🛡️ 盾の補強',desc:'最大防御+3、防御全回復',apply:()=>{S.maxArmor+=3;S.armor=S.maxArmor;}},
+    {label:'🩹 応急手当',desc:'HP+40',apply:()=>{S.hp=Math.min(S.maxHp,S.hp+40);}},
+    {label:'🪨 鉄の皮膚',desc:'最大HP+12、HP+12',apply:()=>{S.maxHp+=12;S.hp+=12;}}];
+  if(S.armorPer<3)p.push({label:'📘 盾の心得',desc:`🛡️1枚あたりの防御+1（現在${S.armorPer}）`,apply:()=>S.armorPer++});
+  return pick(p,3);
+}
+let pendTimer=null,dying=false;
+const POP_MS=1450;
+function popLeft(){return Math.max(POP?Math.max(0,POP_MS-(performance.now()-POP.t0)):0,bannerLeft());}
+function showNextPending(){
+  if(modalOpen||!S||!S.pending.length)return;
+  if(S.pending[0]==='clear'&&popLeft()<=0){showClear();return;}
+  if(S.pending[0]==='event'&&popLeft()<=0){showEvent();return;}
+  const left=popLeft();if(left>0){clearTimeout(pendTimer);pendTimer=setTimeout(showNextPending,left+120);return;}
+  const kind=S.pending[0];
+  const head={level:['🎉 レベルアップ！',TUT?`Lv${S.level}になった。1つ選んでください。`:`${NM()}はLv${S.level}になった。1つ選んでください。`],
+    shop:['💰 ショップ','お金がたまった。強化を1つ選んでください。'],
+    shield:['🛡️ 防具の強化','盾ポイントがたまった。1つ選んでください。'],
+    relic:['🏺 遺物','中ボスが遺物を落とした。1つ選んでください（この冒険のあいだ有効）。']}[kind];
+  sfx(kind==='level'?'level':'shop');
+  const opts=kind==='level'?levelOptions():kind==='shop'?shopOptions():kind==='relic'?relicOptions():shieldOptions();
+  if(!opts.length){S.pending.shift();showNextPending();return;}
+  openModal(`<h2>${head[0]}</h2><p style="text-align:center">${head[1]}</p>`+opts.map((o,i)=>`<button class="opt" data-i="${i}">${o.label}<small>${o.desc}</small></button>`).join(''));
+  $('mbox').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{const o=opts[+b.dataset.i];if(o.replaceId){chooseReplace(o.replaceId,kind,opts);return;}if(kind==='shop'&&S.run)S.run.shops=(S.run.shops||0)+1;o.apply();finishPending();});
+}
+function finishPending(){S.pending.shift();closeModal();if(!TUT){achState();achSave();}saveGame();updateAll();showNextPending();if(TUT&&TSTEPS[TUT.i].wait==='level'&&!S.pending.length)tutDone();}
+function chooseReplace(k,kind,opts){
+  const d=SKILLS[k];
+  openModal(`<h2>どのスキルと入れ替える？</h2><p style="text-align:center">新しく覚える：${d.icon} ${d.name}<br><small>${skillDesc(k)}</small></p>`+
+    S.skills.map((s,i)=>`<button class="opt" data-i="${i}">${SKILLS[s.id].icon} ${SKILLS[s.id].name} を忘れる<small>${skillDesc(s.id)}</small></button>`).join('')+
+    `<button class="opt" id="rpBack" style="text-align:center">やめて 別のものを選ぶ</button>`);
+  $('mbox').querySelectorAll('.opt[data-i]').forEach(b=>b.onclick=()=>{S.skills[+b.dataset.i]={id:k,cd:cdOf(k),cur:0};finishPending();});
+  $('rpBack').onclick=()=>{closeModal();showNextPending();};
+}
+
+/* ---------- modal ---------- */
+function openModal(html){hideTip();$('mbox').innerHTML=html;$('modal').classList.remove('hidden');modalOpen=true;}
+function closeModal(){$('modal').classList.add('hidden');modalOpen=false;}
+
+const HELP=`<h2>遊び方</h2><ul>
+<li>同じ種類のタイルを<b>縦・横・斜め</b>に<b>3つ以上</b>なぞってつなぐと消えます。指を戻すと取り消せます。</li>
+<li><b>⚔️と💀は一緒につなげます。</b>つないだ敵全員に「基礎攻撃力＋剣の本数×武器攻撃力」のダメージ。</li>
+<li>🛡️：防御を回復。満タンを超えた分は<b>盾ポイント</b>になり、たまると防具強化。</li>
+<li>🧪：HP回復（余った分の半分はお金に）。 💰：お金。たまると<b>ショップ</b>で強化を選べます。</li>
+<li><b>長くつなぐほど強い</b>：どのパネルも、つないだ数が多いほど1枚あたりの効果が上がります（4つ×1.2、5つ×1.4、7つ×1.8、10つ×2.6、14つ×4.1）。5つ以上なら経験値ボーナスも（+1〜4）。</li>
+<li>敵を倒すと経験値。<b>レベルアップ</b>でスキル習得や能力強化。</li>
+<li>毎ターン、盤面の敵がまとめて攻撃してきます（出たばかりの敵は次のターンから）。ダメージはまず防御が受け止めます。</li>
+<li>敵タイルの数字：<span style="color:#ffd54a">左下＝攻撃力</span>、<span style="color:#ff6b6b">右下＝HP</span>、<span style="color:#7fc4ff">右上＝装甲</span>（先にダメージを吸収）。</li>
+<li>敵には いろいろな種類がいます（コウモリ、爆弾、ゴーレム…）。<b>長押し</b>で特徴を確認しよう。</li>
+<li>2ターンごとに1階ずつ潜ります。20階ごとにボスがいて、<b>倒すまで下へ進めません</b>（オーガ王→ドラゴン→ヴァンパイア→クラーケン）。</li>
+<li>目標は<b>地下100Fの世界の元凶「深淵の眼」</b>。左上の階層を長押しすると、今いる場所の情報が見られます。</li>
+<li>スキルはターンを消費せずに使えます。</li>
+<li><b>タイル・スキル・ゲージを長押し</b>すると、効果の説明が出ます。</li>
+<li>毎ターン<b>自動セーブ</b>。閉じても「続きから」で再開できます。</li>
+</ul><button class="opt" style="text-align:center;position:sticky;bottom:0;background:#2e2535;box-shadow:0 -8px 12px #211a25" id="mClose">閉じる</button>`;
+function showHelp(){openModal(HELP);$('mClose').onclick=closeModal;}
+
+function showMenu(){
+  if(TUT){openModal(`<h2>チュートリアル</h2><button class="opt" id="u1">${TUT.fromNew?'スキップして 冒険をはじめる':'チュートリアルを終わる'}</button><button class="opt" id="u2">遊び方（文章）</button><button class="opt" id="u3">タイトルへ</button><button class="opt" id="u4" style="text-align:center">閉じる</button>`);
+    $('u1').onclick=tutSkip;$('u2').onclick=showHelp;$('u3').onclick=()=>{closeModal();endTutorial();showTitle();};$('u4').onclick=closeModal;return;}
+  openModal(`<h2>メニュー</h2>
+  <button class="opt" id="m1">遊び方</button>
+  <button class="opt" id="m2">セーブデータを書き出す<small>別の端末へ移すときや、バックアップ用</small></button>
+  <button class="opt" id="m7">📜 冒険の記録<small>実績・魔物図鑑・解放</small></button>
+  <button class="opt" id="m8">⚙️ 設定<small>音と振動の切り替え</small></button>
+  <button class="opt" id="m3">タイトルへ戻る<small>進行状況は保存されています</small></button>
+  <button class="opt" id="m4">あきらめる<small>この冒険を終了します</small></button>
+  <button class="opt" id="m5" style="text-align:center">閉じる</button>`);
+  $('m1').onclick=showHelp;$('m2').onclick=showExport;$('m7').onclick=()=>showRecords(showMenu);if(firstRun())$('m7').style.display='none';$('m8').onclick=()=>showSettings(showMenu);
+  $('m3').onclick=()=>{saveGame();closeModal();showTitle();};
+  $('m4').onclick=()=>{openModal(`<h2>本当にあきらめますか？</h2><p style="text-align:center">セーブデータは消えます。</p><button class="opt" id="y" style="text-align:center">あきらめる</button><button class="opt" id="n" style="text-align:center">続ける</button>`);
+    $('y').onclick=()=>{closeModal();GIVEUP=true;gameOver();};$('n').onclick=closeModal;};
+  $('m5').onclick=closeModal;
+}
+function encodeSave(){return btoa(unescape(encodeURIComponent(serialize())));}
+function showExport(){
+  saveGame();
+  openModal(`<h2>セーブデータ</h2><p>下の文字列を保存しておくと、タイトル画面の「セーブデータを読み込む」で再開できます。</p><textarea id="ex" readonly>${encodeSave()}</textarea><button class="opt" id="cp" style="text-align:center">コピー</button><button class="opt" id="cl" style="text-align:center">閉じる</button>`);
+  $('cp').onclick=async()=>{const ta=$('ex');const ok=await copyText(ta.value);if(ok)$('cp').textContent='コピーしました';else{ta.focus();ta.select();ta.setSelectionRange(0,ta.value.length);$('cp').textContent='選択しました。長押しでコピーしてください';}};
+  $('cl').onclick=closeModal;
+}
+function showImport(){
+  openModal(`<h2>セーブデータを読み込む</h2><p>書き出した文字列を貼り付けてください。今のセーブは上書きされます。</p><textarea id="im"></textarea><p id="imErr" style="color:#f88"></p><button class="opt" id="ok" style="text-align:center">読み込んで再開</button><button class="opt" id="cl" style="text-align:center">キャンセル</button>`);
+  $('cl').onclick=closeModal;
+  $('ok').onclick=()=>{try{const json=decodeURIComponent(escape(atob($('im').value.trim())));const s=JSON.parse(json);if(s.v!==1||!Array.isArray(s.board))throw 0;
+      chooseNewSlot(()=>{closeModal();startFromSave(json);saveGame();},showImport);}catch(e){$('imErr').textContent='読み込めませんでした。文字列を確認してください。';}};
+}
+
+/* ---------- save / load ---------- */
+function serialize(){return JSON.stringify(S,(k,v)=>(k==='ry'||k==='hit')?undefined:v);}
+function saveGame(){
+  if(!S||!inGame||TUT)return;S.ts=Date.now();
+  const json=serialize();savedJson=json;
+  try{localStorage.setItem(slotKey(SLOT),json);}catch(e){}
+  cloudWrite('save',{json,ts:S.ts});
+}
+function deleteSave(){savedJson=null;try{localStorage.removeItem(slotKey(SLOT));}catch(e){}cloudWrite('save','DEL');}
+function recordBest(){
+  const prev=best||{turn:-1,kills:0,level:0,chain:0};
+  const pf=prev.floor||(prev.turn>=0?1+Math.floor(prev.turn/2):0),F=floorOf();
+  const isNew=F>pf||(F===pf&&S.turn>prev.turn),chain=Math.max(prev.chain||0,S.maxChain||0),cleared=Math.max(prev.cleared||0,S.cleared||0);
+  const nb=isNew?{turn:S.turn,kills:S.kills,level:S.level,floor:F,chain,cleared}:{...prev,chain,cleared};
+  if(isNew||chain!==(prev.chain||0)||cleared!==(prev.cleared||0)){best=nb;try{localStorage.setItem(LS_BEST,JSON.stringify(best));}catch(e){}cloudWrite('best',best);}
+  return isNew;
+}
+function startFromSave(json){
+  const s=JSON.parse(json);if(!s.floor)s.floor=1+Math.floor(s.turn/2);if(!s.run)s.run={hit:true,shops:99,mute:0};
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++)s.board[r][c].ry=r;
+  S=s;startGame();
+}
+
+/* cloud (claude.ai artifact db) */
+const cq={};
+const cref=name=>DB.doc('data/users/'+UID+'/'+name);
+function cloudWrite(name,data){if(!cloudOn)return;const q=cq[name]||(cq[name]={busy:false,next:null});q.next=data;if(!q.busy)pump(name);}
+async function pump(name){
+  const q=cq[name];q.busy=true;
+  while(q.next!==null&&cloudOn){const d=q.next;q.next=null;
+    const run=()=>d==='DEL'?cref(name).delete():cref(name).set(d);
+    try{await run();}catch(e){
+      if(e&&e.code==='unavailable'){await new Promise(r=>setTimeout(r,700+Math.random()*900));try{await run();}catch(e2){}}
+      else{cloudOn=false;setCloud('端末内にのみ保存中');}}
+  }
+  q.busy=false;
+}
+function setCloud(t){$('cloud').textContent='セーブ: '+t;}
+async function initCloud(){
+  try{
+    if(!window.claude||typeof window.claude.use!=='function'){setCloud('この端末のブラウザに保存');return;}
+    const [db,user]=await Promise.all([window.claude.use('db'),window.claude.use('user')]);
+    if(!db||!user){setCloud('この端末のブラウザに保存');return;}
+    const id=await user.id();if(!id){setCloud('この端末のブラウザに保存');return;}
+    DB=db;UID=id;
+    const timer=setTimeout(()=>setCloud('クラウドに接続できません（端末に保存中）'),10000);
+    const [sv,bs,ac]=await Promise.all([cref('save').get(),cref('best').get(),cref('ach').get()]);
+    clearTimeout(timer);cloudOn=true;setCloud('クラウドに自動保存（他の端末でも続きから遊べます）');
+    // merge save
+    let localTs=0;try{localTs=savedJson?JSON.parse(savedJson).ts||0:0;}catch(e){}
+    if(sv.exists){const d=sv.data();
+      if(d&&typeof d.json==='string'&&(d.ts||0)>localTs&&!inGame){savedJson=d.json;try{localStorage.setItem(LS_SAVE,d.json);}catch(e){}}
+      else if(savedJson&&localTs>(d.ts||0))cloudWrite('save',{json:savedJson,ts:localTs});}
+    else if(savedJson)cloudWrite('save',{json:savedJson,ts:localTs});
+    if(bs.exists){const b=bs.data();if(b&&(!best||b.turn>best.turn)){best={turn:b.turn,kills:b.kills,level:b.level,chain:Math.max(b.chain||0,best&&best.chain||0)};try{localStorage.setItem(LS_BEST,JSON.stringify(best));}catch(e){}}
+      else if(best&&b&&best.turn>b.turn)cloudWrite('best',best);}
+    else if(best)cloudWrite('best',best);
+    try{if(ac.exists){const d=ac.data();if(d&&typeof d.json==='string'&&achMerge(JSON.parse(d.json))){try{localStorage.setItem(LS_ACH,JSON.stringify(ACH));}catch(e){}}cloudWrite('ach',{json:JSON.stringify(ACH)});}else if(achCount())cloudWrite('ach',{json:JSON.stringify(ACH)});}catch(e){}
+    refreshTitle();
+  }catch(e){setCloud('この端末のブラウザに保存');}
+}
+
+/* ---------- opening story ---------- */
+const STORY=[
+  ['その年、村の井戸は','黒く濁りはじめた。'],
+  ['作物は枯れ、夜はすこしずつ長くなった。','古老たちは声をひそめて言った。','「地の底で、何かが目をひらいたのだ」'],
+  ['村はずれの、忘れられた墓地。','苔むした石棺の下に、','誰も降りたことのない階段がある。'],
+  ['湿った石の匂い。','どこかで、水の滴る音。','ランタンの灯が、闇に小さな輪をつくる。'],
+  ['目指すは、地下100F。','<span class="em">世界の元凶を――討て。</span>']
+];
+let storyDone=null,storyPage=0,storyReady=false,storyTimer=null;
+function playStory(then){
+  storyDone=then;storyPage=0;ensureAudio();AU.mode='amb';bgmStart();
+  const el=$('story');el.classList.remove('hidden','fade');showStoryPage();
+}
+function showStoryPage(){
+  const lines=STORY[storyPage],t=$('storyText');storyReady=false;$('storyHint').style.opacity=0;
+  t.classList.remove('out');t.innerHTML=lines.map((l,i)=>`<div class="ln" style="animation-delay:${.3+i*1.3}s">${l.replace('{N}',esc(getName()))}</div>`).join('');
+  clearTimeout(storyTimer);storyTimer=setTimeout(()=>{storyReady=true;$('storyHint').style.opacity=1;},(.3+(lines.length-1)*1.3+1.8)*1000);
+}
+function storyNext(){
+  const t=$('storyText');
+  if(!storyReady){t.querySelectorAll('.ln').forEach(x=>{x.style.animationDelay='0s';x.style.animationDuration='.5s';});clearTimeout(storyTimer);storyTimer=setTimeout(()=>{storyReady=true;$('storyHint').style.opacity=1;},500);return;}
+  storyReady=false;t.classList.add('out');
+  setTimeout(()=>{storyPage++;if(storyPage>=STORY.length){unlock('s_story');endStory();}else showStoryPage();},900);
+}
+function endStory(){
+  clearTimeout(storyTimer);const el=$('story');el.classList.add('fade');AU.mode='game';
+  const f=storyDone;storyDone=null;if(f)f();
+  setTimeout(()=>{el.classList.add('hidden');el.classList.remove('fade');},1400);
+}
+$('story').addEventListener('click',e=>{if(e.target.id==='storySkip')return;storyNext();});
+$('storySkip').onclick=()=>{storyPage=STORY.length;endStory();};
+/* ---------- screens ---------- */
+function refreshTitle(){
+  {const show=!!(RUNS.length||best||achCount()>1);$('btnAch').style.display=show?'':'none';}
+  const has=anySave(),n=[0,1,2].filter(i=>slotJson(i)).length;$('btnCont').style.display=has?'':'none';$('btnNew').classList.toggle('pri',!has);$('btnNew').textContent=has?'新しい冒険':'冒険に出る';
+  let info='';if(has){let L=null;[0,1,2].forEach(i=>{const s=slotInfo(i);if(s&&!s.broken&&(!L||(s.ts||0)>(L.ts||0)))L=s;});
+    info=(n>1?`セーブ${n}件・`:'')+(L?`前回：${L.name?esc(L.name)+' ':''}B${L.floor||1}F・Lv${L.level}`:'');if(info)info=`（${info}）`;}
+  $('btnCont').innerHTML='続きから'+(info?`<small>${info.replace(/^（|）$/g,'')}</small>`:'');
+  $('bestLine').textContent=best?`${best.cleared?'👑':'🕳️'} 最深 B${best.floor||1+Math.floor(best.turn/2)}F`+(UNL.curseMax?`　🩸 呪いLv${UNL.curseMax}まで`:''):'';
+}
+/* ---------- title background: a live board tracing chains ---------- */
+let tAnimOn=false;const TT=['skull','sword','shield','potion','coin'];
+function tRand(){return TT[rnd(TT.length)];}
+function titleAnim(){if(tAnimOn)return;tAnimOn=true;const bd=$('tBoard'),sv=$('tTrace');if(!bd)return;
+  const RW=8,g=[];bd.innerHTML='';for(let r=0;r<RW;r++){g.push([]);for(let c=0;c<N;c++){const i=document.createElement('i');bd.appendChild(i);g[r].push(null);}}
+  const cells=[...bd.children];const set=(r,c,t)=>{g[r][c]=t;const el=cells[r*N+c];el.textContent=ICON[t];el.style.background=BG[t];};
+  for(let r=0;r<RW;r++)for(let c=0;c<N;c++)set(r,c,tRand());
+  const grp=t=>t==='sword'||t==='skull'?'a':t;
+  function findChain(){let best=null;for(let k=0;k<40;k++){const r0=rnd(RW),c0=rnd(N),G=grp(g[r0][c0]),P=[[r0,c0]];
+      for(let st=0;st<9;st++){const [r,c]=P[P.length-1],nb=[];for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const rr=r+dr,cc=c+dc;if((dr||dc)&&rr>=0&&cc>=0&&rr<RW&&cc<N&&grp(g[rr][cc])===G&&!P.some(q=>q[0]===rr&&q[1]===cc))nb.push([rr,cc]);}
+        if(!nb.length)break;P.push(nb[rnd(nb.length)]);}
+      if(!best||P.length>best.length)best=P;if(best.length>=6)break;}
+    if(best.length<3){for(let r=0;r<RW;r++)for(let c=0;c<N;c++)set(r,c,tRand());return findChain();}return best;}
+  function cycle(){if($('title').classList.contains('hidden')){tAnimOn=false;return;}
+    const P=findChain(),W=bd.clientWidth,H=bd.clientHeight,cw=(W-10)/N,ch=(H-10)/RW;sv.setAttribute('viewBox',`0 0 ${W} ${H}`);
+    const pts=P.map(([r,c])=>`${5+c*cw+cw/2},${5+r*ch+ch/2}`);let i=0;
+    sv.innerHTML=`<polyline fill="none" stroke="rgba(255,255,255,.75)" stroke-width="${Math.max(3,cw*.1)}" stroke-linecap="round" stroke-linejoin="round" points=""/>`;const pl=sv.firstChild;
+    const t=setInterval(()=>{if(i<P.length){cells[P[i][0]*N+P[i][1]].classList.add('on');i++;pl.setAttribute('points',pts.slice(0,i).join(' '));return;}
+      clearInterval(t);setTimeout(()=>{P.forEach(([r,c])=>{const el=cells[r*N+c];el.classList.remove('on');el.classList.add('gone');});sv.innerHTML='';
+        setTimeout(()=>{P.forEach(([r,c])=>{set(r,c,tRand());cells[r*N+c].classList.remove('gone');});setTimeout(cycle,700);},380);},650);},230);}
+  setTimeout(cycle,900);}
+function showTitle(){setTimeout(titleAnim,50);checkUnlocks();setTimeout(()=>{if(!inGame&&!modalOpen&&UNL.unseen.length)showUnlockCeremony(refreshTitle);},400);clearTimeout(pendTimer);hideTip();endTutorial();inGame=false;bgmStop();closeModal();refreshTitle();$('title').classList.remove('hidden');}
+function startGame(){inGame=true;if(!TUT){const h=new Date().getHours();if(h<4)setTimeout(()=>unlock('s_night'),1500);}if(!TUT&&S&&S.turn===0)setTimeout(()=>{if(inGame&&!TUT&&S.turn===0)showBanner('B1F',zoneAt(1).name,'目指すは地下100F。世界の元凶を討て。');},1300);ensureAudio();if(AU.on.bgm)bgmStart();$('title').classList.add('hidden');chain=[];$('log').textContent='';layout();updateAll();showNextPending();}
+function gameOver(){
+  if(GIVEUP&&S.turn===0)unlock('s_coward');if(!GIVEUP&&floorOf()===100)unlock('s_almost');achState();
+  recordRun();achRunEnd();achSave();const isNew=recordBest();deleteSave();inGame=false;bgmStop();sfx('over');
+  showGameOver(isNew);
+}
+function showGameOver(isNew){
+  openModal(`<div class="big" style="text-align:center">💀</div><h2>力尽きた…</h2>
+  <p style="text-align:center;font-size:15px"><span style="color:#a99fae;font-size:13px">${NM()}（${(CLASSES[S.cls]||CLASSES.warrior).n}）${S.curse?`・呪いLv${S.curse}`:''}${S.relics&&S.relics.length?`・${relicsHtml()}`:''}</span><br>B${floorOf()}F「${floorOf()%20===0?bossFloorName(floorOf()):zoneAt(floorOf()).name}」で倒れた<br>${S.turn}ターン ／ 撃破${S.kills} ／ Lv${S.level} ／ 最長${S.maxChain||0}チェーン</p>
+  <p style="text-align:center">${isNew?'🏆 最深記録を更新！':`最深記録：B${best.floor||1}F`}</p>${heldAchHtml()}
+  <button class="opt" id="g1" style="text-align:center">もう一度</button><button class="opt" id="g2" style="text-align:center">タイトルへ</button>
+  <button class="opt" id="g3" style="text-align:center;font-size:13px">📝 この結果をメモ用にコピー</button>`);copyBtn('g3',runReportText);
+  $('g1').onclick=()=>{closeModal();const go=()=>{newState();startGame();saveGame();};if(UNL.unseen.length)showUnlockCeremony(go);else go();};
+  $('g2').onclick=()=>{closeModal();showTitle();};
+}
+$('btnCont').onclick=()=>{if(!anySave())return;const f=[0,1,2].filter(i=>slotJson(i));if(f.length===1){loadSlot(f[0]);return;}showSlots('load',loadSlot);};
+function newAdventure(cls){if(cls===undefined||typeof cls!=='string'){pickClass(c=>newAdventure(c),()=>{closeModal();if(TUT){endTutorial();showTitle();}});return;}closeModal();endTutorial();newState(cls);startGame();saveGame();}
+function slotLine(i){const s=slotInfo(i);if(!s)return `<b>スロット${i+1}</b>　<span style="color:#8f8396">― 空き ―</span>`;if(s.broken)return `<b>スロット${i+1}</b>　読み込めないデータ`;
+  const c=CLASSES[s.cls]||CLASSES.warrior,d=s.ts?new Date(s.ts):null;
+  return `<b>スロット${i+1}</b>　${c.ic}${esc(s.name||'')}（${c.n}）<small>B${s.floor||1}F・Lv${s.level}・${s.turn}ターン${d?`　${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`:''}</small>`;}
+function showSlots(mode,pick,back){
+  const title=mode==='load'?'続きから':'どのセーブに上書きしますか？';
+  openModal(`<h2>${title}</h2>${mode==='over'?'<p style="text-align:center;color:#f99;font-size:13px">セーブは3つまで。選んだスロットの冒険は消えます。</p>':''}
+    ${[0,1,2].map(i=>{const has=!!slotJson(i);return `<div class="slotrow"><button class="opt sl" data-i="${i}" ${mode==='load'&&!has?'disabled style="opacity:.4"':''}>${slotLine(i)}</button>${mode==='load'&&has?`<button class="sldel" data-i="${i}" aria-label="削除">🗑</button>`:''}</div>`;}).join('')}
+    <button class="opt" id="slBack" style="text-align:center">戻る</button>`);
+  document.querySelectorAll('#mbox .sl').forEach(b=>b.onclick=()=>{if(b.disabled)return;pick(+b.dataset.i);});
+  document.querySelectorAll('#mbox .sldel').forEach(b=>b.onclick=()=>{const i=+b.dataset.i;
+    openModal(`<h2>スロット${i+1}を削除</h2><p style="text-align:center">${slotLine(i)}</p><p style="text-align:center">この冒険は消えます。よろしいですか？</p><button class="opt" id="y" style="text-align:center">削除する</button><button class="opt" id="n" style="text-align:center">やめる</button>`);
+    $('y').onclick=()=>{try{localStorage.removeItem(slotKey(i));}catch(e){}if(i===SLOT)savedJson=null;refreshTitle();anySave()?showSlots(mode,pick,back):(closeModal());};
+    $('n').onclick=()=>showSlots(mode,pick,back);});
+  $('slBack').onclick=back||closeModal;
+}
+/* pick the slot a new adventure will use: first empty one, or ask which to overwrite */
+function chooseNewSlot(then,back){const e=[0,1,2].find(i=>!slotJson(i));if(e!==undefined){setSlot(e);then();return;}
+  showSlots('over',i=>{setSlot(i);then(true);},back);}
+function loadSlot(i){setSlot(i);try{closeModal();startFromSave(savedJson);}catch(e){openModal('<h2>読み込みエラー</h2><p>セーブデータが壊れています。</p><button class="opt" id="x">閉じる</button>');$('x').onclick=closeModal;}}
+function showNewGameMenu(over){
+  if(typeof over!=='boolean'){chooseNewSlot(ov=>showNewGameMenu(!!ov));return;}
+  const first=!tutDoneFlag()&&!best;
+  openModal(`<h2>新しい冒険</h2>${nameField()}${curseField()}<p style="text-align:center;font-size:12px;color:${over?'#f99':'#a99fae'}">${over?`スロット${SLOT+1}の冒険に上書きします`:`スロット${SLOT+1}に記録します`}</p>
+    <button class="opt" id="ng1">📜 物語から始める<small>${first?'はじめての方へ。物語のあと、チュートリアルで遊び方を覚えられます（スキップ可）':'オープニングを見てから冒険へ'}</small></button>
+    <button class="opt" id="ng2">⚔️ すぐに冒険へ<small>オープニングもチュートリアルも飛ばす</small></button>
+    <button class="opt" id="ng3">🎓 チュートリアルから<small>遊び方をおさらいしてから冒険へ</small></button>
+    <button class="opt" id="ng4" style="text-align:center">やめる</button>`);
+  $('ng1').onclick=()=>{closeModal();if(first){playStory(()=>startTutorial(true));return;}pickClass(c=>playStory(()=>newAdventure(c)));};
+  $('ng2').onclick=()=>newAdventure();
+  $('ng3').onclick=()=>{closeModal();startTutorial(true);};
+  $('ng4').onclick=closeModal;wireNameField();wireCurse();
+}
+$('btnNew').onclick=()=>showNewGameMenu();
+$('tutSkip').onclick=e=>{e.stopPropagation();tutSkip();};
+$('btnAch').onclick=()=>showRecords();
+$('btnSet').onclick=()=>showSettings(null);
+
+$('btnImport').onclick=showImport;
+$('menuBtn').onclick=()=>{if(!modalOpen&&inGame)showMenu();};
+
+/* ---------- HUD ---------- */
+function setBar(id,v,max,text){const b=$(id);b.querySelector('.fill').style.width=(max>0?Math.max(0,Math.min(1,v/max))*100:0)+'%';b.querySelector('span').textContent=text;}
+function enemyTotal(excl){let t=0;for(let r=0;r<N;r++)for(let c=0;c<N;c++){const e=S.board[r][c];if(isEnemy(e)&&!(excl&&excl.has(r*N+c))){const a=enemyAtk(e);t+=a.d+a.p;}}return t;}
+function updateAll(){
+  if(!S)return;musicZone();
+  $('tTurn').textContent=`B${floorOf()}F`;$('tKill').textContent=S.kills;$('tLv').textContent=S.level;
+  setBar('bHp',S.hp,S.maxHp,`❤️ HP ${S.hp} / ${S.maxHp}`);
+  setBar('bAr',S.armor,S.maxArmor,`🛡️ 防御 ${S.armor}/${S.maxArmor}`);
+  setBar('bXp',S.xp,S.xpNeed,`✨ 経験 ${S.xp}/${S.xpNeed}`);
+  setBar('bGd',S.gold,S.goldNeed,`💰 ${S.gold}/${S.goldNeed}`);
+  setBar('bSh',S.shieldPts,S.shieldNeed,`🔰 盾pt ${S.shieldPts}/${S.shieldNeed}`);
+  $('stats').innerHTML=`<span>${(CLASSES[S.cls]||CLASSES.warrior).ic}${S.curse?`<small style="color:#ff8a8a">呪${S.curse}</small>`:''}${S.relics&&S.relics.length?`<small id="relicBtn" style="margin-left:3px">${relicsHtml()}</small>`:''}</span><span>⚔️ 基礎${S.baseDmg}＋剣×${S.weaponDmg}</span><span>🧪×${S.healPer}</span><span>🛡️×${S.armorPer}</span><span>💰×${S.goldPer}</span>`;
+  const sk=$('skills');sk.innerHTML='';
+  for(let i=0;i<4;i++){const s=S.skills[i];const b=document.createElement('button');b.className='sk'+(s?'':' empty');
+    if(s){const d=SKILLS[s.id];b.innerHTML=`<span class="ic">${d.icon}</span><span>${d.name}</span>`+(s.cur>0?`<span class="cd">あと${s.cur}</span>`:'');if(s.cur>0)b.classList.add('off');}
+    else b.innerHTML='<span class="ic">・</span><span>空き</span>';
+    if(s&&TUT&&!TUT.lock&&TSTEPS[TUT.i].wait==='skill'&&i===0)b.classList.add('pulse');
+    attachLP(b,()=>skillInfo(i),()=>useSkill(i));sk.appendChild(b);}
+  updatePreview();
+}
+function updatePreview(){
+  const pv=$('preview');if(!S)return;
+  pv.classList.toggle('tut',!!TUT&&!chain.length);
+  if(TUT&&!chain.length){pv.innerHTML=`<div class="coach">${TUT.msg}</div>`;return;}
+  if(!chain.length){const t=enemyTotal();pv.innerHTML=`<div>次のターンの敵の攻撃：<b>${S.anom==='fog'?'？':t}</b>（防御${S.armor}で受け止め）</div><span class="sub">${S.anom?`<span style="color:#c9a2ff">${ANOMS[S.anom].ic}${ANOMS[S.anom].n}：${ANOMS[S.anom].d}</span> ／ `:''}${S.bless>0?`<span style="color:#ffe08a">🌟祝福中：あと${S.bless}ターン チェーン+3扱い</span>`:'3つ以上なぞってつなごう ／ 長押しで説明'}</span>`;return;}
+  const tiles=chain.map(tileAt);const g=groupOf(tiles[0].t);const n=chain.length;
+  let main='',kills=new Set();
+  const bn=chainBonus(n);let mu=chainMult(n);
+  if(g==='atk'){const sw=tiles.filter(t=>t.t==='sword').length;const d=chainDmg(chain);const en=chain.filter(p=>isEnemy(tileAt(p)));
+    const lastE=S.cls==='hunter'?lastEnemyOf(chain):null;
+    en.forEach(p=>{const e=tileAt(p);if(wouldDie(e,dmgTo(e,p===lastE?d*2:d)))kills.add(p[0]*N+p[1]);});
+    main=en.length?`⚔️ 敵${en.length}体に <b>${S.cls==='gambler'?chainDmg(chain,.5)+'〜'+chainDmg(chain,2):d}</b> ダメージ`+(lastE?`（🏹最後の敵に${d*2}）`:'')+`（撃破${kills.size}${S.cls==='gambler'?'?':''}）`+(S.cls==='vampire'&&kills.size?` 🩸+${Math.min(kills.size*drainOf(),S.maxHp-S.hp)}`:''):`⚔️ 剣${sw}本（敵をつなぐと${d}ダメージ）`;}
+  else{const pv1=(g,n)=>{let main='';
+  if(g==='shield'&&S.cls==='zombie'){main=`🧟 HP +${Math.min(Math.round(n*mu),S.maxHp-S.hp)}`;}
+  else if(g==='potion'&&S.cls==='vampire'){main=`🧪→💰 +${Math.round(n*mu)}`;}
+  else if(g==='shield'){const a=Math.round(n*S.armorPer*mu),u=Math.min(a,S.maxArmor-S.armor);main=`🛡️ 防御 +${u}`+(a>u?`（盾pt +${a-u}）`:'');}
+  else if(g==='potion'){const heal=Math.round(n*S.healPer*mu),h=Math.min(heal,S.maxHp-S.hp),cl=S.cls==='cleric',sell=Math.floor((heal-h)/(cl?3:4));main=`🧪 HP +${h}`+(sell?`（余り→${cl?'✨':'💰'}+${sell}）`:'');}
+  else main=`💰 お金 +${Math.round(n*S.goldPer*mu)}`;
+  return main;};
+  if(g==='mix'){const cnt={};tiles.forEach(t=>cnt[t.t]=(cnt[t.t]||0)+1);if(Object.keys(cnt).length>1)mu*=MIXLOSS;main='⚗️ '+['shield','potion','coin'].filter(k=>cnt[k]).map(k=>pv1(k,cnt[k])).join(' ');}else main=pv1(g,n);}
+  const after=enemyTotal(kills);
+  pv.innerHTML=`<div>${main}${n<3?' <span style="color:#f99">あと'+(3-n)+'</span>':''}</div><span class="sub">${mu>1?`<span style="color:#ffe08a">✨${bonusTxtOf(n)}</span>`:n>=3?'4つ以上で 効果アップ！':''} ／ 敵の攻撃：${after}</span>`;
+}
+
+/* ---------- input ---------- */
+function cellAt(e,strict){
+  const rc=cv.getBoundingClientRect();const x=(e.clientX-rc.left)/rc.width*N,y=(e.clientY-rc.top)/rc.height*N;
+  const c=Math.floor(x),r=Math.floor(y);if(r<0||r>=N||c<0||c>=N)return null;
+  if(strict){const dx=x-c-.5,dy=y-r-.5;if(dx*dx+dy*dy>.43*.43)return null;}
+  return [r,c];
+}
+function busy(){if(!S||dying)return true;if(S.pending.length&&!modalOpen)return true;for(const row of S.board)for(const t of row)if(t.ry!==undefined&&Math.abs(t.ry-S.board.indexOf(row))>0.001)return true;return false;}
+let boardLP=null,boardTip=false;
+cv.addEventListener('pointerdown',e=>{
+  if(!inGame||modalOpen||(TUT&&TUT.lock))return;const p=cellAt(e,false);if(!p)return;
+  if(busy()){clearTimeout(boardLP);const x1=e.clientX,y1=e.clientY;boardLP=setTimeout(()=>{boardTip=true;showTip(tileInfo(p),x1,y1);},LP_MS);return;}
+  ensureAudio();dragging=true;chain=[p];sfx('link',1);try{cv.setPointerCapture(e.pointerId);}catch(_){}updatePreview();e.preventDefault();
+  clearTimeout(boardLP);const x0=e.clientX,y0=e.clientY;boardLP=setTimeout(()=>{if(dragging&&chain.length===1&&same(chain[0],p)){dragging=false;chain=[];updatePreview();boardTip=true;showTip(tileInfo(p),x0,y0);if(TUT&&TSTEPS[TUT.i].wait==='tip'&&isEnemy(tileAt(p)))TUT.tipSeen=true;}},LP_MS);
+});
+cv.addEventListener('pointermove',e=>{
+  if(!dragging)return;const p=cellAt(e,true);if(!p)return;const last=chain[chain.length-1];if(same(p,last))return;
+  if(chain.length>1&&same(p,chain[chain.length-2])){chain.pop();sfx('link',chain.length);}
+  else if(!chain.some(q=>same(q,p))&&adj(p,last)&&groupOf(tileAt(p).t)===groupOf(tileAt(chain[0]).t)){chain.push(p);clearTimeout(boardLP);sfx('link',chain.length);}
+  updatePreview();
+});
+function endDrag(){clearTimeout(boardLP);if(boardTip){boardTip=false;hideTip();if(TUT&&TUT.tipSeen&&!TUT.lock)tutDone();}if(!dragging)return;dragging=false;if(tutRejectChain()){chain=[];updatePreview();return;}if(chain.length>=3)commitChain();else{chain=[];updatePreview();}}
+cv.addEventListener('pointerup',endDrag);cv.addEventListener('pointercancel',endDrag);
+
+/* ---------- atmosphere: lantern light, dust, dripping water ---------- */
+const MOTES=Array.from({length:22},()=>({x:Math.random(),y:Math.random(),v:.012+Math.random()*.03,ph:Math.random()*6.28,s:.5+Math.random()}));
+let DROP=null,nextDrop=0;
+function drawAtmos(now,cs){
+  const W=cv.width,fl=Math.sin(now/170)*.5+Math.sin(now/430+1)*.3+Math.sin(now/97+2)*.2;
+  const g=ctx.createRadialGradient(W*.5,W*.4,W*.12,W*.5,W*.5,W*.8);
+  g.addColorStop(0,`rgba(255,168,88,${.045+fl*.015})`);g.addColorStop(.5,'rgba(0,0,0,0)');g.addColorStop(1,`rgba(0,0,0,${.66+fl*.05})`);
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,W);
+  for(const m of MOTES){m.y-=m.v*FDT;m.x+=Math.sin(now/1600+m.ph)*.0005;if(m.y<-.02){m.y=1.02;m.x=Math.random();}
+    ctx.globalAlpha=.09+.07*Math.sin(now/800+m.ph);ctx.fillStyle='#d8c8a8';ctx.beginPath();ctx.arc(m.x*W,m.y*W,cs*.017*m.s,0,6.283);ctx.fill();}
+  ctx.globalAlpha=1;
+  if(!DROP&&now>nextDrop){DROP={x:(.08+Math.random()*.84)*W,y:-cs*.1,v:0,end:W*(.55+Math.random()*.42),hit:0};nextDrop=now+5000+Math.random()*7000;}
+  if(DROP){
+    if(!DROP.hit){DROP.v+=cs*14*FDT;DROP.y+=DROP.v*FDT;
+      ctx.fillStyle='rgba(170,200,230,.55)';ctx.beginPath();ctx.ellipse(DROP.x,DROP.y,cs*.022,cs*.05,0,0,6.283);ctx.fill();
+      if(DROP.y>=DROP.end)DROP.hit=now;}
+    else{const e=(now-DROP.hit)/450;if(e>=1)DROP=null;else{ctx.strokeStyle=`rgba(170,200,230,${.5*(1-e)})`;ctx.lineWidth=cs*.02;ctx.beginPath();ctx.ellipse(DROP.x,DROP.end,cs*(.05+.25*e),cs*(.02+.08*e),0,0,6.283);ctx.stroke();}}
+  }
+}
+/* ---------- render ---------- */
+let dpr=1,lastT=0,FDT=0;
+function layout(){
+  const app=$('app');const other=['top','bars','stats','preview','log','skills'].reduce((a,id)=>a+$(id).offsetHeight,0)+5*7+14;
+  const avail=Math.min(app.clientWidth-4,app.clientHeight-other,500);
+  const size=Math.max(220,Math.floor(avail));
+  dpr=Math.min(3,window.devicePixelRatio||1);
+  cv.style.width=cv.style.height=size+'px';cv.width=cv.height=Math.round(size*dpr);
+}
+window.addEventListener('resize',()=>{if(inGame)layout();});
+function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function label(txt,x,y,color,size,align){ctx.font=`800 ${size}px system-ui,sans-serif`;ctx.textAlign=align;ctx.lineWidth=size*.28;ctx.strokeStyle='rgba(0,0,0,.85)';ctx.strokeText(txt,x,y);ctx.fillStyle=color;ctx.fillText(txt,x,y);}
+function frame(t){
+  const dt=Math.min(0.05,(t-lastT)/1000);lastT=t;FDT=dt;
+  if(S&&inGame){
+    for(let r=0;r<N;r++)for(let c=0;c<N;c++){const tl=S.board[r][c];if(tl.ry===undefined)tl.ry=r;if(tl.ry<r)tl.ry=Math.min(r,tl.ry+dt*7.5);else if(tl.ry>r)tl.ry=r;}
+    draw(t);
+  }
+  requestAnimationFrame(frame);
+}
+function draw(now){
+  const W=cv.width,cs=W/N,pad=cs*.05;ctx.fillStyle=(floorOf()%20===0&&(S.bossFlag||bossAlive()))?'#2a0e12':zoneAt(floorOf()).tint;ctx.fillRect(0,0,W,W);
+  const inChain=new Set(chain.map(p=>p[0]*N+p[1]));
+  let dmg=0,g=null;if(chain.length){g=groupOf(tileAt(chain[0]).t);if(g==='atk')dmg=chainDmg(chain);}
+  const emojiFont=`${cs*.46}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const t=S.board[r][c];const x=c*cs,y=t.ry*cs;const sel=inChain.has(r*N+c);
+    const dim=chain.length&&!sel&&groupOf(t.t)!==g;
+    ctx.globalAlpha=dim?.4:1;
+    rr(x+pad,y+pad,cs-pad*2,cs-pad*2,cs*.16);ctx.fillStyle=BG[t.t];ctx.fill();
+    if(t.boss){ctx.lineWidth=3*dpr;ctx.strokeStyle='#e8b33a';ctx.stroke();}
+    else if(t.mini){ctx.lineWidth=3*dpr;ctx.strokeStyle='#ff7ad9';ctx.stroke();}
+    else if(t.elite){ctx.lineWidth=2*dpr;ctx.strokeStyle='#c9a2ff';ctx.stroke();}
+    if(sel){ctx.fillStyle='rgba(255,255,255,.18)';ctx.fill();ctx.lineWidth=3*dpr;ctx.strokeStyle='#fff';ctx.stroke();}
+    if(t.hit&&now-t.hit<260){ctx.fillStyle=`rgba(255,80,80,${.6*(1-(now-t.hit)/260)})`;ctx.fill();}
+    ctx.font=emojiFont;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';
+    {const fl=isEnemy(t)&&EK[kindOf(t)].flt;if(fl)ctx.filter=fl;ctx.fillText(isEnemy(t)?icoOf(t):ICON[t.t],x+cs/2,y+cs*.46);if(fl)ctx.filter='none';}
+    if(isEnemy(t)){
+      const fs=cs*.24;ctx.textBaseline='alphabetic';
+      const k=bhOf(t);
+      if(t.frz>0){rr(x+pad,y+pad,cs-pad*2,cs-pad*2,cs*.16);ctx.fillStyle='rgba(120,190,255,.35)';ctx.fill();}
+      const fog=S.anom==='fog'&&!t.boss&&!t.mini;
+      if(fog)label('?',x+cs-pad*2.2,y+cs-pad*2,'#aaa',fs,'right');
+      else if(k==='bomb')label(String(t.cnt),x+pad*2.2,y+cs-pad*2,'#ff9a3a',fs*1.1,'left');
+      else label(String(t.atk),x+pad*2.2,y+cs-pad*2,k==='spider'?'#c58bff':'#ffd54a',fs,'left');
+      if(!fog){const hs=String(Math.max(0,t.hp));label(hs,x+cs-pad*2.2,y+cs-pad*2,'#ff6b6b',hs.length>=3?fs*.8:fs,'right');}
+      if(t.armor>0&&!fog)label(String(t.armor),x+cs-pad*2.2,y+pad*2+fs*.8,'#7fc4ff',fs,'right');
+      if(t.mini)label('中',x+cs/2,y+pad*2+fs*.55,'#ff9ad9',fs*.7,'center');
+      if(t.elite)label('⭐',x+cs/2,y+pad*2+fs*.55,'#fff',fs*.6,'center');
+      const bx=x+pad*2.2,by=y+pad*2+fs*.7;
+      if(t.fresh)label('new',bx,by-fs*.1,'#ccc',fs*.6,'left');
+      else if(t.frz>0)label('❄'+t.frz,bx,by,'#bfe3ff',fs*.75,'left');
+      else if(k==='golem'&&t.rest)label('💤',bx,by,'#fff',fs*.75,'left');
+      else if(k==='dragon')label('🔥'+(3-(t.ch||0)),bx,by,'#ffb36b',fs*.75,'left');
+      else if(k==='abyss')label('🌀'+(3-(t.ch||0)),bx,by,'#c9a2ff',fs*.75,'left');
+      if(sel&&wouldDie(t,dmgTo(t,dmg))){ctx.strokeStyle='rgba(255,60,60,.9)';ctx.lineWidth=cs*.07;ctx.beginPath();ctx.moveTo(x+cs*.22,y+cs*.22);ctx.lineTo(x+cs*.78,y+cs*.78);ctx.moveTo(x+cs*.78,y+cs*.22);ctx.lineTo(x+cs*.22,y+cs*.78);ctx.stroke();}
+      ctx.textBaseline='middle';
+    }
+    ctx.globalAlpha=1;
+  }
+  drawAtmos(now,cs);
+  drawGuide(now,cs);drawSkillFx(now,cs);drawFx(now,FDT,cs);drawBanner(now,cs);
+  if(chain.length>1){ctx.beginPath();chain.forEach((p,i)=>{const X=p[1]*cs+cs/2,Y=p[0]*cs+cs/2;i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);});
+    ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=cs*.1;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();}
+}
+
+/* ---------- audio (Web Audio, no files) ---------- */
+const LS_AUDIO='dchain_audio_v1';
+const AU={ctx:null,master:null,bgm:null,sfx:null,noise:null,on:{bgm:true,sfx:true},timer:null,step:0,loop:0,next:0,playing:false};
+AU.on.vib=true;
+try{const a=JSON.parse(localStorage.getItem(LS_AUDIO)||'null');if(a)AU.on={bgm:a.bgm!==false,sfx:a.sfx!==false,vib:a.vib!==false};}catch(e){}
+function vib(p){if(!AU.on.vib)return;try{navigator.vibrate&&navigator.vibrate(p);}catch(e){}}
+const mf=m=>440*Math.pow(2,(m-69)/12);
+function ensureAudio(){
+  try{
+    if(!AU.ctx){const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+      const c=new C();AU.ctx=c;AU.master=c.createGain();AU.master.gain.value=.9;AU.master.connect(c.destination);
+      AU.bgm=c.createGain();AU.bgm.gain.value=.55;AU.bgm.connect(AU.master);
+      AU.sfx=c.createGain();AU.sfx.gain.value=.8;AU.sfx.connect(AU.master);
+      {const ei=c.createGain(),dl=c.createDelay(1.5),fb=c.createGain(),lp=c.createBiquadFilter(),wet=c.createGain();dl.delayTime.value=.34;fb.gain.value=.42;lp.type='lowpass';lp.frequency.value=2200;wet.gain.value=.55;
+        ei.connect(dl);dl.connect(lp);lp.connect(fb);fb.connect(dl);lp.connect(wet);wet.connect(AU.master);AU.echoIn=ei;}
+      const b=c.createBuffer(1,c.sampleRate,c.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;AU.noise=b;}
+    if(AU.ctx.state==='suspended')AU.ctx.resume().catch(()=>{});
+  }catch(e){}
+}
+function tone(freq,t,dur,o={}){
+  const c=AU.ctx;if(!c)return;const {type='square',gain=.1,dest=AU.sfx,attack=.005,slideTo=null,filter=null,echo=0}=o;
+  const osc=c.createOscillator();osc.type=type;osc.frequency.setValueAtTime(freq,t);if(slideTo)osc.frequency.exponentialRampToValueAtTime(slideTo,t+dur);
+  const g=c.createGain();g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(gain,t+attack);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  let n=osc;if(filter){const f=c.createBiquadFilter();f.type='lowpass';f.frequency.value=filter;osc.connect(f);n=f;}
+  n.connect(g);g.connect(dest);if(echo&&AU.echoIn){const sg=c.createGain();sg.gain.value=echo;g.connect(sg);sg.connect(AU.echoIn);}osc.start(t);osc.stop(t+dur+.03);
+}
+function noise(t,dur,gain,hp,dest=AU.sfx){
+  const c=AU.ctx;if(!c)return;const s=c.createBufferSource();s.buffer=AU.noise;
+  const f=c.createBiquadFilter();f.type='highpass';f.frequency.value=hp;
+  const g=c.createGain();g.gain.setValueAtTime(gain,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  s.connect(f);f.connect(g);g.connect(dest);s.start(t,Math.random()*.5);s.stop(t+dur+.02);
+}
+/* --- BGM: original 8-bar loop in A minor --- */
+let STEP=60/70/2;AU.tr=0;
+function musicZone(){if(!S)return;const z=zoneAt(floorOf()),b=S.bossFlag||bossAlive();AU.tr=b?-6:z.tr;STEP=60/(z.bpm+(b?12:0))/2;}
+const CH=[[45,'m'],[41,'M'],[48,'M'],[43,'M'],[45,'m'],[41,'M'],[40,'M'],[40,'M']];
+const MEL=[[76,null,72,74,76,null,74,72],[69,null,72,null,77,76,74,72],[79,null,76,null,72,74,76,null],[74,null,71,null,67,null,71,74],
+           [76,77,76,74,72,null,69,null],[72,null,74,72,69,null,65,null],[68,null,71,null,74,null,76,null],[76,null,null,null,null,null,null,null]];
+const BASS=[0,null,12,0,7,null,12,7];
+function playStep(i,t){
+  const bar=i>>3,pos=i&7,[root0,q]=CH[bar],root=root0+(AU.tr||0),tri=q==='m'?[0,3,7]:[0,4,7],D=AU.bgm,boss=S&&(S.bossFlag||bossAlive());
+  if(pos===0){tone(mf(root-12),t,STEP*8.3,{type:'sine',gain:.075,attack:.9,dest:D});
+    tri.forEach(x=>tone(mf(root+12+x),t,STEP*8,{type:'triangle',gain:.022,attack:1.1,dest:D,echo:.35}));}
+  if(AU.mode==='amb')return;
+  if(pos===0||pos===4)tone(mf(root+(pos?7:0)),t,STEP*3.2,{type:'triangle',gain:.1,attack:.04,dest:D});
+  if(pos===0||(boss&&pos===1))tone(78,t,.32,{type:'sine',gain:boss?.16:.1,slideTo:38,dest:D});
+  if(AU.loop%2===0){const m0=MEL[bar][pos],m=m0===null?null:m0+(AU.tr||0)-12;if(m!==null){const nx=pos<7?MEL[bar][pos+1]:1;
+      tone(mf(m),t,STEP*(nx===null?2.6:1.3),{type:'triangle',gain:.06,attack:.03,filter:1500,dest:D,echo:.5});}}
+  else if(pos%2===0){const arp=[0,1,2,1][pos/2];tone(mf(root+12+tri[arp]),t,STEP*1.8,{type:'sine',gain:.05,dest:D,echo:.55});}
+}
+function drip(t){const f=1300+Math.random()*900;tone(f,t,.1,{type:'sine',gain:.045,slideTo:f*.45,dest:AU.bgm,echo:.7});
+  if(Math.random()<.35)tone(f*1.1,t+.45+Math.random()*.4,.08,{type:'sine',gain:.03,slideTo:f*.5,dest:AU.bgm,echo:.7});}
+function sched(){
+  const c=AU.ctx;if(!c||!AU.playing)return;
+  if(AU.next<c.currentTime-.1)AU.next=c.currentTime+.05;
+  while(AU.next<c.currentTime+.2){if(AU.on.bgm)playStep(AU.step,AU.next);AU.step=(AU.step+1)%64;if(AU.step===0)AU.loop++;AU.next+=STEP;}
+  if(AU.nextDrip===undefined||AU.nextDrip<c.currentTime-1)AU.nextDrip=c.currentTime+2;
+  if(c.currentTime+.2>AU.nextDrip){if(AU.on.bgm)drip(AU.nextDrip);AU.nextDrip+=2.5+Math.random()*5.5;}
+}
+function bgmStart(){ensureAudio();if(!AU.ctx||AU.playing)return;AU.playing=true;AU.step=0;AU.loop=0;AU.next=AU.ctx.currentTime+.1;AU.timer=setInterval(sched,25);}
+function bgmStop(){AU.playing=false;clearInterval(AU.timer);}
+/* --- sound effects --- */
+const T0=()=>AU.ctx?AU.ctx.currentTime+.01:0;
+const SFX={
+  link(n){tone(mf(72+Math.min(n,12)*2),T0(),.07,{gain:.05});},
+  clear(g){const t=T0();
+    if(g==='atk'){noise(t,.14,.22,900);tone(160,t,.16,{type:'sawtooth',gain:.12,slideTo:60,filter:1200});}
+    else if(g==='shield'){tone(660,t,.18,{type:'triangle',gain:.14});tone(990,t+.05,.2,{type:'triangle',gain:.1});}
+    else if(g==='potion'){tone(380,t,.28,{type:'sine',gain:.16,slideTo:950});tone(600,t+.08,.2,{type:'sine',gain:.08,slideTo:1300});}
+    else{tone(988,t,.08,{gain:.06});tone(1319,t+.07,.22,{gain:.06});}},
+  kill(){const t=T0()+.06;tone(520,t,.18,{type:'square',gain:.06,slideTo:1040,filter:3000});},
+  hurt(){const t=T0()+.22;tone(230,t,.32,{type:'sawtooth',gain:.17,slideTo:65,filter:900});noise(t,.2,.12,300);},
+  block(){const t=T0()+.22;tone(1400,t,.09,{type:'triangle',gain:.1});tone(1000,t+.04,.12,{type:'triangle',gain:.07});},
+  skill(){const t=T0();tone(220,t,.4,{type:'sine',gain:.16,slideTo:1300});noise(t,.35,.08,2000);},
+  level(){const t=T0();[72,76,79,84].forEach((m,i)=>tone(mf(m),t+i*.09,.22,{type:'square',gain:.06,filter:4000}));},
+  shop(){const t=T0();[84,88,91].forEach((m,i)=>tone(mf(m),t+i*.07,.2,{type:'triangle',gain:.1}));},
+  boss(){const t=T0()+.3;tone(70,t,1.2,{type:'sawtooth',gain:.16,slideTo:40,filter:400});noise(t,1,.06,200);},
+  praise(tier){const t=T0(),base=[72,74,76,79,81][tier]||72,seq=[0,4,7,12,16,19,24].slice(0,3+tier);
+    seq.forEach((iv,i)=>tone(mf(base+iv),t+i*.06,.22,{type:'square',gain:.055,filter:5000}));
+    const e=t+seq.length*.06;[0,4,7].forEach(iv=>tone(mf(base+12+iv),e,.6,{type:'triangle',gain:.06}));noise(t,.35,.04+tier*.01,6000);},
+  tierUp(tier){const t=T0();tone(mf(84+tier*2),t,.12,{type:'triangle',gain:.09});tone(mf(91+tier*2),t+.05,.16,{type:'triangle',gain:.07});},
+  boom(){const t=T0();noise(t,.6,.35,80);tone(90,t,.6,{type:'sawtooth',gain:.2,slideTo:30,filter:500});},
+  descend(){const t=T0();[67,62,58,55,50].forEach((m,i)=>tone(mf(m),t+i*.12,.5,{type:'triangle',gain:.11}));noise(t,.8,.05,300);},
+  ach(){const t=T0();[79,84,88,91].forEach((m,i)=>tone(mf(m),t+i*.08,.35,{type:'triangle',gain:.08,echo:.4}));},
+  over(){const t=T0();[64,60,57,52].forEach((m,i)=>tone(mf(m),t+i*.28,.4,{type:'triangle',gain:.14}));}
+};
+function sfx(name,...a){if(!AU.on.sfx)return;ensureAudio();if(!AU.ctx)return;try{SFX[name](...a);}catch(e){}}
+function saveAudio(){try{localStorage.setItem(LS_AUDIO,JSON.stringify(AU.on));}catch(e){}}
+const VIB_IC=(()=>{try{const c=document.createElement('canvas');c.width=c.height=28;const x=c.getContext('2d');
+  x.font='22px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';x.textBaseline='top';x.fillText('🫨',0,0);
+  const d=x.getImageData(0,0,28,28).data;for(let i=0;i<d.length;i+=4)if(d[i+3]>40&&(Math.abs(d[i]-d[i+1])>30||Math.abs(d[i+1]-d[i+2])>30))return '🫨';}catch(e){}return '振動';})();
+function refreshAudioBtns(){{const v=$('vibBtn');v.textContent=VIB_IC;if(VIB_IC==='振動')v.style.fontSize='12px';}const b=$('bgmBtn'),s=$('sfxBtn');b.style.opacity=AU.on.bgm?1:.4;b.textContent='🎵';s.textContent=AU.on.sfx?'🔊':'🔇';s.style.opacity=AU.on.sfx?1:.4;const v=$('vibBtn');v.style.opacity=AU.on.vib?1:.4;v.classList.toggle('offx',!AU.on.vib);}
+$('bgmBtn').onclick=()=>{AU.on.bgm=!AU.on.bgm;saveAudio();refreshAudioBtns();if(AU.on.bgm&&inGame)bgmStart();};
+$('sfxBtn').onclick=()=>{AU.on.sfx=!AU.on.sfx;saveAudio();refreshAudioBtns();};
+$('vibBtn').onclick=()=>{AU.on.vib=!AU.on.vib;saveAudio();refreshAudioBtns();if(AU.on.vib)vib(30);showToast(AU.on.vib?'振動 ON':'振動 OFF');};
+$('bgmBtn').addEventListener('click',()=>showToast(AU.on.bgm?'BGM ON':'BGM OFF'));
+$('sfxBtn').addEventListener('click',()=>showToast(AU.on.sfx?'効果音 ON':'効果音 OFF'));
+function showToast(t){log(t);}
+document.addEventListener('visibilitychange',()=>{if(!AU.ctx)return;if(document.hidden)AU.ctx.suspend().catch(()=>{});else if(inGame)AU.ctx.resume().catch(()=>{});});
+refreshAudioBtns();
+
+/* ---------- tutorial (learn by playing) ---------- */
+const LS_TUT='dchain_tut_done_v1';
+let TUT=null;
+const TE={A:{hp:3,atk:1},B:{hp:20,atk:2},C:{hp:4,atk:2,armor:1,fresh:true},D:{hp:2,atk:1,fresh:true}};
+const TSTEPS=[
+  {say:'💰を なぞって つなげよう',group:'coin',wait:'chain',path:[[2,1],[2,2],[2,3]],hlAfter:'bGd',done:'お金がたまると 強化が買える！',
+   board:['psdpsd','dpsdps','scccdp','pdspsd','dspdps','spdsdp']},
+  {say:'ななめも つながる！<br>4つ以上 つなげてみよう',group:'coin',wait:'chain',path:[[1,1],[2,2],[3,3],[4,4]],done:'長くつなぐほど おトク！',min:4,retry:'4つ ぜんぶ つなげよう',
+   board:['psdpsd','dcsdps','spcpdp','pdscsd','dspdcs','spdsdp']},
+  {say:'⚔️と💀は いっしょに つなげる！<br>敵を たおそう',group:'atk',wait:'chain',path:[[3,1],[3,2],[3,3]],done:'剣が多いほど 大ダメージ！',kill:true,retry:'💀まで つなげよう',
+   board:['pcdpcd','dpcdpc','cdpcdp','pssAdc','dcpdpc','cpdcdp']},
+  {say:'💀は 毎ターン 攻撃してくる！<br>🛡️を つないで 守ろう',group:'shield',wait:'chain',path:[[1,2],[2,2],[3,2]],hlAfter:'bAr',done:'🛡️が 攻撃を 受け止めた！',
+   board:['pcspcs','cpdcps','spdpsc','cpdcsp','pscpcB','cspscp']},
+  {say:'HPが 減ってしまった…<br>🧪で 回復しよう',group:'potion',wait:'chain',path:[[3,1],[3,2],[3,3],[3,4]],hl:'bHp',done:'HPが 回復した！',
+   setup:()=>{S.hp=30;},board:['csdcsd','dcsdcs','sdcsdc','cppppd','sdcsdc','dcsdcs']},
+  {say:'💀を 長押し してみよう',wait:'tip',path:[[2,2]],done:'どのパネルも 長押しで 説明が出るよ',wrong:'なぞらずに 長押し してみよう',
+   board:['pcdpcd','dpcdpc','cdCcdp','pcdpcd','dpcdpc','cdpcdp']},
+  {say:'敵を たおして<br>レベルアップ しよう',group:'atk',wait:'level',path:[[4,0],[4,1],[4,2]],done:'スキルを 覚えた！',kill:true,retry:'💀まで つなげよう',
+   setup:()=>{S.xp=S.xpNeed-1;},board:['pcdpcd','dpcdpc','cdpcdp','pcdpcd','ssAdpc','cdpcdp']},
+  {say:'下の スキルを タップして<br>使ってみよう',wait:'skill',done:'スキルは ターンを 使わない！',wrong:'下の 光っている スキルを タップ',
+   board:['pDdpcd','dpcDpc','cdpcdp','pDdpcD','dpcdpc','cdpDdp']},
+  {wait:'end',say:'準備OK！'}
+];
+function tutDoneFlag(){try{return localStorage.getItem(LS_TUT)==='1';}catch(e){return false;}}
+function setTutDone(){try{localStorage.setItem(LS_TUT,'1');}catch(e){}}
+function parseBoard(rows){
+  const M={c:'coin',s:'sword',d:'shield',p:'potion'};
+  return rows.map((row,r)=>row.split('').map(ch=>{
+    if(M[ch])return {t:M[ch],ry:r};
+    const e=TE[ch];return {t:'skull',hp:e.hp,maxHp:e.hp,atk:e.atk,armor:e.armor||0,fresh:!!e.fresh,ry:r};}));
+}
+function clearHl(){document.querySelectorAll('.pulse').forEach(e=>e.classList.remove('pulse'));}
+function startTutorial(fromNew){TUT={i:0,fromNew:!!fromNew};newState();startGame();loadStep(0);}
+function loadStep(i){
+  if(!TUT)return;tutSkipBtn();TUT.i=i;TUT.lock=false;TUT.tipSeen=false;TUT.base=null;
+  const st=TSTEPS[i];clearHl();chain=[];
+  if(st.setup)st.setup();
+  if(st.board)S.board=parseBoard(st.board);
+  TUT.path=st.path||null;TUT.msg=st.say;TUT.killsAt=S.kills;
+  if(st.hl)$(st.hl).classList.add('pulse');
+  updateAll();
+  if(st.wait==='end')showTutEnd();
+}
+function tutSay(html){if(!TUT)return;TUT.msg=html;updatePreview();}
+function tutNudge(msg,reload){
+  if(!TUT||TUT.lock)return;const st=TSTEPS[TUT.i];TUT.lock=!!reload;
+  tutSay(`<span style="color:#ff9a9a">${msg}</span>`);
+  clearTimeout(TUT.nt);TUT.nt=setTimeout(()=>{if(!TUT)return;if(reload)loadStep(TUT.i);else tutSay(st.say);},1500);
+}
+function tutDone(){
+  if(!TUT)return;const st=TSTEPS[TUT.i];TUT.lock=true;TUT.path=null;clearHl();
+  if(st.hlAfter)$(st.hlAfter).classList.add('pulse');
+  sfx('shop');tutSay('✨ '+st.done);
+  clearTimeout(TUT.nt);TUT.nt=setTimeout(()=>{if(TUT)loadStep(TUT.i+1);},1900);
+}
+function tutAfterCommit(){
+  if(!TUT)return;const st=TSTEPS[TUT.i];
+  if(st.kill&&S.kills<=TUT.killsAt){tutNudge(st.retry,true);return;}
+  if(st.wait==='chain')tutDone();
+}
+function tutRejectChain(){ // returns true if the chain must be cancelled
+  if(!TUT)return false;const st=TSTEPS[TUT.i];
+  if(TUT.lock)return true;
+  if(chain.length<3){if(chain.length===2)tutNudge('3つ以上 つなげよう');return false;}
+  if(!st.group||groupOf(tileAt(chain[0]).t)!==st.group){tutNudge(st.wrong||'光っている パネルを なぞろう');return true;}
+  if(st.min&&chain.length<st.min){tutNudge(st.retry);return true;}
+  return false;
+}
+function showTutEnd(){
+  setTutDone();sfx('level');unlock('tut');
+  openModal(`<div class="big" style="text-align:center">🎉</div><h2>チュートリアル クリア！</h2>
+  <p style="text-align:center">わからないときは パネルを長押し。<br>くわしい説明は ☰メニューの「遊び方」へ。</p>
+  `+(TUT&&TUT.fromNew?`<button class="opt" id="te1" style="text-align:center">冒険をはじめる</button><button class="opt" id="te2" style="text-align:center">タイトルへ</button>`
+     :`<button class="opt" id="te2" style="text-align:center">タイトルへ戻る</button><button class="opt" id="te1" style="text-align:center">新しい冒険をはじめる${[0,1,2].every(i=>slotJson(i))?'<small>セーブが3つ埋まっています。上書きするスロットを選びます</small>':''}</button>`));
+  $('te1').onclick=()=>chooseNewSlot(()=>newAdventure(),()=>{closeModal();endTutorial();showTitle();});
+  $('te2').onclick=()=>{closeModal();endTutorial();showTitle();};
+}
+function endTutorial(){if(TUT)clearTimeout(TUT.nt);TUT=null;clearHl();tutSkipBtn();}
+function tutSkipBtn(){const b=$('tutSkip');if(!b)return;b.classList.toggle('hidden',!TUT);if(TUT)b.textContent=TUT.fromNew?'チュートリアルを飛ばす ›':'チュートリアルを終わる ›';}
+function tutSkip(){if(!TUT)return;const fromNew=TUT.fromNew;setTutDone();if(fromNew)newAdventure();else{closeModal();endTutorial();showTitle();}}
+function drawGuide(now,cs){
+  if(!TUT||!TUT.path||chain.length||TUT.lock)return;
+  const P=TUT.path,pl=.5+.5*Math.sin(now/220);
+  ctx.save();ctx.lineWidth=(2+2*pl)*dpr;ctx.strokeStyle=`rgba(255,215,90,${.55+.45*pl})`;
+  P.forEach(([r,c])=>{rr(c*cs+cs*.03,r*cs+cs*.03,cs*.94,cs*.94,cs*.18);ctx.stroke();});
+  const cyc=2600,t=(now%cyc)/cyc;let x,y,alpha=t>.88?Math.max(0,1-(t-.88)/.1):1;
+  if(P.length===1){
+    x=P[0][1]*cs+cs/2;y=P[0][0]*cs+cs/2;
+    const k=Math.min(1,Math.max(0,(t-.15)/.6));
+    if(t>.15){ctx.beginPath();ctx.arc(x,y,cs*(.18+.32*k),0,Math.PI*2);ctx.strokeStyle=`rgba(255,215,90,${.9*(1-k*.6)*alpha})`;ctx.lineWidth=cs*.06;ctx.stroke();}
+  }else{
+    const k=Math.min(1,Math.max(0,(t-.15)/.6)),f=k*(P.length-1),i=Math.min(P.length-2,Math.floor(f)),u=f-i;
+    const cx=q=>[q[1]*cs+cs/2,q[0]*cs+cs/2];
+    const a=cx(P[i]),b=cx(P[i+1]);x=a[0]+(b[0]-a[0])*u;y=a[1]+(b[1]-a[1])*u;
+    if(t>.15){ctx.beginPath();const s0=cx(P[0]);ctx.moveTo(s0[0],s0[1]);for(let j=1;j<=i;j++){const q=cx(P[j]);ctx.lineTo(q[0],q[1]);}ctx.lineTo(x,y);
+      ctx.strokeStyle=`rgba(255,215,90,${.6*alpha})`;ctx.lineWidth=cs*.1;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();}
+  }
+  ctx.globalAlpha=alpha;ctx.font=`${cs*.55}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('👆',x+cs*.1,y+cs*.36);ctx.restore();
+}
+
+/* ---------- chain praise effects ---------- */
+const TIERS=[[10,'ナイス！','#7fe08a'],[12,'グレート！','#5ec8ff'],[14,'エクセレント！','#ffb84d'],[17,'ファンタスティック！！','#ff6bd6'],[20,'レジェンド！！！','rainbow']];
+const BT=[5,7,9,11,14];
+const bonusTier=n=>{let t=-1;BT.forEach((x,i)=>{if(n>=x)t=i;});return t;};
+let FLOATS=[];
+const PCOL={coin:'#ffd54a',sword:'#d6defa',skull:'#ff6b6b',shield:'#6fb6ff',potion:'#e07bff'};
+let PARTS=[],POP=null,FLASH=0,liveTier=-1;
+const tierOf=n=>{let t=-1;TIERS.forEach((x,i)=>{if(n>=x[0])t=i;});return t;};
+function celebrate(cells,types,kills,bonusTxt){
+  const n=cells.length,tier=tierOf(n),bt=bonusTier(n),W=cv.width,cs=W/N;
+  const per=4+Math.max(0,bt+1)*2,sp=(1+Math.max(0,bt)*.25)*cs;
+  cells.forEach((p,i)=>{for(let k=0;k<per;k++){const a=Math.random()*Math.PI*2,v=(.4+Math.random())*sp*2.2;
+    PARTS.push({x:p[1]*cs+cs/2,y:p[0]*cs+cs/2,vx:Math.cos(a)*v,vy:Math.sin(a)*v-cs*1.5,life:0,max:.55+Math.random()*.5,c:PCOL[types[i]],s:cs*(.05+Math.random()*.06)});}});
+  if(PARTS.length>900)PARTS.splice(0,PARTS.length-900);
+  const prevBest=Math.max(best&&best.chain||0,S.maxChain||0);
+  S.maxChain=Math.max(S.maxChain||0,n);
+  let text=null,color='#fff',sub='';
+  if(tier>=0){text=TIERS[tier][1];color=TIERS[tier][2];sub=`${n}チェーン`;}
+  if(kills>=3&&text)sub+=` ／ ${kills}体撃破`;else if(kills>=5){text=`${kills}体まとめて撃破！`;color='#ff8a7a';}
+  if(n>=10&&n>prevBest)sub+=(sub?'　':'')+'🏆 自己ベスト！';
+  if(text){POP={text,sub,sub2:bonusTxt||'',color,t0:performance.now(),tier:Math.max(0,tier)};sfx('praise',Math.max(0,tier));
+    if(tier>=2)FLASH=performance.now();
+    vib(tier>=3?[30,40,60]:tier>=1?[25,30,25]:20);}
+  else if(bonusTxt){const p=cells[cells.length-1];FLOATS.push({text:bonusTxt,x:p[1]*cs+cs/2,y:p[0]*cs+cs/2,t0:performance.now()});}
+}
+function rainbow(now,o=0){return `hsl(${(now/4+o)%360},95%,65%)`;}
+function drawFx(now,dt,cs){
+  const W=cv.width;
+  // live chain counter next to the finger
+  if(dragging&&chain.length>=3){
+    const n=chain.length,t=bonusTier(n);
+    if(t>liveTier&&t>=0){liveTier=t;sfx('tierUp',t);}
+    const last=chain[n-1];let x=last[1]*cs+cs*.92,y=last[0]*cs+cs*.08;
+    x=Math.min(W-cs*.35,Math.max(cs*.35,x));y=Math.max(cs*.3,y);
+    const col=t<0?'#ffffff':TIERS[t][2]==='rainbow'?rainbow(now):TIERS[t][2];
+    const f=cs*(.34+Math.max(0,t)*.04);
+    ctx.save();ctx.font=`900 ${f}px system-ui,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.lineWidth=f*.22;ctx.strokeStyle='rgba(0,0,0,.85)';ctx.strokeText(`×${n}`,x,y);ctx.fillStyle=col;ctx.fillText(`×${n}`,x,y);ctx.restore();
+  }else liveTier=-1;
+  // particles
+  for(const p of PARTS){p.life+=dt;p.vy+=cs*9*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;}
+  PARTS=PARTS.filter(p=>p.life<p.max);
+  for(const p of PARTS){ctx.globalAlpha=Math.max(0,1-p.life/p.max);ctx.fillStyle=p.c;ctx.beginPath();ctx.arc(p.x,p.y,p.s,0,Math.PI*2);ctx.fill();}
+  ctx.globalAlpha=1;
+  // flash
+  if(FLASH){const e=(now-FLASH)/1000;if(e<.25){ctx.fillStyle=`rgba(255,255,255,${.35*(1-e/.25)})`;ctx.fillRect(0,0,W,W);}else FLASH=0;}
+  FLOATS=FLOATS.filter(f=>now-f.t0<1100);
+  for(const f of FLOATS){const e=(now-f.t0)/1100;let fs=cs*.28;ctx.save();ctx.globalAlpha=e>.7?1-(e-.7)/.3:1;ctx.font=`800 ${fs}px system-ui,sans-serif`;
+    const w=ctx.measureText(f.text).width;const x=Math.min(W-w/2-4,Math.max(w/2+4,f.x)),y=Math.max(fs,f.y-e*cs*.9);
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineWidth=fs*.25;ctx.strokeStyle='rgba(0,0,0,.9)';ctx.strokeText(f.text,x,y);ctx.fillStyle='#ffe08a';ctx.fillText(f.text,x,y);ctx.restore();}
+  // praise text
+  if(POP){const e=(now-POP.t0)/1000;if(e>1.45)POP=null;else{
+    const s=e<.16?.3+e/.16*.95:e<.28?1.25-(e-.16)/.12*.25:1,al=e>1.1?Math.max(0,1-(e-1.1)/.35):1;
+    ctx.save();ctx.globalAlpha=al;ctx.translate(W/2,W*.42-e*cs*.25);ctx.scale(s,s);
+    if(POP.tier>=3)ctx.rotate(Math.sin(now/60)*.03);
+    let f=cs*(.55+POP.tier*.06);ctx.font=`900 ${f}px system-ui,sans-serif`;
+    const w=ctx.measureText(POP.text).width;if(w>W*.92){f*=W*.92/w;ctx.font=`900 ${f}px system-ui,sans-serif`;}
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineJoin='round';
+    ctx.lineWidth=f*.22;ctx.strokeStyle='rgba(0,0,0,.9)';ctx.strokeText(POP.text,0,0);
+    if(POP.color==='rainbow'){const g=ctx.createLinearGradient(-W/2,0,W/2,0);for(let i=0;i<=6;i++)g.addColorStop(i/6,rainbow(now,i*60));ctx.fillStyle=g;}else ctx.fillStyle=POP.color;
+    ctx.fillText(POP.text,0,0);
+    const line=(txt,yy,col)=>{let f2=cs*.26;ctx.font=`800 ${f2}px system-ui,sans-serif`;const w2=ctx.measureText(txt).width;if(w2>W*.94){f2*=W*.94/w2;ctx.font=`800 ${f2}px system-ui,sans-serif`;}
+      ctx.lineWidth=f2*.25;ctx.strokeStyle='rgba(0,0,0,.9)';ctx.strokeText(txt,0,yy);ctx.fillStyle=col;ctx.fillText(txt,0,yy);};
+    if(POP.sub)line(POP.sub,f*.85,'#fff');
+    if(POP.sub2)line(POP.sub2,f*.85+cs*.34,'#ffe08a');
+    ctx.restore();}}
+}
+
+/* ---------- skill effects ---------- */
+const SKCOL={fire:'#ff8a3a',thunder:'#ffe94a',snipe:'#ff5a5a',freeze:'#9fe0ff',crush:'#d0d0d0',magnet:'#ffd54a',execute:'#c58bff',heal:'#7fe08a',wall:'#6fb6ff',alchemy:'#ffd54a',arm:'#d6defa',quake:'#b48cff',bless:'#ffe08a'};
+let BOLTS=[],RINGS=[];
+function burst(cells,col,mult){
+  const cs=cv.width/N;
+  cells.forEach(p=>{for(let k=0;k<Math.round(10*mult);k++){const a=Math.random()*Math.PI*2,v=(.4+Math.random())*cs*2.4*mult;
+    PARTS.push({x:p[1]*cs+cs/2,y:p[0]*cs+cs/2,vx:Math.cos(a)*v,vy:Math.sin(a)*v-cs*1.4,life:0,max:.5+Math.random()*.5,c:col,s:cs*(.05+Math.random()*.06)});}});
+  if(PARTS.length>900)PARTS.splice(0,PARTS.length-900);
+}
+function skillFx(id,cells,kills){
+  const d=SKILLS[id],col=SKCOL[id]||'#fff',now=performance.now();
+  let pts=cells;
+  if(!pts.length){pts=[];for(let i=0;i<8;i++)pts.push([rnd(N),rnd(N)]);}
+  burst(pts,col,kills?1.5:1);
+  if(id==='thunder')cells.forEach((p,i)=>BOLTS.push({p,t0:now+i*90}));
+  if(id==='snipe'||id==='execute'||id==='freeze'||id==='crush')cells.forEach(p=>RINGS.push({p,t0:now,col}));
+  if(id==='fire'||kills>=3||id==='thunder')FLASH=now;
+  let sub=kills>=3?`${kills}体まとめて撃破！`:kills?`${kills}体撃破`:'';
+  POP={text:`${d.icon} ${d.name}！`,sub,sub2:'',color:col,t0:now,tier:kills>=3?2:kills?1:0};
+  if(kills){sfx('kill');if(kills>=3)sfx('praise',2);}
+  vib(kills?[25,30,25]:15);
+}
+function drawSkillFx(now,cs){
+  const W=cv.width;
+  BOLTS=BOLTS.filter(b=>now-b.t0<320);
+  for(const b of BOLTS){const e=now-b.t0;if(e<0)continue;const al=1-e/320,x=b.p[1]*cs+cs/2,y=b.p[0]*cs+cs/2;
+    ctx.save();ctx.strokeStyle=`rgba(255,240,120,${al})`;ctx.shadowColor='#fff6a0';ctx.shadowBlur=cs*.4;ctx.lineWidth=cs*.08;ctx.lineJoin='round';
+    ctx.beginPath();let px=x+(Math.random()-.5)*cs,py=-cs*.2;ctx.moveTo(px,py);const seg=6;
+    for(let i=1;i<=seg;i++){const ty=py+(y-py)*i/seg,tx=i===seg?x:x+(Math.random()-.5)*cs*.9*(1-i/seg)+(px-x)*(1-i/seg);ctx.lineTo(tx,ty);}
+    ctx.stroke();ctx.restore();}
+  RINGS=RINGS.filter(r=>now-r.t0<500);
+  for(const r of RINGS){const e=Math.max(0,(now-r.t0)/500),x=r.p[1]*cs+cs/2,y=r.p[0]*cs+cs/2;
+    ctx.save();ctx.globalAlpha=1-e;ctx.strokeStyle=r.col;ctx.lineWidth=cs*.06;ctx.beginPath();ctx.arc(x,y,cs*(.15+.45*e),0,Math.PI*2);ctx.stroke();ctx.restore();}
+}
+
+/* ---------- depth: floors, zones, bosses, the world's root of evil ---------- */
+const ZONES=[
+  {f:1,name:'忘れられた地下墓地',desc:'かつて祈りの場だった墓地。骸骨とコウモリがさまよう。',tint:'#1a141c',tr:0,bpm:70},
+  {f:6,minor:1,name:'腐臭の回廊',desc:'死者が起き上がり、火薬の匂いが漂う。',tint:'#131a15',tr:-2,bpm:72},
+  {f:12,minor:1,name:'蜘蛛の巣窟',desc:'毒グモが巣を張り、亡霊が壁をすり抜けていく。',tint:'#1a1523',tr:1,bpm:73},
+  {f:21,name:'石像の迷宮',desc:'動く石像が通路をふさぐ、古代の迷宮。',tint:'#19191d',tr:-3,bpm:75},
+  {f:26,minor:1,name:'呪術師の祭壇',desc:'呪いの声が、傷ついた魔物を癒やし続ける。',tint:'#21131a',tr:2,bpm:76},
+  {f:41,name:'竜骨の谷',desc:'巨大な骨が転がる谷。焼けた岩がまだ熱い。',tint:'#231610',tr:-1,bpm:78},
+  {f:61,name:'血塗られた城',desc:'地の底に築かれた、吸血鬼の居城。',tint:'#220e14',tr:3,bpm:80},
+  {f:81,name:'深淵の神殿',desc:'水没した神殿。世界の元凶の気配がすぐそこにある。',tint:'#0e1724',tr:-4,bpm:84}
+];
+const DEEP=['奈落の回廊','虚無の書庫','星喰いの洞','終わりなき螺旋','時の澱'];
+function zoneAt(F){
+  if(F>100){const i=Math.floor((F-101)/20);return {f:101+i*20,name:DEEP[i%DEEP.length],desc:'元凶の先に続いていた、さらに深い層。',tint:['#120f1e','#0f1a1a','#1e0f1a','#1a1a0f','#101010'][i%5],tr:[0,-5,2,-3,4][i%5],bpm:82+Math.min(16,i*2)};}
+  let z=ZONES[0];for(const x of ZONES)if(F>=x.f)z=x;return z;
+}
+const BOSS_FLOOR={20:'オーガの玉座',40:'竜の寝床',60:'吸血鬼の城門',80:'海底神殿の奥',100:'世界の底'};
+function bossKindAt(F){const n=Math.max(1,Math.round(F/20));return n%5===0?'abyss':['ogre','dragon','vampire','kraken'][(n-1)%5];}
+function bossFloorName(F){return F<=100?BOSS_FLOOR[F]:`${zoneAt(F-1).name}の主の間`;}
+const ROSTER=[[2,'bat'],[6,'zombie'],[8,'bomb'],[12,'spider'],[16,'ghost'],[21,'golem'],[26,'shaman']];
+const floorOf=()=>(S&&S.floor)||1;
+function bossAlive(){if(!S)return false;for(const row of S.board)for(const e of row)if(isEnemy(e)&&e.boss)return true;return false;}
+let BANNER=null;const BANNER_MS=3800;
+function showBanner(top,main,sub,col){BANNER={top,main,sub,col:col||'#ffe08a',t0:performance.now()};}
+function bannerLeft(){return BANNER?Math.max(0,BANNER_MS-(performance.now()-BANNER.t0)):0;}
+function flashFloor(){const e=$('tTurn');e.classList.remove('flash');void e.offsetWidth;e.classList.add('flash');}
+function advanceFloor(msgs){
+  if(TUT||S.bossFlag||bossAlive())return;
+  S.fprog=(S.fprog||0)+1;if(S.fprog<2)return;
+  S.fprog=0;S.floor=floorOf()+1;const F=S.floor;flashFloor();maybeEvent(F);rollAnomaly(F,msgs);checkNotes(F);
+  if(F%20===10&&unlocked('s2')){S.miniFlag=true;msgs.push('⚠️ 強い気配がする…（中ボス）');}
+  if(F%20===0){S.bossFlag=true;const k=bossKindAt(F);
+    showBanner(`B${F}F`,bossFloorName(F),k==='abyss'?'世界の元凶が、目を覚ました。':`${EK[k].icon} ${EK[k].name}が待ち構えている。倒すまで先へは進めない。`,'#ff8a7a');
+    msgs.push(`B${F}F ${bossFloorName(F)}`);sfx('boss');return;}
+  const z=zoneAt(F);
+  if(z.f===F){if(z.minor)msgs.push(`B${F}F「${z.name}」に入った`);else{showBanner(`B${F}F`,z.name,z.desc);msgs.push(`B${F}F「${z.name}」へ`);}sfx('descend');}
+  const arr=ROSTER.filter(x=>x[0]===F).map(x=>EK[x[1]].icon+EK[x[1]].name);
+  if(arr.length)msgs.push(`${arr.join('・')}の気配がする…`);
+}
+function checkBoss(msgs){
+  if(!S.bossUp||bossAlive()||S.bossFlag)return;
+  S.bossUp=false;const F=floorOf();achBoss(S.bossKind,S.turn-(S.bossTurn||S.turn));
+  if(F%100===0){S.pending.push('clear');msgs.push('👑 世界の元凶を倒した！');}
+  else{msgs.push('🗝️ ボスを倒した！下への階段が開いた');sfx('level');}
+}
+function showClear(){
+  unlock('clear');let rk=null;if(!TUT){const L=S.curse||0;if(L>=1)UNL.curseClear=Math.max(UNL.curseClear||0,L);const nm=Math.min(10,L+1);if(nm>(UNL.curseMax||0)){UNL.curseMax=nm;achToast({ic:'🩸',n:`呪いLv${nm}が解放された`,d:'新しい冒険で、呪いの強さを選べる',secret:0,custom:'さらなる試練'});}unlSave();checkUnlocks();rk=clearReward();achStat('clears');unlock('cl_'+(S.cls||'warrior'));achLong();achSave();}
+  sfx('level');const nth=Math.round(floorOf()/100);S.cleared=(S.cleared||0)+1;
+  recordBest();
+  if(nth===1){
+    openModal(`<div class="big" style="text-align:center">👑</div><h2>世界の元凶を倒した！</h2>
+      <p style="text-align:center">B100F・${S.turn}ターン・撃破${S.kills}・Lv${S.level}<br>深淵の眼が崩れ落ち、地上に光が戻っていく……</p>${TUT?'':rewardHtml(rk)}
+      <button class="opt" id="cl1" style="text-align:center">……？</button>`);
+    $('cl1').onclick=()=>{openModal(`<div class="big" style="text-align:center">🕳️</div><h2>まだ、底ではなかった</h2>
+      <p style="text-align:center">元凶が消えたあとに、さらに下へと続く階段が口を開けていた。<br>地の底のさらに底から、より深い闇の気配が這い上がってくる——</p>
+      <button class="opt" id="cl2" style="text-align:center">さらに深くへ（エンドレス）</button>`);
+      $('cl2').onclick=()=>{showBanner('B100F','終わりなき深層へ','ここから先は、果てのない冒険。','#c9a2ff');finishPending();};};
+  }else{
+    openModal(`<div class="big" style="text-align:center">👁️</div><h2>B${floorOf()}Fの元凶を倒した</h2><p style="text-align:center">${S.turn}ターン・撃破${S.kills}・Lv${S.level}<br>それでも、闇の底は見えない。</p>${TUT?'':rewardHtml(rk)}
+      <button class="opt" id="cl2" style="text-align:center">さらに深くへ</button>`);
+    $('cl2').onclick=()=>{finishPending();};
+  }
+}
+function drawBanner(now,cs){
+  if(!BANNER)return;const e=(now-BANNER.t0)/BANNER_MS;if(e>=1){BANNER=null;return;}if(e<0)return;
+  const W=cv.width,al=e<.2?e/.2:e>.74?(1-e)/.26:1;
+  ctx.save();ctx.globalAlpha=al*.78;ctx.fillStyle='#000';ctx.fillRect(0,W*.28,W,W*.44);ctx.globalAlpha=al;
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  const MF='"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP","Noto Serif CJK JP",serif';
+  const fit=(t,f,wt)=>{ctx.font=`${wt} ${f}px ${MF}`;const w=ctx.measureText(t).width;if(w>W*.9){f*=W*.9/w;ctx.font=`${wt} ${f}px ${MF}`;}return f;};
+  let f=fit(BANNER.top,cs*.3,800);ctx.fillStyle='#bbb';ctx.fillText(BANNER.top,W/2,W*.36);
+  f=fit(BANNER.main,cs*.52,900);ctx.lineWidth=f*.18;ctx.strokeStyle='rgba(0,0,0,.9)';ctx.strokeText(BANNER.main,W/2,W*.47+(1-al)*cs*.1);ctx.fillStyle=BANNER.col;ctx.fillText(BANNER.main,W/2,W*.47+(1-al)*cs*.1);
+  if(BANNER.sub){f=fit(BANNER.sub,cs*.24,700);ctx.fillStyle='#eee';ctx.fillText(BANNER.sub,W/2,W*.6);}
+  ctx.restore();
+}
+function floorTip(){
+  const F=floorOf(),z=zoneAt(F),boss=S.bossFlag||bossAlive();
+  return tipHead('🕳️',`B${F}F ${F%20===0?bossFloorName(F):z.name}`)+
+    `${z.desc}<br>ターン ${S.turn}<br>`+(boss?'<span style="color:#ff9a9a">ボスを倒すまで 下へ進めない</span>':`次の階まで あと${2-(S.fprog||0)}ターン`)+
+    `<br>${F<100?`目標：B100Fの世界の元凶（あと${100-F}階）`:'終わりなき深層'}`;
+}
+
+/* ---------- achievements (50, of which 15 secret) ---------- */
+const LS_ACH='dchain_ach_v1';
+const ACHS=[
+  {id:'f2',ic:'🕯️',n:'最初の一歩',d:'B2Fに降りる'},
+  {id:'f10',ic:'🪜',n:'墓地の奥へ',d:'B10Fに到達する'},
+  {id:'f20',ic:'🏰',n:'玉座の間',d:'B20Fに到達する'},
+  {id:'f40',ic:'🦴',n:'竜の寝床へ',d:'B40Fに到達する'},
+  {id:'f60',ic:'🩸',n:'血の城門',d:'B60Fに到達する'},
+  {id:'f80',ic:'🌊',n:'水底の神殿',d:'B80Fに到達する'},
+  {id:'f100',ic:'🕳️',n:'世界の底',d:'B100Fに到達する'},
+  {id:'clear',ic:'👑',n:'世界を救った者',d:'深淵の眼を倒す'},
+  {id:'f150',ic:'🌌',n:'果てなき深層',d:'B150Fに到達する'},
+  {id:'f200',ic:'🌀',n:'底なしの探求者',d:'B200Fに到達する'},
+  {id:'ogre',ic:'👹',n:'オーガ殺し',d:'オーガ王を倒す'},
+  {id:'dragon',ic:'🐉',n:'竜殺し',d:'ドラゴンを倒す'},
+  {id:'vampire',ic:'🧛',n:'夜明けをもたらす者',d:'ヴァンパイアを倒す'},
+  {id:'kraken',ic:'🐙',n:'深海の覇者',d:'クラーケンを倒す'},
+  {id:'c10',ic:'✨',n:'ナイス・チェーン',d:'10チェーンを達成する'},
+  {id:'c14',ic:'💫',n:'エクセレント',d:'14チェーンを達成する'},
+  {id:'c20',ic:'🌈',n:'レジェンド',d:'20チェーンを達成する'},
+  {id:'mk5',ic:'💥',n:'一網打尽',d:'1回のチェーンで敵を5体倒す'},
+  {id:'coin12',ic:'💰',n:'黄金の川',d:'💰を12個つなぐ'},
+  {id:'shield10',ic:'🛡️',n:'鉄壁の陣',d:'🛡️を10個つなぐ'},
+  {id:'potion10',ic:'🧪',n:'薬師の手並み',d:'🧪を10個つなぐ'},
+  {id:'k100',ic:'⚔️',n:'百人斬り',d:'敵を累計100体倒す'},
+  {id:'k1000',ic:'🗡️',n:'千の屍を越えて',d:'敵を累計1000体倒す'},
+  {id:'elite',ic:'⭐',n:'強者を討つ',d:'⭐強化個体を倒す'},
+  {id:'bomb1',ic:'💣',n:'間一髪の解体',d:'爆発寸前（残り1）の爆弾を倒す'},
+  {id:'shaman',ic:'🧙',n:'呪いを断つ',d:'呪術師を倒す'},
+  {id:'lv10',ic:'📈',n:'熟練の探索者',d:'Lv10に到達する'},
+  {id:'lv20',ic:'🎖️',n:'歴戦の勇士',d:'Lv20に到達する'},
+  {id:'sk4',ic:'📚',n:'四つの奥義',d:'スキルを4つ覚える'},
+  {id:'wpn10',ic:'🔨',n:'業物',d:'剣1本あたりの攻撃力を10以上にする'},
+  {id:'hp200',ic:'❤️',n:'不屈の肉体',d:'最大HPを200以上にする'},
+  {id:'skill50',ic:'🔮',n:'術の探究',d:'スキルを累計50回使う'},
+  {id:'thunder3',ic:'⚡',n:'雷鳴三連',d:'雷撃で3体同時に倒す'},
+  {id:'tut',ic:'🎓',n:'見習い探索者',d:'チュートリアルをクリアする'},
+  {id:'games10',ic:'🎒',n:'懲りない冒険者',d:'冒険に10回出る'},
+  {id:'games30',ic:'🧭',n:'迷宮の常連',d:'冒険に30回出る'},
+  {id:'games50',ic:'🗺️',n:'地図を描く者',d:'冒険に50回出る'},
+  {id:'games100',ic:'🏕️',n:'迷宮に住まう者',d:'冒険に100回出る'},
+  {id:'days10',ic:'📅',n:'通い慣れた道',d:'10日間、別々の日に冒険に出る'},
+  {id:'days30',ic:'🗓️',n:'ひと月の巡礼',d:'30日間、別々の日に冒険に出る'},
+  {id:'k3000',ic:'⚰️',n:'三千の墓標',d:'敵を累計3000体倒す'},
+  {id:'k10000',ic:'🌑',n:'万の影を払う',d:'敵を累計10000体倒す'},
+  {id:'k30000',ic:'☄️',n:'災厄そのもの',d:'敵を累計30000体倒す'},
+  {id:'skill200',ic:'📜',n:'術の熟達',d:'スキルを累計200回使う'},
+  {id:'skill500',ic:'🪄',n:'大魔導',d:'スキルを累計500回使う'},
+  {id:'boss50',ic:'🗝️',n:'門番狩り',d:'ボスを累計50体倒す'},
+  {id:'boss200',ic:'🏆',n:'王たちの終わり',d:'ボスを累計200体倒す'},
+  {id:'clears3',ic:'👑',n:'三度の夜明け',d:'世界の元凶を累計3回倒す'},
+  {id:'clears10',ic:'🌅',n:'救世の常連',d:'世界の元凶を累計10回倒す'},
+  {id:'cl_warrior',ic:'🪖',n:'戦士の誉れ',d:'戦士で世界の元凶を倒す'},
+  {id:'cl_thief',ic:'🗝️',n:'盗賊の誉れ',d:'盗賊で世界の元凶を倒す'},
+  {id:'cl_mage',ic:'🔮',n:'魔術師の誉れ',d:'魔術師で世界の元凶を倒す'},
+  {id:'cl_cleric',ic:'📿',n:'僧侶の誉れ',d:'僧侶で世界の元凶を倒す'},
+  {id:'f250',ic:'🌠',n:'深淵の向こう',d:'B250Fに到達する'},
+  {id:'f300',ic:'🪐',n:'終わりなき底',d:'B300Fに到達する'},
+  {id:'s_nodmg',ic:'🫥',n:'影のように',d:'B10Fまで一度もHPを減らさずに到達する',secret:1},
+  {id:'s_1hp',ic:'🩹',n:'首の皮一枚',d:'HP1で踏みとどまる',secret:1},
+  {id:'s_overkill',ic:'💢',n:'過剰な正義',d:'倒すのに必要な量より100以上多いダメージを与える',secret:1},
+  {id:'s_coward',ic:'🏳️',n:'賢明な撤退',d:'一手も動かずにあきらめる',secret:1},
+  {id:'s_noshop',ic:'🪙',n:'清貧の旅',d:'ショップを一度も使わずにB40Fに到達する',secret:1},
+  {id:'s_waste',ic:'🍶',n:'薬の無駄遣い',d:'HP満タンのまま🧪を10個以上つなぐ',secret:1},
+  {id:'s_fastboss',ic:'⏱️',n:'瞬殺',d:'ボスを出現から3ターン以内に倒す',secret:1},
+  {id:'s_frzdragon',ic:'❄️',n:'凍てつく竜',d:'ドラゴンを凍結させる',secret:1},
+  {id:'s_boom',ic:'🔥',n:'火薬の洗礼',d:'爆弾の爆発を受けて、1ターンで最大HPの半分以上を失う',secret:1},
+  {id:'s_silence',ic:'🕊️',n:'静寂',d:'盤面から敵を1体残らず消し去る',secret:1},
+  {id:'s_story',ic:'📖',n:'語り部の声',d:'オープニングを飛ばさずに最後まで見る',secret:1},
+  {id:'s_night',ic:'🌙',n:'眠れぬ夜',d:'深夜0時〜4時に冒険に出る',secret:1},
+  {id:'s_bare',ic:'👊',n:'身ひとつで',d:'Lv1のままオーガ王を倒す',secret:1},
+  {id:'s_mute',ic:'🔇',n:'無音の探索',d:'BGM・効果音・振動をすべて切って10ターン進む',secret:1},
+  {id:'s_almost',ic:'💀',n:'あと一歩',d:'B100Fで力尽きる',secret:1},
+  {id:'s_c15x50',ic:'🎆',n:'連鎖の申し子',d:'15チェーン以上を累計50回達成する',secret:1},
+  {id:'s_beast100',ic:'📕',n:'魔物学者',d:'魔物図鑑をすべて埋める',secret:1},
+  {id:'s_allcls10',ic:'🎭',n:'四つの道',d:'4つの職業すべてで10回ずつ冒険に出る',secret:1},
+  {id:'s_comeback',ic:'🔥',n:'雪辱',d:'前回の冒険より50階以上深く潜る',secret:1},
+  {id:'s_steady',ic:'🪨',n:'安定の探索者',d:'5回連続でB50F以上に到達する',secret:1}
+];
+let ACH={v:1,u:{},st:{}};
+function achLoad(){try{const a=JSON.parse(localStorage.getItem(LS_ACH)||'null');if(a&&a.u)ACH={v:1,u:a.u,st:a.st||{},...(a.resetAt?{resetAt:a.resetAt}:{})};}catch(e){}}
+function achSave(){try{localStorage.setItem(LS_ACH,JSON.stringify(ACH));}catch(e){}cloudWrite('ach',{json:JSON.stringify(ACH)});}
+function achMerge(o){
+  if(!o||!o.u)return false;const before=JSON.stringify(ACH),ra=ACH.resetAt||0,ro=o.resetAt||0,R=Math.max(ra,ro),u={};
+  for(const src of [ACH.u,o.u])for(const k in src)if(src[k]>=R&&(!u[k]||src[k]<u[k]))u[k]=src[k];
+  let st;if(ra===ro){st={...ACH.st};for(const k in(o.st||{}))st[k]=Math.max(st[k]||0,o.st[k]||0);}else st=ra>ro?{...ACH.st}:{...(o.st||{})};
+  ACH={v:1,u,st,...(R?{resetAt:R}:{})};return JSON.stringify(ACH)!==before;
+}
+function achStat(k,add=1){if(TUT)return 0;ACH.st[k]=(ACH.st[k]||0)+add;return ACH.st[k];}
+const ACH_N=()=>ACHS.length,ACH_SN=()=>ACHS.filter(a=>a.secret).length;
+const achCount=()=>Object.keys(ACH.u).filter(k=>ACHS.some(a=>a.id===k)).length;
+let achQ=[],achShowing=false;
+function unlock(id){
+  if(ACH.u[id]||(TUT&&id!=='tut'))return;const a=ACHS.find(x=>x.id===id);if(!a)return;
+  ACH.u[id]=Date.now();achSave();
+  if(firstRun()&&inGame&&id!=='tut'){(ACH_HELD=ACH_HELD||[]).push(a);return;}
+  achQ.push(a);if(!achShowing)achNext();
+}
+let ACH_HELD=null;
+const firstRun=()=>!TUT&&!RUNS.length&&!best&&(ACH.st.games||0)<=1;
+function heldAchHtml(){const h=ACH_HELD;ACH_HELD=null;if(!h||!h.length)return '';return `<div class="rwd" style="text-align:left"><div style="text-align:center">🏆 この冒険で実績を${h.length}個解除</div><small>${h.slice(0,6).map(a=>`${a.ic} ${a.secret?'（シークレット）':''}${a.n}`).join('<br>')}${h.length>6?`<br>ほか${h.length-6}個`:''}</small></div>`;}
+function achNext(){
+  const a=achQ.shift();if(!a){achShowing=false;return;}achShowing=true;
+  const t=$('achToast');t.innerHTML=`<span class="ai">${a.ic}</span><span><small>${a.custom||((a.secret?'シークレット実績を解除':'実績を解除')+`（${achCount()}/${ACH_N()}）`)}</small><b>${a.n}</b><br><small>${a.d}</small></span>`;
+  t.classList.remove('show');void t.offsetWidth;t.classList.add('show');sfx('ach');vib([15,40,15]);
+  setTimeout(()=>{t.classList.remove('show');setTimeout(achNext,450);},achQ.length?1900:3200);
+}
+function achState(){
+  if(TUT||!S)return;checkUnlocks();const F=floorOf();
+  [[2,'f2'],[10,'f10'],[20,'f20'],[40,'f40'],[60,'f60'],[80,'f80'],[100,'f100'],[150,'f150'],[200,'f200']].forEach(([f,id])=>{if(F>=f)unlock(id);});
+  if(S.level>=10)unlock('lv10');if(S.level>=20)unlock('lv20');
+  if(S.skills.length>=4)unlock('sk4');if(S.weaponDmg>=10)unlock('wpn10');if(S.maxHp>=200)unlock('hp200');
+  if((ACH.st.kills||0)>=100)unlock('k100');if((ACH.st.kills||0)>=1000)unlock('k1000');
+  if((ACH.st.skills||0)>=50)unlock('skill50');if((ACH.st.games||0)>=10)unlock('games10');
+  achLong();
+  const R=S.run;if(R){if(F>=10&&!R.hit)unlock('s_nodmg');if(F>=40&&!R.shops)unlock('s_noshop');}
+}
+function achLong(){
+  const st=ACH.st,ge=(k,n,id)=>{if((st[k]||0)>=n)unlock(id);};
+  ge('games',30,'games30');ge('games',50,'games50');ge('games',100,'games100');ge('days',10,'days10');ge('days',30,'days30');
+  ge('kills',3000,'k3000');ge('kills',10000,'k10000');ge('kills',30000,'k30000');ge('skills',200,'skill200');ge('skills',500,'skill500');
+  ge('bosses',50,'boss50');ge('bosses',200,'boss200');ge('clears',3,'clears3');ge('clears',10,'clears10');ge('c15',50,'s_c15x50');
+  if(S&&!TUT){const F=floorOf();if(F>=250)unlock('f250');if(F>=300)unlock('f300');}
+  if(BEAST_ORDER.every(k=>UNL.met[k]))unlock('s_beast100');
+}
+function achRunEnd(){
+  if(TUT||!RUNS.length)return;const n=RUNS.length,cur=RUNS[n-1],prev=RUNS[n-2];
+  if(prev&&cur.f-prev.f>=50)unlock('s_comeback');
+  if(n>=5&&RUNS.slice(-5).every(r=>r.f>=50))unlock('s_steady');
+  if(MAIN_CLS.every(k=>RUNS.filter(r=>r.c===k).length>=10))unlock('s_allcls10');
+}
+function achSeed(){ /* fill long-term counters from older data once */
+  const st=ACH.st;if(st.seeded)return;st.seeded=1;
+  if(st.bosses===undefined)st.bosses=['ogre','dragon','vampire','kraken','abyss'].reduce((a,k)=>a+(UNL.kills[k]||0),0);
+  if(st.clears===undefined)st.clears=Math.max(RUNS.filter(r=>r.cl).reduce((a,r)=>a+r.cl,0),ACH.u.clear?1:0);
+  if(st.days===undefined){const ds=new Set(RUNS.map(r=>new Date(r.d).toDateString()));st.days=ds.size;st.lastDay=[...ds].pop()||'';}
+  RUNS.filter(r=>r.cl).forEach(r=>unlock('cl_'+r.c));
+}
+function achKills(killed,bySkill){
+  if(TUT||!killed.length)return;noteKills(killed);achStat('kills',killed.length);
+  for(const t of killed){const k=kindOf(t);if(t.elite)unlock('elite');if(k==='bomb'&&t.cnt===1)unlock('bomb1');if(k==='shaman')unlock('shaman');if(t.hp<=-100)unlock('s_overkill');}
+}
+function achChain(n,g,killed,hp0,full0){
+  if(TUT)return;achKills(killed);
+  if(n>=15)achStat('c15');if(n>=10)unlock('c10');if(n>=14)unlock('c14');if(n>=20)unlock('c20');if(killed.length>=5)unlock('mk5');
+  if(g==='coin'&&n>=12)unlock('coin12');if(g==='shield'&&n>=10)unlock('shield10');if(g==='potion'&&n>=10)unlock('potion10');
+  if(g==='potion'&&n>=10&&full0)unlock('s_waste');
+}
+function achAfterTurn(hp0,boomed){
+  if(TUT||!S)return;const R=S.run||(S.run={hit:true,shops:99,mute:0});
+  if(S.hp<hp0&&floorOf()<10)R.hit=true;
+  if(S.hp===1)unlock('s_1hp');
+  if(boomed&&hp0-S.hp>=S.maxHp/2)unlock('s_boom');
+  if(!S.board.flat().some(isEnemy))unlock('s_silence');
+  if(!AU.on.bgm&&!AU.on.sfx&&!AU.on.vib){R.mute=(R.mute||0)+1;if(R.mute>=10)unlock('s_mute');}
+  achState();
+}
+function achBoss(kind,turns){
+  if(TUT)return;achStat('bosses');if(['ogre','dragon','vampire','kraken'].includes(kind))unlock(kind);
+  if(turns<=3)unlock('s_fastboss');if(kind==='ogre'&&S.level-S.pending.filter(x=>x==='level').length<=1)unlock('s_bare');
+}
+function showAchievements(back){
+  const got=achCount(),sec=ACHS.filter(a=>a.secret&&ACH.u[a.id]).length;
+  const row=a=>{const u=ACH.u[a.id];if(!u&&a.secret)return `<div class="ach lock"><span class="ai">❔</span><span><b>？？？</b><small>シークレット実績</small></span></div>`;
+    const d=u?new Date(u):null;return `<div class="ach ${u?'':'lock'}"><span class="ai">${a.ic}</span><span><b>${a.n}</b><small>${a.d}${u?`　<i>${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}</i>`:''}</small></span></div>`;};
+  openModal(`<h2>🏆 実績</h2><p style="text-align:center">${got} / ${ACH_N()} 解除（シークレット ${sec} / ${ACH_SN()}）</p>
+    <div class="abar"><div style="width:${got/ACH_N()*100}%"></div></div>
+    <div class="alist">${ACHS.filter(a=>!a.secret).map(row).join('')}<div class="asep">シークレット</div>${ACHS.filter(a=>a.secret).map(row).join('')}</div>
+    <button class="opt" id="achClose" style="text-align:center;position:sticky;bottom:0;background:#2e2535;box-shadow:0 -8px 12px #211a25">閉じる</button>`);
+  $('achClose').onclick=back||closeModal;
+}
+
+/* ---------- copy helper ---------- */
+async function copyText(text){
+  try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(text);return true;}}catch(e){}
+  try{const ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');
+    ta.style.cssText='position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';document.body.appendChild(ta);
+    ta.focus();ta.select();ta.setSelectionRange(0,text.length);const ok=document.execCommand('copy');ta.remove();if(ok)return true;}catch(e){}
+  return false;
+}
+/* ---------- settings & reset ---------- */
+function resetAch(){ACH={v:1,u:{},st:{seeded:1},resetAt:Date.now()};try{localStorage.setItem(LS_ACH,JSON.stringify(ACH));}catch(e){}cloudWrite('ach',{json:JSON.stringify(ACH)});}
+function resetBest(){best=null;RUNS=[];try{localStorage.removeItem(LS_BEST);localStorage.removeItem(LS_RUNS);}catch(e){}cloudWrite('best','DEL');}
+function resetSaveData(){[0,1,2].forEach(i=>{try{localStorage.removeItem(slotKey(i));}catch(e){}});deleteSave();}
+function resetTutFlag(){try{localStorage.removeItem(LS_TUT);}catch(e){}}
+function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshAudioBtns();}
+function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
+let settingsBack=null;
+function showSettings(back,msg){
+  if(back!==undefined)settingsBack=back;
+  const tg=(id,label,on)=>`<button class="opt" id="${id}">${label}<span style="float:right;font-weight:700;color:${on?'#8fe08f':'#f08a8a'}">${on?'ON':'OFF'}</span></button>`;
+  const bf=best?(best.floor||1+Math.floor(best.turn/2)):0;
+  openModal(`<h2>⚙️ 設定</h2>
+    <div class="asep">音と振動</div>${tg('st1','🎵 BGM',AU.on.bgm)}${tg('st2','🔊 効果音',AU.on.sfx)}${tg('st3',(VIB_IC==='振動'?'':VIB_IC+' ')+'振動',AU.on.vib)}
+    <div class="asep">データのリセット</div>`+(inGame?'<p style="text-align:center">リセットは、タイトル画面の「⚙️ 設定」から行えます。</p>':`
+    <button class="opt" id="rs1">🏆 実績をリセット<small>解除済みの ${achCount()} / ${ACH_N()} と、累計撃破数などの記録を消します</small></button>
+    <button class="opt" id="rs2">🥇 最高記録と戦績をリセット<small>${best?`最深記録 B${bf}F・最長${best.chain||0}チェーンを消します`:'記録はまだありません'}</small></button>
+    <button class="opt" id="rs3">💾 セーブデータを削除<small>${anySave()?'「続きから」で遊べる冒険（3スロットすべて）を消します':'セーブデータはありません'}</small></button>
+    <button class="opt" id="rs5">🎓 はじめての状態に戻す<small>次の「はじめから」で、初めての人向けの物語とチュートリアルの案内が出ます</small></button>
+    <button class="opt" id="rs6" style="border-color:#8a3a3a">⚠️ すべて初期状態に戻す<small>実績・最高記録・セーブ・図鑑・解放状況・設定をまとめて消します</small></button>`)+
+    `<p id="stMsg" style="text-align:center;color:#8fe08f">${msg||''}</p>
+    <button class="opt" id="stClose" style="text-align:center;position:sticky;bottom:0;background:#2e2535;box-shadow:0 -8px 12px #211a25">閉じる</button>`);
+  const flip=k=>{AU.on[k]=!AU.on[k];saveAudio();refreshAudioBtns();if(k==='bgm'&&AU.on.bgm&&inGame)bgmStart();if(k==='vib'&&AU.on.vib)vib(30);showSettings();};
+  $('st1').onclick=()=>flip('bgm');$('st2').onclick=()=>flip('sfx');$('st3').onclick=()=>flip('vib');
+  if(!inGame){
+    $('rs1').onclick=()=>confirmReset('実績をリセット','解除した実績と、累計撃破数・スキル使用回数などの記録がすべて未解除に戻ります。',resetAch);
+    $('rs2').onclick=()=>confirmReset('最高記録と戦績をリセット','最深記録・最長チェーン・元凶討伐の記録と、戦績の冒険履歴が消えます。',resetBest);
+    $('rs3').onclick=()=>confirmReset('セーブデータを削除','「続きから」で遊べる冒険（3スロットすべて）が消えます。',resetSaveData);
+    $('rs5').onclick=()=>confirmReset('はじめての状態に戻す','チュートリアルを終えた記録が消え、次の「はじめから」で初めての人向けの案内が出ます。',resetTutFlag);
+    $('rs6').onclick=()=>confirmReset('すべて初期状態に戻す','実績・最高記録・セーブデータ・図鑑・解放状況・設定がすべて消え、初めて遊ぶときと同じ状態になります。',resetEverything,true);
+  }
+  $('stClose').onclick=()=>{const b=settingsBack;settingsBack=null;if(b)b();else closeModal();};
+}
+function confirmReset(name,detail,fn,twice){
+  const done=()=>{fn();refreshTitle();sfx('block');showSettings(undefined,`✓ ${name}：完了しました`);};
+  openModal(`<h2>${name}</h2><p style="text-align:center">${detail}<br><b style="color:#f5a0a0">この操作は取り消せません。</b>${cloudOn?'<br><small>クラウドに保存された分も消えます。</small>':''}</p>
+    <button class="opt" id="cfY" style="text-align:center;border-color:#8a3a3a;color:#ffc4c4">リセットする</button><button class="opt" id="cfN" style="text-align:center">やめる</button>`);
+  $('cfN').onclick=()=>showSettings();
+  $('cfY').onclick=()=>{if(!twice){done();return;}
+    openModal(`<h2>⚠️ 最終確認</h2><p style="text-align:center">本当に、すべてのデータを消して<br>初期状態に戻しますか？</p>
+      <button class="opt" id="cfY2" style="text-align:center;border-color:#8a3a3a;color:#ffc4c4">すべて消す</button><button class="opt" id="cfN2" style="text-align:center">やめる</button>`);
+    $('cfY2').onclick=done;$('cfN2').onclick=()=>showSettings();};
+}
+
+let GIVEUP=false;
+/* ---------- progression: staged unlocks, classes, bestiary, event rooms ---------- */
+const LS_UNL='dchain_unlock_v1';
+let UNL={got:{},met:{},kills:{},unseen:[]};
+function unlLoad(){try{const u=JSON.parse(localStorage.getItem(LS_UNL)||'null');if(u&&u.got)UNL={got:u.got,met:u.met||{},kills:u.kills||{},unseen:u.unseen||[],retroH:u.retroH,curseMax:u.curseMax||0,curseClear:u.curseClear||0,curseSel:u.curseSel||0,vil:u.vil||{},notes:u.notes||{},relSeen:u.relSeen||{},carry:u.carry||null,theme:u.theme||'def'};}catch(e){}}
+function unlSave(){try{localStorage.setItem(LS_UNL,JSON.stringify(UNL));}catch(e){}}
+const bestFloor=()=>best?(best.floor||1+Math.floor((best.turn||0)/2)):0;
+const STAGES=[
+  {id:'s0',n:'はじまり',hint:'最初から',items:['職業「戦士」','魔物図鑑'],cond:()=>true},
+  {id:'s1',n:'第一の扉',hint:'B20Fのボスを倒す',items:['イベント部屋','職業「盗賊」'],cond:()=>!!ACH.u.ogre||bestFloor()>=21||(S&&!TUT&&floorOf()>=21)},
+  {id:'s2',n:'第二の扉',hint:'B40Fに到達する',items:['職業「僧侶」','遺物','中ボス'],cond:()=>!!ACH.u.f40||bestFloor()>=40||(S&&!TUT&&floorOf()>=40)},
+  {id:'s3',n:'第三の扉',hint:'世界の元凶を倒す',items:['職業「魔術師」','呪いLv（難易度段階）','階ごとの「異変」','失われた手記'],cond:()=>!!ACH.u.clear||!!(best&&best.cleared)},
+  {id:'s4',n:'第四の扉',hint:'呪いLv1以上でクリアする',items:['遺物の追加（6種）'],cond:()=>(UNL.curseClear||0)>=1}
+];
+const isSoon=x=>x[0]==='*',itemNm=x=>x.replace(/^\*/,''),itemsTxt=st=>st.items.map(x=>isSoon(x)?itemNm(x)+'（近日追加）':x).join('・');
+const unlocked=id=>id==='s0'||!!UNL.got[id];
+function checkUnlocks(silent){
+  let changed=false;
+  for(const st of STAGES){if(st.id==='s0'||UNL.got[st.id])continue;if(st.cond()){UNL.got[st.id]=Date.now();if(!silent)UNL.unseen.push(st.id);changed=true;
+    if(!silent&&inGame&&!TUT)achToast({ic:'🔓',n:`${st.n}が開いた`,d:itemsTxt(st),secret:0,custom:'新しい要素が解放された'});}}
+  for(const k in CLASSES){const c=CLASSES[k];if(!c.hidden||UNL.got['h_'+k]||!c.cond())continue;UNL.got['h_'+k]=Date.now();changed=true;
+    achToast({ic:c.ic,n:`隠し職業「${c.n}」`,d:'新しい冒険で選べるようになった',secret:0,custom:'隠し職業が解放された'});}
+  checkVillage();
+  if(changed)unlSave();return changed;
+}
+function achToast(a){achQ.push(a);if(!achShowing)achNext();}
+function showUnlockCeremony(then){
+  const id=UNL.unseen.shift();if(!id){unlSave();if(then)then();return;}unlSave();
+  const st=STAGES.find(x=>x.id===id);sfx('ach');
+  openModal(`<div class="big" style="text-align:center">🔓</div><h2 style="font-family:var(--mincho)">新たな道が開かれた</h2>
+    <p style="text-align:center;color:#c9b48a">― ${st.n} ―</p>
+    <div class="alist">${st.items.map(x=>`<div class="ach"><span class="ai">✨</span><span><b>${itemNm(x)}</b>${isSoon(x)?'<small>次の更新で遊べるようになります</small>':''}</span></div>`).join('')}</div>
+    <button class="opt" id="ucOk" style="text-align:center">進む</button>`);
+  $('ucOk').onclick=()=>{closeModal();showUnlockCeremony(then);};
+}
+function showStages(back){
+  const row=st=>{const g=unlocked(st.id);return `<div class="ach ${g?'':'lock'}"><span class="ai">${g?'🔓':'🔒'}</span><span><b>${st.n}</b><small>${g?itemsTxt(st)+(false?'（次の更新で追加）':''):'条件：'+st.hint}</small></span></div>`;};
+  openModal(`<h2>🔓 解放</h2><p style="text-align:center">${STAGES.filter(s=>unlocked(s.id)).length} / ${STAGES.length} の扉が開いている</p><div class="alist">${STAGES.map(row).join('')}</div>
+    <button class="opt" id="sgBack" style="text-align:center;position:sticky;bottom:0;background:#2e2535;box-shadow:0 -8px 12px #211a25">戻る</button>`);
+  $('sgBack').onclick=back||closeModal;
+}
+/* ---------- the village (unlock hub) ---------- */
+const VIL=[
+  {id:'tower',ic:'🔭',n:'見張り台',fx:'ダンジョンの地図。開いた扉と、次の扉の条件が見える',cond:()=>true,hint:''},
+  {id:'library',ic:'📚',n:'図書館',fx:'拾った「失われた手記」が読める',cond:()=>unlocked('s3'),hint:'世界の元凶を倒す'},
+  {id:'church',ic:'⛪',n:'教会',fx:'一度手にした遺物を1つ、冒険に持ち込める',cond:()=>unlocked('s2'),hint:'B40Fに到達する'},
+  {id:'tavern',ic:'🍺',n:'酒場',fx:'旅の仲間（職業）が集まる。隠し職業の噂も聞ける',cond:()=>unlocked('s1'),hint:'B20Fのボスを倒す'},
+  {id:'well',ic:'⛲',n:'村の井戸',fx:'',cond:()=>VIL.filter(v=>v.id!=='well'&&!v.deco).every(v=>vilOk(v.id)),hint:'村のすべての建物をよみがえらせる'},
+  {id:'smith',ic:'⚒️',n:'鍛冶屋',fx:'冒険の始まりに 剣の攻撃力+1',cond:()=>bestFloor()>=30,hint:'B30Fに到達する'},
+  {id:'tailor',ic:'🧵',n:'仕立て屋',fx:'迷宮の色合い（盤面の見た目）を選べる',cond:()=>achCount()>=20,hint:'実績を20個集める'},
+  {id:'gate',ic:'🏘️',n:'村の入口',fx:'',cond:()=>true,deco:1},
+  {id:'stairs',ic:'🪦',n:'墓地の階段',fx:'ダンジョンへ降りる',cond:()=>true,deco:1}
+];
+const vilOk=id=>!!(UNL.vil&&UNL.vil[id]);
+function checkVillage(){UNL.vil=UNL.vil||{};let ch=false;
+  for(const v of [...VIL.filter(x=>x.id!=='well'),VIL.find(x=>x.id==='well')]){if(v.deco||UNL.vil[v.id]||!v.cond())continue;UNL.vil[v.id]=Date.now();ch=true;
+    if(v.id==='tower')continue;
+    achToast({ic:v.ic,n:v.id==='well'?'井戸の水が、澄んだ':`${v.n}がよみがえった`,d:v.id==='well'?'村に、光が戻った。':v.fx,secret:0,custom:'村の復興'});}
+  if(ch)unlSave();}
+const vilCount=()=>VIL.filter(v=>!v.deco&&vilOk(v.id)).length,vilTotal=()=>VIL.filter(v=>!v.deco).length;
+function showVillage(back){checkVillage();const me=()=>showVillage(back);
+  const cell=v=>{const ok=v.deco||vilOk(v.id);
+    return `<button class="vcell ${ok?'':'ruin'}" data-v="${v.id}"><span class="vic">${ok?(v.id==='well'?'⛲':v.ic):(v.id==='well'?'🕳️':'🏚️')}</span><small>${ok||v.id==='well'?v.n:'？？？'}</small></button>`;};
+  const wellOk=vilOk('well');
+  openModal(`<h2 style="font-family:var(--mincho)">🏘️ 村</h2>
+    <p style="text-align:center;font-size:12.5px;color:#c9bfcf;margin:0 0 6px">${wellOk?'井戸は澄み、村に灯りが戻った。':'黒く濁った井戸のまわりで、村は静かに眠っている。'}<br>復興 ${vilCount()} / ${vilTotal()}</p>
+    <div class="vgrid">${VIL.map(cell).join('')}</div>
+    <p id="vInfo" class="vz-cap">建物をタップ</p>
+    <button class="opt" id="vBack" style="text-align:center">戻る</button>`);
+  document.querySelectorAll('#mbox .vcell').forEach(b=>b.onclick=()=>{const v=VIL.find(x=>x.id===b.dataset.v),ok=v.deco||vilOk(v.id);
+    if(!ok){$('vInfo').innerHTML=`🏚️ 崩れた建物。<br>よみがえらせる条件：<b>${v.hint}</b>`;return;}
+    if(v.id==='tower')return showTower(me);if(v.id==='library')return showLibrary(me);if(v.id==='church')return showChurch(me);
+    if(v.id==='tavern')return showTavern(me);if(v.id==='tailor')return showTailor(me);
+    if(v.id==='stairs'){closeModal();showNewGameMenu();return;}
+    if(v.id==='gate'){(back||closeModal)();return;}
+    $('vInfo').innerHTML=v.id==='well'?'澄んだ水が、静かに湧いている。<br>この村は、もう大丈夫だ。':`${v.ic} ${v.n}：${v.fx}`;});
+  $('vBack').onclick=back||closeModal;}
+/* tower: dungeon map of the doors */
+function showTower(back){
+  const depth={s0:'地上',s1:'B20F',s2:'B40F',s3:'B100F',s4:'呪いの底'};
+  const nodes=STAGES.map(st=>{const g=unlocked(st.id);return `<div class="tnode ${g?'on':''}"><i>${g?'🚪':'🔒'}</i><div><small>${depth[st.id]||''}</small><b>${st.n}</b><span>${g?itemsTxt(st):'条件：'+st.hint}</span></div></div>`;}).join('');
+  openModal(`<h2>🔭 見張り台</h2><p style="text-align:center;font-size:12px;color:#a99fae">見張り台から、地の底へ続く扉が見える。</p><div class="tmap">${nodes}</div><button class="opt" id="twB" style="text-align:center">戻る</button>`);$('twB').onclick=back;}
+/* library: lost notes */
+const NOTES=[
+  {f:5,t:'井戸が濁る前の晩、地の底から鐘の音がした。誰も信じなかったが、私は数えた。十三回。'},
+  {f:15,t:'骸骨たちは私たちを恨んでいない。ただ、上へ帰る道を忘れてしまっただけなのだ。'},
+  {f:25,t:'呪術師の祭壇には、名前の削られた碑がある。かつてここで祈った者がいた。'},
+  {f:35,t:'石像は動く。だが、夜明けの方角を向いたものだけは、決して動かなかった。'},
+  {f:45,t:'竜の骨は温かい。この谷の竜は、死んでもなお何かを守っている。'},
+  {f:60,t:'城の主は、昔は村の医者だったという。治せない病を、血で治そうとしたのだ。'},
+  {f:75,t:'壁の向こうから水の音がする。この下に、海があるはずがないのに。'},
+  {f:90,t:'神殿の柱に、井戸の絵が刻まれていた。私たちの村の井戸と、まったく同じ形の。'},
+  {f:100,t:'深淵の眼は、泣いていた。あれは元凶ではなく、最初にここへ降りた誰かの、なれの果てだ。'},
+  {f:130,t:'底の先にも、底があった。上へ戻る者がいない理由が、ようやく分かった。'},
+  {f:170,t:'ここまで来ると、魔物たちのほうが道を譲る。私も、もう向こう側なのかもしれない。'},
+  {f:200,t:'――この手記を拾った者へ。井戸の水は澄んだか？ それだけが、知りたい。'}
+];
+function checkNotes(F){if(TUT)return;UNL.notes=UNL.notes||{};let got=0;NOTES.forEach((n,i)=>{if(F>=n.f&&!UNL.notes[i]){UNL.notes[i]=1;got++;}});
+  if(got){unlSave();if(inGame)achToast({ic:'📜',n:'失われた手記を拾った',d:vilOk('library')?'村の図書館で読める':'村の図書館がよみがえれば読める',secret:0,custom:`手記 ${Object.keys(UNL.notes).length} / ${NOTES.length}`});}}
+function showLibrary(back){const n=UNL.notes||{};
+  openModal(`<h2>📚 図書館</h2><p style="text-align:center;font-size:12px;color:#a99fae">失われた手記 ${Object.keys(n).length} / ${NOTES.length}</p><div class="alist">${NOTES.map((x,i)=>n[i]?`<div class="ach"><span class="ai">📜</span><span><b>手記 その${i+1}</b><small style="font-family:var(--mincho);line-height:1.8">${x.t}</small></span></div>`:`<div class="ach lock"><span class="ai">❔</span><span><b>？？？</b><small>B${x.f}F付近に落ちているらしい</small></span></div>`).join('')}</div>
+    <button class="opt" id="lbB" style="text-align:center;position:sticky;bottom:0;background:#2e2535">戻る</button>`);$('lbB').onclick=back;}
+/* church: carry one relic */
+function showChurch(back){const seen=Object.keys(UNL.relSeen||{}).filter(k=>RELICS[k]&&(!RELICS[k].x||unlocked('s4')));
+  openModal(`<h2>⛪ 教会</h2><p style="text-align:center;font-size:12px;color:#a99fae">一度手にした遺物を1つ、祈りとともに冒険へ持ち込める。</p>
+    <button class="opt chs" data-k="" style="${!UNL.carry?'border-color:#e8b33a':''}">持ち込まない</button>
+    ${seen.length?seen.map(k=>`<button class="opt chs" data-k="${k}" style="${UNL.carry===k?'border-color:#e8b33a':''}">${RELICS[k].ic} ${RELICS[k].n}${UNL.carry===k?'（選択中）':''}<small>${RELICS[k].d}</small></button>`).join(''):'<p class="vz-empty">まだ遺物を手にしたことがない。中ボスを倒そう。</p>'}
+    <button class="opt" id="chB" style="text-align:center">戻る</button>`);
+  document.querySelectorAll('#mbox .chs').forEach(b=>b.onclick=()=>{UNL.carry=b.dataset.k||null;unlSave();showChurch(back);});$('chB').onclick=back;}
+/* tavern: class roster */
+function showTavern(back){const ks=Object.keys(CLASSES);
+  openModal(`<h2>🍺 酒場</h2><p style="text-align:center;font-size:12px;color:#a99fae">旅の仲間 ${ks.filter(classOk).length} / ${ks.length}</p><div class="alist">${ks.map(k=>{const c=CLASSES[k],ok=classOk(k);
+    const how=c.hidden===2?'元凶を倒すと、まれに現れるらしい':c.kill?`1回の冒険で${EK[c.kill[0]].name}を${c.kill[1]}体倒すと…`:STAGES.find(s=>s.id===c.stage)?'条件：'+STAGES.find(s=>s.id===c.stage).hint:'';
+    return ok?`<div class="ach"><span class="ai">${c.ic}</span><span><b>${c.n}</b><small>${c.fx}</small></span></div>`:`<div class="ach lock"><span class="ai">❔</span><span><b>${c.hidden?'？？？':c.n}</b><small>${c.hidden?'噂：'+how:how}</small></span></div>`;}).join('')}</div>
+    <button class="opt" id="tvB" style="text-align:center;position:sticky;bottom:0;background:#2e2535">戻る</button>`);$('tvB').onclick=back;}
+/* tailor: board themes */
+const BG0={...BG};
+const THEMES={def:{n:'いつもの迷宮',need:0,bg:BG0},
+  moss:{n:'苔むした石',need:20,bg:{skull:'#3a2219',sword:'#2c3a2c',shield:'#1d3a33',potion:'#3a2a3f',coin:'#4a4214'}},
+  moon:{n:'月光の回廊',need:35,bg:{skull:'#2a1f3d',sword:'#26324a',shield:'#173a5a',potion:'#2e2650',coin:'#3d3d52'}},
+  ember:{n:'灰と炎',need:50,bg:{skull:'#4a1410',sword:'#3a2c26',shield:'#2c2a34',potion:'#4a1f2c',coin:'#5a3a0e'}},
+  gold:{n:'黄金郷',need:65,bg:{skull:'#4a2a14',sword:'#4a3e22',shield:'#3a3a26',potion:'#4a2e2e',coin:'#6a5210'}}};
+function applyTheme(){const t=THEMES[UNL.theme]||THEMES.def;Object.assign(BG,t.bg);}
+function showTailor(back){
+  openModal(`<h2>🧵 仕立て屋</h2><p style="text-align:center;font-size:12px;color:#a99fae">迷宮の色合いを選べる。実績を集めると柄が増える。</p>${Object.entries(THEMES).map(([k,t])=>{const ok=achCount()>=t.need,sel=(UNL.theme||'def')===k;
+    return `<button class="opt thm" data-k="${k}" ${ok?'':'disabled style="opacity:.45"'} style="${sel?'border-color:#e8b33a':''}"><span style="display:inline-flex;gap:3px;vertical-align:middle;margin-right:6px">${['skull','sword','shield','potion','coin'].map(x=>`<i style="width:14px;height:14px;border-radius:3px;background:${t.bg[x]};display:inline-block"></i>`).join('')}</span>${t.n}${sel?'（使用中）':''}<small>${ok?'':'実績'+t.need+'個で解放'}</small></button>`;}).join('')}
+    <button class="opt" id="tlB" style="text-align:center">戻る</button>`);
+  document.querySelectorAll('#mbox .thm').forEach(b=>{if(!b.disabled)b.onclick=()=>{UNL.theme=b.dataset.k;unlSave();applyTheme();showTailor(back);};});$('tlB').onclick=back;}
+/* start-of-adventure perks from the village */
+function villagePerks(s){if(TUT)return;if(vilOk('smith'))s.weaponDmg+=1;}
+function applyCarry(){if(TUT||!vilOk('church')||!UNL.carry||!RELICS[UNL.carry]||!(UNL.relSeen||{})[UNL.carry])return;if(RELICS[UNL.carry].x&&!unlocked('s4'))return;S.relics=[UNL.carry];if(RELICS[UNL.carry].on)RELICS[UNL.carry].on();}
+/* bestiary */
+const BOSS_KINDS=['ogre','dragon','vampire','kraken','abyss'];
+const BEAST_ORDER=[...['skel','bat','zombie','bomb','spider','ghost','golem','shaman'],...Object.keys(EK).filter(k=>EK[k].from||(!BOSS_KINDS.includes(k)&&!EK[k].mini&&!['skel','bat','zombie','bomb','spider','ghost','golem','shaman'].includes(k))).sort((a,b)=>(EK[a].from||99)-(EK[b].from||99)),...MINI_ORDER,...BOSS_KINDS];
+function noteMet(k){if(TUT||UNL.met[k])return;UNL.met[k]=1;unlSave();}
+function noteKills(list){if(TUT||!list.length)return;for(const t of list){const k=kindOf(t);UNL.kills[k]=(UNL.kills[k]||0)+1;UNL.met[k]=1;if(S){S.kk=S.kk||{};S.kk[k]=(S.kk[k]||0)+1;const D=EK[k]||{};if(D.dh||D.dg||D.dx||D.sp||D.db||D.fz)(S._dq=S._dq||[]).push(k);if(t.mini&&unlocked('s2'))S.pending.push('relic');}}unlSave();checkClassKills();}
+function unlockClass(k){if(UNL.got['h_'+k])return false;UNL.got['h_'+k]=Date.now();unlSave();const c=CLASSES[k];
+  achToast({ic:c.ic,n:`隠し職業「${c.n}」`,d:c.hidden===2?`隠し職業 ${h2Got()} / ${H2().length}（あと${H2().length-h2Got()}種類）`:'次の冒険から選べるようになった',secret:0,custom:'隠し職業が解放された'});return true;}
+function checkClassKills(){if(!S||TUT||!S.kk)return;for(const k in CLASSES){const c=CLASSES[k];if(c.kill&&(S.kk[c.kill[0]]||0)>=c.kill[1])unlockClass(k);}}
+const H2=()=>Object.keys(CLASSES).filter(k=>CLASSES[k].hidden===2),h2Got=()=>H2().filter(k=>UNL.got['h_'+k]).length;
+function rewardHtml(k){const n=h2Got(),t=H2().length;
+  const head=k?`🎁 隠し職業「${CLASSES[k].ic}${CLASSES[k].n}」を獲得！`:'🎁 隠し職業はすべて獲得済み';
+  return `<div class="rwd">${head}<div class="rwbar"><div style="width:${n/t*100}%"></div></div><small>隠し職業 ${n} / ${t}${n<t?`（あと${t-n}種類）<br>元凶を倒すたびに1つ手に入る`:'　コンプリート！'}</small></div>`;}
+function clearReward(){const pool=Object.keys(CLASSES).filter(k=>CLASSES[k].hidden===2&&!UNL.got['h_'+k]);if(!pool.length)return null;const k=pool[rnd(pool.length)];unlockClass(k);return k;}
+function showBestiary(back){
+  const seen=BEAST_ORDER.filter(k=>UNL.met[k]).length;
+  const row=k=>{const e=EK[k],m=UNL.met[k],boss=BOSS_KINDS.includes(k),tag=boss?'ボス':e.mini?'中ボス':e.rare?'★レア':'';
+    if(!m)return `<div class="ach lock"><span class="ai">❔</span><span><b>？？？</b><small>${tag||'まだ出会っていない'}</small></span></div>`;
+    return `<div class="ach"><span class="ai" style="${e.flt?'filter:'+e.flt:''}">${e.icon}</span><span><b>${e.name}${tag?`<span style="font-size:11px;color:${e.rare?'#ffd54a':'#ff9ad9'}">（${tag}）</span>`:''}</b><small>${e.desc}<br><i>倒した数：${UNL.kills[k]||0}</i></small></span></div>`;};
+  openModal(`<h2>📖 魔物図鑑</h2><p style="text-align:center">${seen} / ${BEAST_ORDER.length} 種と遭遇</p><div class="alist">${BEAST_ORDER.map(row).join('')}</div>
+    <button class="opt" id="bsBack" style="text-align:center;position:sticky;bottom:0;background:#2e2535;box-shadow:0 -8px 12px #211a25">戻る</button>`);
+  $('bsBack').onclick=back||closeModal;
+}
+function showRecords(back){
+  const b=back||closeModal;
+  openModal(`<h2>📜 冒険の記録</h2>
+    <button class="opt" id="rc0">📊 戦績<small>冒険回数・クリア・記録の推移など</small></button>
+    <button class="opt" id="rc1">🏆 実績<small>${achCount()} / ${ACH_N()}</small></button>
+    <button class="opt" id="rc2">📖 魔物図鑑<small>${BEAST_ORDER.filter(k=>UNL.met[k]).length} / ${BEAST_ORDER.length} 種</small></button>
+    <button class="opt" id="rc3">🏘️ 村<small>復興 ${vilCount()} / ${vilTotal()}・扉 ${STAGES.filter(s=>unlocked(s.id)).length} / ${STAGES.length}・手記・持ち込み・見た目</small></button>
+    <button class="opt" id="rc4" style="text-align:center">閉じる</button>`);
+  const me=()=>showRecords(back);
+  $('rc0').onclick=()=>showStats(me);$('rc1').onclick=()=>showAchievements(me);$('rc2').onclick=()=>showBestiary(me);$('rc3').onclick=()=>showVillage(me);$('rc4').onclick=b;
+}
+/* classes */
+const CLASSES={
+  warrior:{ic:'🪖',n:'戦士',d:'剣の扱いに長けた、頑丈な探索者。',fx:'最大HP60・最大防御5で、最初から防御が満タン。癖がなく扱いやすい',stage:'s0'},
+  thief:{ic:'🗝️',n:'盗賊',d:'金目のものに目がない、身軽な流れ者。',fx:'💰の価値3（通常2）・ショップの必要額2割引・最大HP40',stage:'s1'},
+  mage:{ic:'🔮',n:'魔術師',d:'古い術を受け継ぐ、線の細い学者。',fx:'最初から🔥火球を習得・スキルの再使用ターン25%短縮・最大HP40',stage:'s3'},
+  cleric:{ic:'📿',n:'僧侶',d:'祈りで傷を癒やしてきた、穏やかな巡礼者。',fx:'🧪の回復量3（通常2）・回復の余りは経験値に・基礎攻撃力が伸びやすく（+7）、剣は伸びにくい（+1）',stage:'s2'},
+  vampire:{ic:'🧛',n:'ヴァンパイア',hidden:1,d:'血の渇きに導かれ、地の底へ還る夜の貴族。',fx:'🧪では回復できない（💰に変わる）・敵を倒すたびに血を吸ってHP回復（レベルで増加）・最大HP46',
+    kill:['vampire',1],cond:()=>false},
+  zombie:{ic:'🧟',n:'ゾンビ',hidden:1,d:'何度倒れても、なぜか起き上がってくる者。',fx:'最大HP74だが防具は使えない（🛡️は傷をふさいでHP回復）・🧪の回復量1・冒険中に一度だけ蘇る',
+    kill:['zombie',20],cond:()=>false},
+  hunter:{ic:'🏹',n:'狩人',hidden:2,d:'獲物の最後の一匹を、決して逃さない射手。',fx:'チェーンの最後につないだ敵に2倍ダメージ・最初から🎯狙撃を習得・最大HP45',cond:()=>false},
+  dragoon:{ic:'🐉',n:'竜騎士',hidden:2,d:'竜の背で戦った、一撃に全てを懸ける騎士。',fx:'5つ以上のチェーンは倍率がさらに伸びる・4つ以下の攻撃は威力半分・最大HP55',cond:()=>false},
+  gambler:{ic:'🃏',n:'ギャンブラー',hidden:2,d:'迷宮の宝も、命も、すべて賭けの種。',fx:'攻撃のダメージが毎回0.5〜2倍に揺れる・💰の価値3・最大HP50',cond:()=>false},
+  knight:{ic:'🛡️',n:'騎士',hidden:2,d:'重い鎧に身を包んだ、誇り高き守り手。',fx:'最大防御8・防御が満タンのとき攻撃1.5倍・🧪の回復量1・最大HP50',cond:()=>false},
+  alchemist:{ic:'⚗️',n:'錬金術師',hidden:2,d:'あらゆるものを混ぜ合わせる、変わり者の学者。',fx:'🛡️🧪💰を混ぜてつなげる（それぞれの効果が出るが、混ぜると効果半減）・剣の攻撃力が低い（1・強化+1）・最大HP42',cond:()=>false}
+};
+const MAIN_CLS=Object.keys(CLASSES).filter(k=>!CLASSES[k].hidden);
+const classOk=k=>{const c=CLASSES[k];if(c.hidden)return !!UNL.got['h_'+k];return !c.soon&&unlocked(c.stage);};
+const drainOf=()=>3+Math.floor(S.level/3);
+function vampDrain(k,msgs){if(S.cls!=='vampire'||k<=0)return '';const h=Math.min(k*drainOf(),S.maxHp-S.hp);if(h<=0)return '';S.hp+=h;flash('bHp');const t=`🩸吸血 HP+${h}`;if(msgs)msgs.push(t);return t;}
+function applyClass(s,k){
+  s.cls=k;
+  if(k==='warrior'){s.maxHp=60;s.hp=60;s.maxArmor=5;s.armor=5;}
+  if(k==='thief'){s.goldPer=3;s.goldNeed=Math.round(s.goldNeed*.8);s.maxHp=40;s.hp=40;}
+  if(k==='mage'){s.cdMul=.75;s.maxHp=40;s.hp=40;s.skills=[{id:'fire',cd:Math.max(4,Math.round(SKILLS.fire.cd*.75)),cur:0}];}
+  if(k==='cleric'){s.healPer=3;s.weaponDmg=1;s.baseDmg=2;s.baseUp=7;s.wpnUp=1;s.maxHp=53;s.hp=53;}
+  if(k==='vampire'){s.healPer=0;s.maxHp=46;s.hp=46;}
+  if(k==='zombie'){s.healPer=1;s.maxHp=74;s.hp=74;s.maxArmor=0;s.armor=0;s.revive=1;}
+  if(k==='hunter'){s.maxHp=45;s.hp=45;s.skills=[{id:'snipe',cd:cdOf('snipe'),cur:0}];}
+  if(k==='dragoon'){s.maxHp=55;s.hp=55;}
+  if(k==='gambler'){s.goldPer=3;s.maxHp=50;s.hp=50;}
+  if(k==='knight'){s.maxArmor=8;s.armor=8;s.healPer=1;s.maxHp=50;s.hp=50;}
+  if(k==='alchemist'){s.weaponDmg=1;s.wpnUp=1;s.maxHp=42;s.hp=42;}
+}
+function pickClass(then,cancel){
+  const ks=Object.keys(CLASSES).filter(k=>!CLASSES[k].hidden||classOk(k));
+  if(ks.filter(classOk).length<=1){then('warrior');return;}
+  openModal(`<h2>職業を選ぶ</h2>${ks.map(k=>{const c=CLASSES[k],ok=classOk(k);
+    return `<button class="opt" data-k="${k}" ${ok?'':'disabled style="opacity:.4"'}>${ok?c.ic:'🔒'} ${c.n}<small>${ok?c.d+'<br>'+c.fx:(c.soon&&unlocked(c.stage)?'次の更新で追加':'解放条件：'+STAGES.find(s=>s.id===c.stage).hint)}</small></button>`;}).join('')}
+    <p style="text-align:center;font-size:12px;color:#a99fae;margin:6px 0">${h2Got()<H2().length?`？ 元凶を倒すと手に入る隠し職業 ${h2Got()} / ${H2().length}`:'隠し職業 コンプリート'}</p>
+    <button class="opt" id="pcCancel" style="text-align:center">やめる</button>`);
+  $('mbox').querySelectorAll('.opt[data-k]').forEach(b=>{if(!b.disabled)b.onclick=()=>{closeModal();then(b.dataset.k);};});
+  $('pcCancel').onclick=cancel||closeModal;
+}
+/* event rooms */
+const EVENTS=[
+  {ic:'💧',t:'癒やしの泉',d:'岩の割れ目から、澄んだ水が静かに湧いている。',o:()=>[
+    {l:'水を飲む',s:`HPを${Math.ceil(S.maxHp*.4)}回復`,f:()=>{const h=Math.min(S.maxHp-S.hp,Math.ceil(S.maxHp*.4));S.hp+=h;return h?`冷たい水が喉を潤した。HP+${h}`:'冷たい水を味わった。体はすでに満ちている。';}},
+    {l:'盾を清める',s:'防御を全回復し、最大防御+1',dis:S.cls==='zombie',f:()=>{S.maxArmor++;S.armor=S.maxArmor;return '盾が淡く光った。最大防御+1';}}]},
+  {ic:'🧰',t:'古びた宝箱',d:'苔に覆われた宝箱。錆びた錠は、今にも外れそうだ。',o:()=>[
+    {l:'開ける',s:'何が入っているかは分からない',f:()=>{if(Math.random()<.7){const g=20+floorOf()*4;addGold(g);return `金貨がぎっしり詰まっていた！ お金+${g}`;}
+      const d=Math.ceil(S.maxHp*.15);S.hp=Math.max(1,S.hp-d);return `罠だ！ 毒針が指を刺した。HP−${d}`;}},
+    {l:'そっとしておく',s:'何も起きない',f:()=>'嫌な予感がして、その場を離れた。'}]},
+  {ic:'🧳',t:'怪しい商人',d:'「へへ…こんな深くで客とはね。いい品があるよ。代金は、まあ…あんた次第さ」',o:()=>{const cost=40+floorOf()*2;return [
+    {l:'血で払う',s:'最大HP−10、剣1本の攻撃力+2',f:()=>{S.maxHp=Math.max(10,S.maxHp-10);S.hp=Math.min(S.hp,S.maxHp);S.weaponDmg+=2;return '鈍く光る砥石を受け取った。剣が鋭くなった。'}},
+    {l:'金で払う',s:`お金${cost}で、🧪の回復量+1`,dis:S.gold<cost,f:()=>{S.gold-=cost;S.healPer++;return '怪しげな薬草の束を受け取った。回復量+1';}},
+    {l:'断る',s:'何も起きない',f:()=>'「…気が変わったら、またおいで」'}];}},
+  {ic:'🎒',t:'倒れた冒険者',d:()=>{const past=RUNS.filter(r=>r.n);if(!past.length)return '朽ちた鎧の傍らに、擦り切れた背嚢が転がっている。';const r=past[rnd(past.length)],me=r.n===((S&&S.name)||getName());return `朽ちた鎧の傍らに、擦り切れた背嚢が転がっている。<br>革の札に、かすれた文字で「${esc(r.n)}」とある。${me?'<br>……どこかで聞いた名だ。':''}`;},o:()=>[
+    {l:'背嚢をあさる',s:`経験値+${4+Math.round(floorOf()/2)}`,f:()=>{const x=4+Math.round(floorOf()/2);gainXp(x);return `走り書きの地図と、使いかけの道具を見つけた。経験値+${x}`;}},
+    {l:'弔う',s:'最大HP+6',f:()=>{S.maxHp+=6;S.hp+=6;return '静かに手を合わせた。胸の奥が、少し温かい。最大HP+6';}}]},
+  {ic:'🕯️',t:'祈りの祭壇',d:'蝋燭の火が、風もないのに揺れている。',o:()=>{const half=Math.floor(S.gold/2);return [
+    {l:'お金を捧げる',s:`お金${half}を捧げ、HP全回復・全スキルの再使用待ちを0に`,dis:half<1,f:()=>{S.gold-=half;S.hp=S.maxHp;S.skills.forEach(k=>k.cur=0);return '火がまっすぐに立ちのぼった。体に力が満ちる。';}},
+    {l:'立ち去る',s:'何も起きない',f:()=>'祭壇に背を向けた。蝋燭の火が、ふっと消えた。'}];}},
+  {ic:'📖',t:'朽ちかけた書物',d:'湿気で頁が貼りついている。かろうじて読めそうだ。',o:()=>[
+    {l:'読む',s:`経験値+${6+Math.round(floorOf()*.8)}`,f:()=>{const x=6+Math.round(floorOf()*.8);gainXp(x);return `古い戦いの記録だった。経験値+${x}`;}},
+    {l:'燃やして暖をとる',s:'HP+25',f:()=>{const h=Math.min(S.maxHp-S.hp,25);S.hp+=h;return h?`小さな火が、冷えた体を温めた。HP+${h}`:'小さな火を眺めて、しばし心を休めた。';}}]},
+  {ic:'🗡️',t:'呪われた剣',d:'床に突き立った黒い剣が、低くうなっている。',o:()=>[
+    {l:'引き抜く',s:'剣1本の攻撃力+3、最大HP−15',f:()=>{S.weaponDmg+=3;S.maxHp=Math.max(10,S.maxHp-15);S.hp=Math.min(S.hp,S.maxHp);return '剣の声が頭に響く。力と引き換えに、何かを失った。';}},
+    {l:'触れない',s:'何も起きない',f:()=>'うなり声は、背後でいつまでも続いていた。'}]}
+];
+function maybeEvent(F){
+  if(TUT||!unlocked('s1')||F%20===0)return;
+  if(!S.nextEvent)S.nextEvent=F+2+rnd(3);
+  if(F>=S.nextEvent&&!S.pending.includes('event')){S.pending.push('event');S.nextEvent=F+4+rnd(3);}
+}
+function showEvent(){
+  let i;do{i=rnd(EVENTS.length);}while(EVENTS.length>1&&i===S.lastEvent);S.lastEvent=i;
+  const ev=EVENTS[i],opts=ev.o();sfx('descend');
+  openModal(`<div class="big" style="text-align:center">${ev.ic}</div><h2 style="font-family:var(--mincho)">${ev.t}</h2>
+    <p style="text-align:center;font-family:var(--mincho);line-height:1.9">${typeof ev.d==='function'?ev.d():ev.d}</p>
+    ${opts.map((o,k)=>`<button class="opt" data-e="${k}" ${o.dis?'disabled style="opacity:.4"':''}>${o.l}<small>${o.s}</small></button>`).join('')}`);
+  $('mbox').querySelectorAll('.opt[data-e]').forEach(b=>{if(!b.disabled)b.onclick=()=>{
+    const msg=opts[+b.dataset.e].f();sfx('shop');
+    openModal(`<div class="big" style="text-align:center">${ev.ic}</div><p style="text-align:center;font-family:var(--mincho);line-height:1.9">${msg}</p><button class="opt" id="evGo" style="text-align:center">先へ進む</button>`);
+    $('evGo').onclick=()=>finishPending();};});
+}
+
+/* ---------- adventurer name & report ---------- */
+const LS_NAME='dchain_name_v1';
+const NM=()=>esc((S&&S.name)||getName());
+const NM_A=['さすらいの','灰色の','寡黙な','泥まみれの','夜目の利く','臆病な','陽気な','古傷の','迷子の','灯火の','ずぶ濡れの','腹ぺこの','眠たげな','裸足の','錆びた剣の','星読みの'];
+const NM_B=['ルカ','ミオ','ガルド','セナ','トビ','イリス','ノア','カイ','リサ','ボルド','エマ','ジン','ハル','ユナ','オルド','ティモ'];
+const randName=()=>NM_A[Math.random()*NM_A.length|0]+NM_B[Math.random()*NM_B.length|0];
+function getName(){try{const n=localStorage.getItem(LS_NAME);if(n)return n;}catch(e){}const n=randName();setName(n);return n;}
+function setName(n){n=String(n||'').replace(/[\r\n<>]/g,'').trim().slice(0,16);if(!n)return;try{localStorage.setItem(LS_NAME,n);}catch(e){}}
+function curseField(){const mx=UNL.curseMax||0;if(!mx)return '';const v=Math.min(UNL.curseSel||0,mx);
+  return `<div class="nmrow"><label>呪いLv</label><button id="cuM">－</button><b id="cuV" style="flex:1;text-align:center;color:${v?'#ff8a8a':'#ece4d8'}">${v?'Lv'+v:'なし'}</b><button id="cuP">＋</button></div><p id="cuD" style="text-align:center;font-size:11.5px;color:#a99fae;margin:-4px 0 6px">${curseDesc(v)}</p>`;}
+function curseDesc(v){return v?`敵のHP+${v*12}%${v>=3?`・攻撃力+${Math.floor(v/3)}`:''}（最大Lv${UNL.curseMax}）`:`呪いなし（最大Lv${UNL.curseMax}まで選べる）`;}
+function wireCurse(){if(!$('cuV'))return;const set=d=>{UNL.curseSel=Math.max(0,Math.min(UNL.curseMax||0,(UNL.curseSel||0)+d));unlSave();const v=UNL.curseSel;$('cuV').textContent=v?'Lv'+v:'なし';$('cuV').style.color=v?'#ff8a8a':'#ece4d8';$('cuD').textContent=curseDesc(v);};
+  $('cuM').onclick=()=>set(-1);$('cuP').onclick=()=>set(1);}
+function nameField(){return `<div class="nmrow"><label>冒険者名</label><input id="nmIn" maxlength="16" value="${esc(getName()).replace(/"/g,'&quot;')}"><button id="nmDice" aria-label="ランダム">🎲</button></div>`;}
+function wireNameField(){const i=$('nmIn');if(!i)return;i.onchange=i.onblur=()=>{if(!i.value.trim())i.value=getName();setName(i.value);};
+  $('nmDice').onclick=()=>{i.value=randName();setName(i.value);};}
+function reportText(){
+  const runs=RUNS,games=Math.max(ACH.st.games||0,runs.length),cl=ACH.st.clears||0,bf=bestFloor(),ch=Math.max(best&&best.chain||0,...runs.map(r=>r.ch),0);
+  const cls=Object.keys(CLASSES).filter(k=>runs.some(r=>r.c===k)).map(k=>{const rr=runs.filter(r=>r.c===k);return `${CLASSES[k].n}${rr.length}回（最深B${Math.max(...rr.map(r=>r.f))}F${rr.some(r=>r.cl)?'・👑':''}）`;}).join('、');
+  const last=runs.slice(-5).map(r=>`B${r.f}F`).join('→');
+  const d=new Date();
+  return `📝 Dungeon Chain 戦績メモ\n冒険者：${getName()}\n冒険${games}回／元凶討伐${cl}回／最深B${bf||1}F\n総撃破${ACH.st.kills||0}体／最長${ch}チェーン／実績${achCount()}/${ACH_N()}\n`+
+    (cls?`職業：${cls}\n`:'')+(last?`直近：${last}\n`:'')+`（${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} 時点）`;
+}
+function runReportText(){const r=RUNS[RUNS.length-1];if(!r)return reportText();const c=CLASSES[r.c]||CLASSES.warrior;
+  return `📝 Dungeon Chain｜${r.n||getName()}（${c.n}）がB${r.f}F「${placeOf(r.f)}」で力尽きた。\n${r.t}ターン／撃破${r.k}／Lv${r.l}／最長${r.ch}チェーン${r.cl?'／👑元凶討伐':''}\n最深記録B${bestFloor()||r.f}F・冒険${Math.max(ACH.st.games||0,RUNS.length)}回目`;}
+function copyBtn(id,getText){const b=$(id);if(!b)return;const lab=b.innerHTML;b.onclick=async()=>{const ok=await copyText(getText());b.innerHTML=ok?'✅ コピーしました。メモ帳などに貼り付けてください':'コピーできませんでした';setTimeout(()=>b.innerHTML=lab,2600);};}
+
+/* ---------- run history & stats dashboard ---------- */
+const LS_RUNS='dchain_runs_v1';let RUNS=[];
+function runsLoad(){try{const r=JSON.parse(localStorage.getItem(LS_RUNS)||'[]');if(Array.isArray(r))RUNS=r;}catch(e){}}
+function runsSave(){try{localStorage.setItem(LS_RUNS,JSON.stringify(RUNS.slice(-300)));}catch(e){}}
+function recordRun(){if(TUT||!S)return;RUNS.push({d:Date.now(),n:getName(),cu:S.curse||0,c:S.cls||'warrior',f:floorOf(),t:S.turn,k:S.kills,l:S.level,ch:S.maxChain||0,cl:S.cleared||0,e:GIVEUP?1:0});RUNS=RUNS.slice(-300);runsSave();}
+const VC={c1:'#3987e5',c2:'#d95926',c3:'#199e70',c4:'#c98500',grid:'#3a3238',ink:'#ece4d8',ink2:'#a99fae',surf:'#211a25'};
+const CLS_COL={warrior:VC.c1,thief:VC.c2,mage:VC.c3,cleric:VC.c4,vampire:'#d55181',zombie:'#0ca30c',hunter:'#9085e9',dragoon:'#9085e9',gambler:'#9085e9',knight:'#9085e9',alchemist:'#9085e9'};
+const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const fmtD=ts=>{const d=new Date(ts);return `${d.getMonth()+1}/${d.getDate()}`;};
+const placeOf=f=>f%20===0?bossFloorName(f):zoneAt(f).name;
+/* rounded-top bar anchored to the baseline */
+function barPath(x,y,w,h,r){if(h<=0)return '';r=Math.min(r,w/2,h);return `M${x},${y+h}V${y+r}Q${x},${y} ${x+r},${y}H${x+w-r}Q${x+w},${y} ${x+w},${y+r}V${y+h}Z`;}
+function hbarPath(x,y,w,h,r){if(w<=0)return '';r=Math.min(r,h/2,w);return `M${x},${y}H${x+w-r}Q${x+w},${y} ${x+w},${y+r}V${y+h-r}Q${x+w},${y+h} ${x+w-r},${y+h}H${x}Z`;}
+function chartFloors(){
+  const R=RUNS.slice(-30);if(!R.length)return '<p class="vz-empty">冒険を終えると、ここに記録が並びます。</p>';
+  const W=340,H=180,L=34,Rt=8,T=16,B=20,iw=W-L-Rt,ih=H-T-B,maxF=Math.max(100,...R.map(r=>r.f)),top=Math.ceil(maxF/50)*50;
+  const y=v=>T+ih-(v/top)*ih,bw=iw/R.length,gap=Math.min(2,bw*.25);
+  let g='';for(let v=0;v<=top;v+=50)g+=`<line x1="${L}" x2="${W-Rt}" y1="${y(v)}" y2="${y(v)}" stroke="${VC.grid}" stroke-width="1"/><text x="${L-5}" y="${y(v)+3}" text-anchor="end" class="vz-ax">B${v}F</text>`;
+  g+=`<line x1="${L}" x2="${W-Rt}" y1="${y(100)}" y2="${y(100)}" stroke="${VC.c4}" stroke-width="1.5" stroke-dasharray="4 3"/><text x="${L+4}" y="${y(100)-4}" class="vz-ax" fill="${VC.c4}">目標 B100F</text>`;
+  let bars='',best=0,pts=[],prev=null;
+  R.forEach((r,i)=>{const x=L+i*bw+gap/2,w=Math.max(1,bw-gap);
+    bars+=`<path d="${barPath(x,y(r.f),w,T+ih-y(r.f),3)}" fill="${VC.c1}" opacity=".85"/>`;
+    if(r.cl)bars+=`<text x="${x+w/2}" y="${y(r.f)-3}" text-anchor="middle" font-size="9">👑</text>`;
+    bars+=`<rect x="${L+i*bw}" y="${T}" width="${bw}" height="${ih}" fill="transparent" data-run="${i}"/>`;
+    best=Math.max(best,r.f);const px=L+i*bw+bw/2;pts.push(`${prev===null?'M':'L'}${px},${y(best)}`);prev=best;});
+  const line=`<path d="${pts.join('')}" fill="none" stroke="${VC.c2}" stroke-width="2" stroke-linejoin="round"/><circle cx="${L+(R.length-.5)*bw}" cy="${y(best)}" r="4" fill="${VC.c2}" stroke="${VC.surf}" stroke-width="2"/>`;
+  return `<div class="vz-leg"><span><i style="background:${VC.c1}"></i>到達した階</span><span><i style="background:${VC.c2};height:2px"></i>自己ベスト</span></div>
+    <svg id="vzFloors" viewBox="0 0 ${W} ${H}" class="vz-svg">${g}${bars}${line}<text x="${L}" y="${H-5}" class="vz-ax">${R.length>1?'古い':''}</text><text x="${W-Rt}" y="${H-5}" text-anchor="end" class="vz-ax">最新</text></svg>
+    <p id="vzRun" class="vz-cap">棒をタップすると、その回の詳細が出ます</p>`;
+}
+function chartRows(rows,unit,valW=96){
+  if(!rows.length)return '<p class="vz-empty">まだ記録がありません。</p>';
+  const W=340,rh=24,L=104,iw=W-L-valW,max=Math.max(1,...rows.map(r=>r.v));
+  let s='';rows.forEach((r,i)=>{const yy=i*rh+4,w=r.v/max*iw;
+    s+=`<text x="${L-6}" y="${yy+13}" text-anchor="end" class="vz-lb">${esc(r.label)}</text>`+
+      (r.v>0?`<path d="${hbarPath(L,yy+3,Math.max(2,w),rh-10,3)}" fill="${r.col||VC.c1}"/>`:'')+
+      `<text x="${L+Math.max(2,w)+6}" y="${yy+13}" class="vz-val">${esc(r.txt!==undefined?r.txt:r.v+unit)}</text>`;});
+  return `<svg viewBox="0 0 ${W} ${rows.length*rh+6}" class="vz-svg">${s}</svg>`;
+}
+function showStats(back){
+  const runs=RUNS,games=Math.max(ACH.st.games||0,runs.length),clears=Math.max(runs.filter(r=>r.cl).length,best&&best.cleared?1:0);
+  const kills=ACH.st.kills||0,bf=bestFloor(),chainMax=Math.max(best&&best.chain||0,...runs.map(r=>r.ch),0);
+  const last10=runs.slice(-10),prev10=runs.slice(-20,-10),avg=a=>a.length?a.reduce((x,r)=>x+r.f,0)/a.length:0;
+  const a1=avg(last10),a0=avg(prev10),diff=prev10.length?Math.round(a1-a0):null;
+  const tile=(lab,val,sub)=>`<div class="vz-tile"><small>${lab}</small><b>${val}</b>${sub?`<small>${sub}</small>`:''}</div>`;
+  const ks=Object.keys(CLASSES).filter(k=>!CLASSES[k].hidden||classOk(k)||RUNS.some(r=>r.c===k));
+  const clsRows=ks.map(k=>{const c=CLASSES[k],rr=runs.filter(r=>r.c===k),ok=classOk(k);
+    return {label:`${ok?c.ic:'🔒'} ${c.n}`,v:rr.length,col:CLS_COL[k],txt:!ok?'未解放':rr.length?`${rr.length}回・👑${rr.filter(r=>r.cl).length}・最深B${Math.max(...rr.map(r=>r.f))}F`:'未プレイ'};});
+  const monRows=BEAST_ORDER.filter(k=>UNL.kills[k]).map(k=>({label:`${EK[k].icon} ${EK[k].name}`,v:UNL.kills[k]})).sort((a,b)=>b.v-a.v);
+  const deathMap={};runs.filter(r=>!r.e&&!(r.cl&&r.f<=100)).forEach(r=>{const p=placeOf(r.f);deathMap[p]=(deathMap[p]||0)+1;});
+  const deathRows=Object.entries(deathMap).map(([p,v])=>({label:p,v,col:VC.c2})).sort((a,b)=>b.v-a.v).slice(0,8);
+  openModal(`<h2>📊 戦績</h2><p style="text-align:center;margin:0 0 4px;color:#c9bfcf">冒険者：${esc(getName())}</p>
+    <div class="vz-tiles">${tile('冒険回数',games+'<span>回</span>')}${tile('クリア',clears+'<span>回</span>',clears?'👑 元凶討伐':'')}${tile('最深記録',bf?`B${bf}F`:'-')}
+      ${tile('総撃破数',kills+'<span>体</span>')}${tile('最長チェーン',chainMax+'<span>つ</span>')}
+      ${tile('直近10回の平均',last10.length?`B${Math.round(a1)}F`:'-',diff===null?'':diff>0?`<span class="up">▲ 前の10回よりB${diff}F深い</span>`:diff<0?`<span class="dn">▼ 前の10回より${-diff}F浅い</span>`:'前の10回と同じ')}</div>
+    <h3 class="vz-h">到達階層の推移（直近30回）</h3>${chartFloors()}
+    <h3 class="vz-h">職業別</h3>${chartRows(clsRows,'回',150)}
+    <h3 class="vz-h">魔物の討伐数</h3>${chartRows(monRows,'体')}
+    <h3 class="vz-h">倒れた場所</h3>${chartRows(deathRows,'回')}
+    <p class="vz-note">職業別・推移・倒れた場所は、この機能を入れた後の冒険から記録しています。</p>
+    <button class="opt" id="vzRep" style="text-align:center">📝 戦績をメモ用にコピー<small>メモ帳などに貼って、自分の記録として残せます</small></button>
+    <button class="opt" id="vzBack" style="text-align:center;position:sticky;bottom:0;background:#2e2535;box-shadow:0 -8px 12px #211a25">戻る</button>`);
+  const R=RUNS.slice(-30),fl=$('vzFloors');
+  if(fl)fl.querySelectorAll('rect[data-run]').forEach(el=>el.onclick=()=>{const r=R[+el.dataset.run],c=CLASSES[r.c]||CLASSES.warrior;
+    fl.querySelectorAll('rect[data-run]').forEach(x=>x.setAttribute('fill','transparent'));el.setAttribute('fill','rgba(255,255,255,.08)');
+    $('vzRun').innerHTML=`${fmtD(r.d)}　${c.ic}${c.n}　<b>B${r.f}F</b>（${placeOf(r.f)}）${r.cl?'　👑':''}<br>${r.t}ターン・撃破${r.k}・Lv${r.l}・最長${r.ch}チェーン${r.e?'・あきらめた':''}`;});
+  copyBtn('vzRep',reportText);$('vzBack').onclick=back||closeModal;
+}
+
+/* ---------- long-press info ---------- */
+const LP_MS=420;
+function showTip(html,x,y){
+  const t=$('tip');t.innerHTML=html;t.classList.remove('hidden');
+  const w=t.offsetWidth,h=t.offsetHeight,W=innerWidth,H=innerHeight;
+  let L=Math.max(8,Math.min(W-w-8,x-w/2)),T=y-h-28;if(T<8)T=Math.min(H-h-8,y+28);
+  t.style.left=L+'px';t.style.top=T+'px';
+  vib(15);
+}
+function hideTip(){$('tip').classList.add('hidden');}
+function attachLP(el,html,onTap){
+  let tm=null,shown=false,sx=0,sy=0,down=false;
+  let moved=false;
+  el.addEventListener('pointerdown',e=>{down=true;shown=false;moved=false;sx=e.clientX;sy=e.clientY;clearTimeout(tm);try{el.setPointerCapture(e.pointerId);}catch(_){}
+    tm=setTimeout(()=>{if(!down)return;shown=true;showTip(html(),sx,sy);},LP_MS);});
+  el.addEventListener('pointermove',e=>{if(down&&!shown&&Math.hypot(e.clientX-sx,e.clientY-sy)>12){moved=true;clearTimeout(tm);}});
+  el.addEventListener('pointerup',()=>{const was=down;down=false;clearTimeout(tm);if(shown){hideTip();shown=false;}else if(was&&!moved&&onTap)onTap();});
+  el.addEventListener('pointercancel',()=>{down=false;clearTimeout(tm);if(shown){hideTip();shown=false;}});
+}
+const tipHead=(ic,name)=>`<div class="th">${ic} ${name}</div>`;
+function tileInfo(p){
+  const t=tileAt(p);
+  switch(t.t){
+    case 'sword':return tipHead('⚔️','剣')+`💀（敵）と一緒につなげます。<br>つないだ敵<b>全員</b>に「基礎${S.baseDmg}＋剣の本数×${S.weaponDmg}」のダメージ。<br>例：剣2本なら<b>${S.baseDmg+2*S.weaponDmg}</b>ダメージ<br>長くつなぐほど 倍率アップ（4つ×1.2／7つ×1.8／10つ×2.6）`;
+    case 'shield':return tipHead('🛡️','盾')+`1枚につき防御+${S.armorPer}（最大${S.maxArmor}）。<br>防御は敵の攻撃を先に受け止めます。<br>あふれた分は盾ポイント（${S.shieldPts}/${S.shieldNeed}）になり、たまると防具を強化できます。`;
+    case 'potion':return tipHead('🧪','回復薬')+`1個につきHP+${S.healPer}（最大HP${S.maxHp}まで）。<br>回復しきれなかった分は 半分が💰になります。`;
+    case 'coin':return tipHead('💰','お金')+`1枚につき+${S.goldPer}。<br>${S.goldNeed}たまるとショップで強化を1つ選べます（今${S.gold}）。`;
+    case 'skull':{
+      const k=kindOf(t),d=EK[k];let st='';
+      if(t.fresh)st+='出てきたばかり（次のターンから行動）<br>';
+      if(t.frz>0)st+=`❄ 凍結中（あと${t.frz}ターン動けない）<br>`;
+      if(k==='golem')st+=t.rest?'💤 次のターンは休み<br>':'次のターンは攻撃してくる<br>';
+      if(k==='dragon')st+=`🔥 ブレスまで あと${3-(t.ch||0)}ターン（${t.atk*3}ダメージ）<br>`;
+      if(k==='bomb')st+=`💣 あと${t.cnt}ターンで爆発（${t.boom}ダメージ）<br>`;
+      if(k==='abyss')st+=`🌀 波動まで あと${3-(t.ch||0)}ターン（${Math.round(t.atk*2.5)}ダメージ）<br>`;
+      return tipHead(d.icon,(t.elite?'⭐強い':'')+d.name+(t.boss?'（ボス）':''))+
+      `HP <b style="color:#ff6b6b">${t.hp}</b>/${t.maxHp}　攻撃 <b style="color:#ffd54a">${k==='bomb'?'-':t.atk}</b>　装甲 <b style="color:#7fc4ff">${t.armor}</b><br>${d.desc}<br>${st}`+
+      (t.elite?'⭐ 強化個体：HP・攻撃・装甲が高いが、経験値も多い<br>':'')+`倒すには合計<b>${t.hp+t.armor}</b>ダメージ${k==='ghost'?'（剣は半分しか効かない）':''}。経験値+${xpOf(t)}`;}
+  }
+  return '';
+}
+function skillInfo(i){
+  const s=S.skills[i];
+  if(!s)return tipHead('・','空きスロット')+'レベルアップ時に新しいスキルを覚えると、ここに入ります（最大4つ）。';
+  const d=SKILLS[s.id];
+  return tipHead(d.icon,d.name)+`${skillDesc(s.id)}${d.scale?'<br><small>（威力は攻撃力とターン数に合わせて上がる）</small>':''}<br>再使用まで${s.cd}ターン ／ ターンを消費しません<br>`+(s.cur>0?`<span style="color:#f99">あと${s.cur}ターンで使用可能</span>`:'<span style="color:#8f8">今すぐ使えます（タップで使用）</span>');
+}
+const BAR_TIPS={
+  bHp:()=>tipHead('❤️','HP')+`0になるとゲームオーバー。🧪で回復します（1個${S.healPer}）。`,
+  bAr:()=>tipHead('🛡️','防御')+`敵の攻撃は、まず防御が1につき1ダメージ受け止めます。🛡️1枚で+${S.armorPer}。`,
+  bXp:()=>tipHead('✨','経験値')+'敵を倒すとたまります（ボスは6）。満タンでレベルアップし、スキルか能力強化を選べます。',
+  bGd:()=>tipHead('💰','お金')+'満タンになるとショップで強化を1つ選べます。必要額は買うたびに増えます。',
+  bSh:()=>tipHead('🔰','盾ポイント')+'防御が満タンのときに消した🛡️の分がたまります。満タンで防具の強化を選べます。'
+};
+Object.keys(BAR_TIPS).forEach(id=>attachLP($(id),BAR_TIPS[id]));
+attachLP($('itFloor'),()=>S?floorTip():'');
+attachLP($('stats'),()=>tipHead('📊','能力')+`⚔️ 基礎攻撃力${S.baseDmg}＋剣1本あたり${S.weaponDmg}<br>🧪 1個の回復量 ${S.healPer}<br>🛡️ 1枚の防御 ${S.armorPer}<br>💰 1枚の価値 ${S.goldPer}`);
+document.addEventListener('contextmenu',e=>{if(!(e.target&&e.target.closest&&e.target.closest('textarea')))e.preventDefault();});
+
+/* ---------- boot ---------- */
+try{SLOT=Math.min(NSLOT-1,Math.max(0,+localStorage.getItem(LS_SLOT)||0));}catch(e){}savedJson=slotJson(SLOT);
+try{const b=localStorage.getItem(LS_BEST);if(b)best=JSON.parse(b);}catch(e){}
+try{localStorage.removeItem('dchain_log_cur_v1');localStorage.removeItem('dchain_log_last_v1');}catch(e){}
+achLoad();unlLoad();runsLoad();achSeed();achLong();achSave();
+checkVillage();applyTheme();if(bestFloor()>1){UNL.notes=UNL.notes||{};NOTES.forEach((n,i)=>{if(bestFloor()>=n.f)UNL.notes[i]=1;});unlSave();}
+if(ACH.u.clear&&!(UNL.curseMax>=1)){UNL.curseMax=1;unlSave();}
+if(!UNL.retroH){UNL.retroH=1;for(let i=0;i<Math.min(ACH.st.clears||0,5);i++)clearReward();unlSave();}checkUnlocks();refreshTitle();setTimeout(titleAnim,100);setTimeout(()=>{if(!inGame&&!modalOpen&&UNL.unseen.length)showUnlockCeremony(refreshTitle);},600);setCloud('この端末のブラウザに保存');
+requestAnimationFrame(frame);
+setTimeout(initCloud,0);
+</script>
+<script>if('serviceWorker' in navigator&&location.protocol==='https:'){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}</script>
+</body>
+</html>

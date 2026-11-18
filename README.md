@@ -1,1 +1,7 @@
-# dungeon-chain
+# Dungeon Chain
+
+つないで、戦って、地の底へ。同じ種類のパネルをなぞってつなぐ、ダンジョン探索RPGです。
+
+- 遊ぶ：https://tkcy3.github.io/dungeon-chain/
+- スマホのChromeで開き、メニューの「ホーム画面に追加」でアプリのように遊べます。
+- 1つのHTMLファイルだけで動きます。セーブはその端末のブラウザに保存されます。
