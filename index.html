@@ -778,7 +778,7 @@ function showMenu(){
   <button class="opt" id="m2">セーブデータを書き出す<small>別の端末へ移すときや、バックアップ用</small></button>
   <button class="opt" id="m7">📜 冒険の記録<small>実績・魔物図鑑・解放</small></button>
   <button class="opt" id="m8">⚙️ 設定<small>音と振動の切り替え</small></button>
-  <button class="opt" id="m3">🏘️ 村に戻る<small>進行状況は保存されています（タイトルの「続きから」で再開）</small></button>
+  <button class="opt" id="m3">🏘️ 村に戻る<small>進行状況は保存されています（墓地の階段の「続きから」で再開）</small></button>
   <button class="opt" id="m4">あきらめる<small>この冒険を終了します</small></button>
   <button class="opt" id="m5" style="text-align:center">閉じる</button>`);
   $('m1').onclick=showHelp;$('m2').onclick=showExport;$('m7').onclick=()=>showRecords(showMenu);if(firstRun()||!(vilOk('tower')||vilOk('library')))$('m7').style.display='none';$('m8').onclick=()=>showSettings(showMenu);
@@ -790,7 +790,7 @@ function showMenu(){
 function encodeSave(){return btoa(unescape(encodeURIComponent(serialize())));}
 function showExport(){
   saveGame();
-  openModal(`<h2>セーブデータ</h2><p>下の文字列を保存しておくと、タイトル画面の「セーブデータを読み込む」で再開できます。</p><textarea id="ex" readonly>${encodeSave()}</textarea><button class="opt" id="cp" style="text-align:center">コピー</button><button class="opt" id="cl" style="text-align:center">閉じる</button>`);
+  openModal(`<h2>セーブデータ</h2><p>下の文字列を保存しておくと、タイトル画面の「読み込み」で再開できます。</p><textarea id="ex" readonly>${encodeSave()}</textarea><button class="opt" id="cp" style="text-align:center">コピー</button><button class="opt" id="cl" style="text-align:center">閉じる</button>`);
   $('cp').onclick=async()=>{const ta=$('ex');const ok=await copyText(ta.value);if(ok)$('cp').textContent='コピーしました';else{ta.focus();ta.select();ta.setSelectionRange(0,ta.value.length);$('cp').textContent='選択しました。長押しでコピーしてください';}};
   $('cl').onclick=closeModal;
 }
@@ -961,20 +961,32 @@ function showSlots(mode,pick,back){
 function chooseNewSlot(then,back){const e=[0,1,2].find(i=>!slotJson(i));if(e!==undefined){setSlot(e);then();return;}
   showSlots('over',i=>{setSlot(i);then(true);},back);}
 function loadSlot(i){setSlot(i);try{closeModal();startFromSave(savedJson);}catch(e){openModal('<h2>読み込みエラー</h2><p>セーブデータが壊れています。</p><button class="opt" id="x">閉じる</button>');$('x').onclick=closeModal;}}
+let NG_BACK=null;
 function showNewGameMenu(over){
-  if(typeof over!=='boolean'){chooseNewSlot(ov=>showNewGameMenu(!!ov));return;}
+  if(typeof over!=='boolean'){chooseNewSlot(ov=>showNewGameMenu(!!ov),NG_BACK||undefined);return;}
+  const vb=NG_BACK;NG_BACK=null;
   const first=!tutDoneFlag()&&!best;
   openModal(`<h2>新しい冒険</h2>${nameField()}${curseField()}<p style="text-align:center;font-size:12px;color:${over?'#f99':'#a99fae'}">${over?`スロット${SLOT+1}の冒険に上書きします`:`スロット${SLOT+1}に記録します`}</p>
+    ${vb?'<button class="opt" id="ng2">⚔️ 冒険へ<small>職業を選んで、地の底へ</small></button>':''}
     <button class="opt" id="ng1">📜 物語から始める<small>${first?'はじめての方へ。物語のあと、チュートリアルで遊び方を覚えられます（スキップ可）':'オープニングを見てから冒険へ'}</small></button>
-    <button class="opt" id="ng2">⚔️ すぐに冒険へ<small>オープニングもチュートリアルも飛ばす</small></button>
+    ${vb?'':'<button class="opt" id="ng2">⚔️ すぐに冒険へ<small>オープニングもチュートリアルも飛ばす</small></button>'}
     <button class="opt" id="ng3">🎓 チュートリアルから<small>遊び方をおさらいしてから冒険へ</small></button>
-    <button class="opt" id="ng4" style="text-align:center">やめる</button>`);
+    <button class="opt" id="ng4" style="text-align:center">${vb?'村に戻る':'やめる'}</button>`);
   $('ng1').onclick=()=>{closeModal();if(first){playStory(()=>startTutorial(true));return;}pickClass(c=>playStory(()=>newAdventure(c)));};
   $('ng2').onclick=()=>newAdventure();
   $('ng3').onclick=()=>{closeModal();startTutorial(true);};
-  $('ng4').onclick=closeModal;wireNameField();wireCurse();
+  $('ng4').onclick=vb||closeModal;wireNameField();wireCurse();
 }
 const villageReady=()=>!!best||((ACH&&ACH.st&&ACH.st.games)||0)>0;
+/* 墓地の階段：続きの冒険があれば選べる。新しい冒険は職業選びから */
+function villageStairs(back){const f=[0,1,2].filter(i=>slotJson(i));
+  const fresh=()=>{NG_BACK=back;showNewGameMenu();};
+  if(!f.length)return fresh();
+  openModal(`<h2>🪦 墓地の階段</h2><p style="text-align:center;font-size:12px;color:#a99fae">苔むした石棺の下へ、階段が続いている。</p>
+    <button class="opt" id="sa1">📖 続きから<small>${f.length===1?slotLine(f[0]).replace(/<[^>]+>/g,' '):'途中の冒険を選んで再開する'}</small></button>
+    <button class="opt" id="sa2">⚔️ 新しい冒険<small>職業を選んで、地の底へ</small></button>
+    <button class="opt" id="sa3" style="text-align:center">戻る</button>`);
+  $('sa1').onclick=()=>{if(f.length===1)loadSlot(f[0]);else showSlots('load',loadSlot,()=>villageStairs(back));};$('sa2').onclick=fresh;$('sa3').onclick=back;}
 function goVillage(){showVillage(()=>{closeModal();refreshTitle();});}
 $('btnNew').onclick=()=>{if(villageReady())goVillage();else showNewGameMenu();};
 $('tutSkip').onclick=e=>{e.stopPropagation();tutSkip();};
@@ -1739,7 +1751,7 @@ let settingsBack=null;
 /* ---------- version & changelog ---------- */
 const VERSION='1.1.0';
 const CHANGELOG=[
-  {v:'1.1.0',d:'2026-11-19',items:['拾った手記は、村の古民家で読めるようになりました','村が冒険の拠点になりました。冒険に出るときも、冒険から戻ったときも、村に立ち寄ります','冒険の記録や魔物図鑑は、村の建物で見られるようになりました','冒険中のメニューの「タイトルへ戻る」を「村に戻る」に変えました']},
+  {v:'1.1.0',d:'2026-11-19',items:['拾った手記は、村の古民家で読めるようになりました','村が冒険の拠点になりました。冒険に出るときも、冒険から戻ったときも、村に立ち寄ります','冒険の記録や魔物図鑑は、村の建物で見られるようになりました','冒険中のメニューの「タイトルへ戻る」を「村に戻る」に変えました。途中の冒険は、墓地の階段から続きを始められます']},
   {v:'1.0.3',d:'2026-11-19',items:['元凶を倒して手に入る隠し職業が、集めるほど手に入りにくくなるようにしました']},
   {v:'1.0.2',d:'2026-11-18',items:['オープニングの文章を、スマホでも読みやすい改行に整えました','冒険を始めたときの案内文を変えました']},
   {v:'1.0.1',d:'2026-11-18',items:['一部の職業が解放されるタイミングを調整しました']},
@@ -1876,7 +1888,7 @@ function showVillage(back){checkVillage();const me=()=>showVillage(back);
     if(!ok){$('vInfo').innerHTML=`🏚️ 崩れた建物。<br>よみがえらせる条件：<b>${VIL_MIN[v.id]?`冒険${VIL_MIN[v.id]}回目以降に `:''}${v.hint}</b>`+(v.id!=='well'&&!v.easy?`<br><small style="color:#a99fae">建物は 1回の冒険につき1つずつ よみがえる</small>`:'');return;}
     if(v.id==='tower')return showTowerMenu(me);if(v.id==='library')return showBestiary(me);if(v.id==='house')return showLibrary(me);if(v.id==='church')return showChurch(me);
     if(v.id==='tavern')return showTavern(me);if(v.id==='tailor')return showTailor(me);
-    if(v.id==='stairs'){closeModal();showNewGameMenu();return;}
+    if(v.id==='stairs')return villageStairs(me);
     $('vInfo').innerHTML=v.id==='well'?'澄んだ水が、静かに湧いている。<br>この村は、もう大丈夫だ。':`${v.ic} ${v.n}：${v.fx}`;});
   $('vBack').onclick=back||closeModal;}
 /* tower: doors map, achievements, stats */
