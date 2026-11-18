@@ -1822,8 +1822,13 @@ const VIL=[
   {id:'stairs',ic:'🪦',n:'墓地の階段',fx:'ダンジョンへ降りる',cond:()=>true,deco:1}
 ];
 const vilOk=id=>!!(UNL.vil&&UNL.vil[id]);
-function checkVillage(){UNL.vil=UNL.vil||{};let ch=false;
-  for(const v of [...VIL.filter(x=>x.id!=='well'),VIL.find(x=>x.id==='well')]){if(v.deco||UNL.vil[v.id]||!v.cond())continue;UNL.vil[v.id]=Date.now();ch=true;
+/* 村の建物は、1回の冒険につき1つずつよみがえる（全部そろうのは5回目くらい） */
+const VIL_ORDER=['tower','tavern','smith','church','tailor','library'];
+function checkVillage(){UNL.vil=UNL.vil||{};let ch=false;const g=(ACH&&ACH.st&&ACH.st.games)||0;
+  const ord=[...VIL.filter(x=>x.id!=='well').sort((a,b)=>VIL_ORDER.indexOf(a.id)-VIL_ORDER.indexOf(b.id)),VIL.find(x=>x.id==='well')];
+  for(const v of ord){if(v.deco||UNL.vil[v.id]||!v.cond())continue;
+    if(v.id!=='tower'&&v.id!=='well'){if(g<=(UNL.vilRun||0))continue;UNL.vilRun=g;}
+    UNL.vil[v.id]=Date.now();ch=true;
     if(v.id==='tower')continue;
     achToast({ic:v.ic,n:v.id==='well'?'井戸の水が、澄んだ':`${v.n}がよみがえった`,d:v.id==='well'?'村に、光が戻った。':v.fx,secret:0,custom:'村の復興'});}
   if(ch)unlSave();}
@@ -1838,7 +1843,7 @@ function showVillage(back){checkVillage();const me=()=>showVillage(back);
     <p id="vInfo" class="vz-cap">建物をタップ</p>
     <button class="opt" id="vBack" style="text-align:center">戻る</button>`);
   document.querySelectorAll('#mbox .vcell').forEach(b=>b.onclick=()=>{const v=VIL.find(x=>x.id===b.dataset.v),ok=v.deco||vilOk(v.id);
-    if(!ok){$('vInfo').innerHTML=`🏚️ 崩れた建物。<br>よみがえらせる条件：<b>${v.hint}</b>`;return;}
+    if(!ok){$('vInfo').innerHTML=`🏚️ 崩れた建物。<br>よみがえらせる条件：<b>${v.hint}</b>`+(v.id!=='well'?`<br><small style="color:#a99fae">建物は 1回の冒険につき1つずつ よみがえる</small>`:'');return;}
     if(v.id==='tower')return showTower(me);if(v.id==='library')return showLibrary(me);if(v.id==='church')return showChurch(me);
     if(v.id==='tavern')return showTavern(me);if(v.id==='tailor')return showTailor(me);
     if(v.id==='stairs'){closeModal();showNewGameMenu();return;}
@@ -1865,7 +1870,9 @@ const NOTES=[
   {f:170,t:'ここまで来ると、魔物たちのほうが道を譲る。私も、もう向こう側なのかもしれない。'},
   {f:200,t:'――この手記を拾った者へ。井戸の水は澄んだか？ それだけが、知りたい。'}
 ];
-function checkNotes(F){if(TUT)return;UNL.notes=UNL.notes||{};let got=0;NOTES.forEach((n,i)=>{if(F>=n.f&&!UNL.notes[i]){UNL.notes[i]=1;got++;}});
+/* 1回の冒険で拾える手記は2つまで（全部そろうのは5〜6回目くらい） */
+const NOTES_PER_RUN=2;
+function checkNotes(F){if(TUT||!S)return;UNL.notes=UNL.notes||{};let got=0;NOTES.forEach((n,i)=>{if(F>=n.f&&!UNL.notes[i]&&(S.notesGot||0)<NOTES_PER_RUN){UNL.notes[i]=1;S.notesGot=(S.notesGot||0)+1;got++;}});
   if(got){unlSave();if(inGame)achToast({ic:'📜',n:'失われた手記を拾った',d:vilOk('library')?'村の図書館で読める':'村の図書館がよみがえれば読める',secret:0,custom:`手記 ${Object.keys(UNL.notes).length} / ${NOTES.length}`});}}
 function showLibrary(back){const n=UNL.notes||{};
   openModal(`<h2>📚 図書館</h2><p style="text-align:center;font-size:12px;color:#a99fae">失われた手記 ${Object.keys(n).length} / ${NOTES.length}</p><div class="alist">${NOTES.map((x,i)=>n[i]?`<div class="ach"><span class="ai">📜</span><span><b>手記 その${i+1}</b><small style="font-family:var(--mincho);line-height:1.8">${x.t}</small></span></div>`:`<div class="ach lock"><span class="ai">❔</span><span><b>？？？</b><small>B${x.f}F付近に落ちているらしい</small></span></div>`).join('')}</div>
@@ -2181,7 +2188,7 @@ try{SLOT=Math.min(NSLOT-1,Math.max(0,+localStorage.getItem(LS_SLOT)||0));}catch(
 try{const b=localStorage.getItem(LS_BEST);if(b)best=JSON.parse(b);}catch(e){}
 try{localStorage.removeItem('dchain_log_cur_v1');localStorage.removeItem('dchain_log_last_v1');}catch(e){}
 achLoad();unlLoad();runsLoad();achSeed();achLong();achSave();
-checkVillage();applyTheme();if(bestFloor()>1){UNL.notes=UNL.notes||{};NOTES.forEach((n,i)=>{if(bestFloor()>=n.f)UNL.notes[i]=1;});unlSave();}
+checkVillage();applyTheme();
 if(ACH.u.clear&&!(UNL.curseMax>=1)){UNL.curseMax=1;unlSave();}
 if(!UNL.retroH){UNL.retroH=1;for(let i=0;i<Math.min(ACH.st.clears||0,5);i++)clearReward();unlSave();}checkUnlocks();refreshTitle();setTimeout(titleAnim,100);setTimeout(()=>{if(!inGame&&!modalOpen&&UNL.unseen.length)showUnlockCeremony(refreshTitle);},600);setCloud('この端末のブラウザに保存');
 requestAnimationFrame(frame);
