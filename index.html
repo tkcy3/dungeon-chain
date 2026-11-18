@@ -1737,8 +1737,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshA
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='1.0.2';
+const VERSION='1.0.3';
 const CHANGELOG=[
+  {v:'1.0.3',d:'2026-11-19',items:['元凶を倒して手に入る隠し職業が、集めるほど手に入りにくくなるようにしました']},
   {v:'1.0.2',d:'2026-11-18',items:['オープニングの文章を、スマホでも読みやすい改行に整えました','冒険を始めたときの案内文を変えました']},
   {v:'1.0.1',d:'2026-11-18',items:['一部の職業が解放されるタイミングを調整しました']},
   {v:'1.0.0',d:'2026-11-18',items:[
@@ -1945,10 +1946,15 @@ function unlockClass(k){if(UNL.got['h_'+k])return false;UNL.got['h_'+k]=Date.now
   achToast({ic:c.ic,n:`隠し職業「${c.n}」`,d:c.hidden===2?`隠し職業 ${h2Got()} / ${H2().length}（あと${H2().length-h2Got()}種類）`:'次の冒険から選べるようになった',secret:0,custom:'隠し職業が解放された'});return true;}
 function checkClassKills(){if(!S||TUT||!S.kk)return;for(const k in CLASSES){const c=CLASSES[k];if(c.kill&&(S.kk[c.kill[0]]||0)>=c.kill[1]&&(S.floor||1)>=(c.floor||0))unlockClass(k);}}
 const H2=()=>Object.keys(CLASSES).filter(k=>CLASSES[k].hidden===2),h2Got=()=>H2().filter(k=>UNL.got['h_'+k]).length;
+/* 隠し職業：1つ目は元凶1回、2つ目はさらに2回、3つ目はさらに3回…と必要な回数が1ずつ増える */
+const h2Need=()=>h2Got()+1,h2Left=()=>Math.max(1,h2Need()-(UNL.h2p||0));
 function rewardHtml(k){const n=h2Got(),t=H2().length;
+  if(k===false){const need=h2Need(),p=UNL.h2p||0;
+    return `<div class="rwd">🔒 次の隠し職業まで、あと${need-p}回<div class="rwbar"><div style="width:${p/need*100}%"></div></div><small>隠し職業 ${n} / ${t}<br>元凶を倒すたびに、次の1つに近づく</small></div>`;}
   const head=k?`🎁 隠し職業「${CLASSES[k].ic}${CLASSES[k].n}」を獲得！`:'🎁 隠し職業はすべて獲得済み';
-  return `<div class="rwd">${head}<div class="rwbar"><div style="width:${n/t*100}%"></div></div><small>隠し職業 ${n} / ${t}${n<t?`（あと${t-n}種類）<br>元凶を倒すたびに1つ手に入る`:'　コンプリート！'}</small></div>`;}
-function clearReward(){const pool=Object.keys(CLASSES).filter(k=>CLASSES[k].hidden===2&&!UNL.got['h_'+k]);if(!pool.length)return null;const k=pool[rnd(pool.length)];unlockClass(k);return k;}
+  return `<div class="rwd">${head}<div class="rwbar"><div style="width:${n/t*100}%"></div></div><small>隠し職業 ${n} / ${t}${n<t?`（あと${t-n}種類）<br>次は元凶を${h2Need()}回倒すと手に入る`:'　コンプリート！'}</small></div>`;}
+function clearReward(force){const pool=Object.keys(CLASSES).filter(k=>CLASSES[k].hidden===2&&!UNL.got['h_'+k]);if(!pool.length)return null;
+  if(!force){UNL.h2p=(UNL.h2p||0)+1;if(UNL.h2p<h2Need()){unlSave();return false;}}UNL.h2p=0;const k=pool[rnd(pool.length)];unlockClass(k);return k;}
 function showBestiary(back){
   const seen=BEAST_ORDER.filter(k=>UNL.met[k]).length;
   const row=k=>{const e=EK[k],m=UNL.met[k],boss=BOSS_KINDS.includes(k),tag=boss?'ボス':e.mini?'中ボス':e.rare?'★レア':'';
@@ -2008,7 +2014,7 @@ function pickClass(then,cancel){
   if(ks.filter(classOk).length<=1){then('warrior');return;}
   openModal(`<h2>職業を選ぶ</h2>${ks.map(k=>{const c=CLASSES[k],ok=classOk(k);
     return `<button class="opt" data-k="${k}" ${ok?'':'disabled style="opacity:.4"'}>${ok?c.ic:'🔒'} ${c.n}<small>${ok?c.d+'<br>'+c.fx:(c.soon&&unlocked(c.stage)?'次の更新で追加':'解放条件：'+STAGES.find(s=>s.id===c.stage).hint)}</small></button>`;}).join('')}
-    <p style="text-align:center;font-size:12px;color:#a99fae;margin:6px 0">${h2Got()<H2().length?`？ 元凶を倒すと手に入る隠し職業 ${h2Got()} / ${H2().length}`:'隠し職業 コンプリート'}</p>
+    <p style="text-align:center;font-size:12px;color:#a99fae;margin:6px 0">${h2Got()<H2().length?`？ 元凶を倒すと手に入る隠し職業 ${h2Got()} / ${H2().length}（次まで あと元凶${h2Left()}回）`:'隠し職業 コンプリート'}</p>
     <button class="opt" id="pcCancel" style="text-align:center">やめる</button>`);
   $('mbox').querySelectorAll('.opt[data-k]').forEach(b=>{if(!b.disabled)b.onclick=()=>{closeModal();then(b.dataset.k);};});
   $('pcCancel').onclick=cancel||closeModal;
@@ -2219,7 +2225,7 @@ try{localStorage.removeItem('dchain_log_cur_v1');localStorage.removeItem('dchain
 achLoad();unlLoad();runsLoad();achSeed();achLong();achSave();
 checkVillage();applyTheme();
 if(ACH.u.clear&&!(UNL.curseMax>=1)){UNL.curseMax=1;unlSave();}
-if(!UNL.retroH){UNL.retroH=1;for(let i=0;i<Math.min(ACH.st.clears||0,5);i++)clearReward();unlSave();}checkUnlocks();refreshTitle();setTimeout(titleAnim,100);setTimeout(()=>{if(!inGame&&!modalOpen&&UNL.unseen.length)showUnlockCeremony(refreshTitle);},600);setCloud('この端末のブラウザに保存');
+if(!UNL.retroH){UNL.retroH=1;for(let i=0;i<Math.min(ACH.st.clears||0,5);i++)clearReward(true);unlSave();}checkUnlocks();refreshTitle();setTimeout(titleAnim,100);setTimeout(()=>{if(!inGame&&!modalOpen&&UNL.unseen.length)showUnlockCeremony(refreshTitle);},600);setCloud('この端末のブラウザに保存');
 requestAnimationFrame(frame);
 setTimeout(initCloud,0);
 </script>
