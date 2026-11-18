@@ -505,16 +505,21 @@ function makeEnemy0(s){
 /* each depth band has its own small cast; new faces arrive a couple at a time */
 /* depth bands. value = weight, or [weight, clears needed] (clears = times the root of evil was defeated) */
 const BANDS=[
-  [1,{skel:10,bat:4}],
-  [6,{skel:9,bat:3,zombie:3,bomb:2}],
-  [12,{skel:7,bat:1,zombie:3,spider:4,ghost:3,bomb:2}],
-  [21,{skel:5,zombie:2,spider:3,ghost:3,bomb:2,golem:3}],
-  [36,{skel:4,zombie:2,spider:2,ghost:3,bomb:2,golem:3,shaman:3}],
-  [51,{skel:4,bat:2,zombie:2,spider:2,ghost:2,bomb:1,golem:2,shaman:2,slime:3,snake:3}],
-  [61,{skel:3,bat:2,zombie:1,spider:1,ghost:2,bomb:1,golem:1,shaman:2,slime:2,snake:2,wolf:3}],
-  [71,{skel:3,bat:1,zombie:1,spider:1,ghost:1,golem:2,shaman:1,slime:2,snake:2,wolf:3,crab:3}],
-  [81,{skel:3,ghost:2,golem:1,shaman:2,slime:1,snake:1,wolf:2,crab:3,eye:3,lich:[2,1]}],
-  [91,{skel:3,ghost:2,golem:1,shaman:1,slime:1,wolf:2,crab:2,eye:3,lich:[3,1],demon:[3,2]}]];
+  [1,{skel:10}],
+  [5,{skel:10,bat:4}],
+  [10,{skel:9,bat:3,spider:3}],
+  [16,{skel:8,bat:3,spider:3,bomb:2}],
+  [22,{skel:7,bat:2,spider:3,bomb:2,ghost:3}],
+  [28,{skel:6,bat:2,spider:2,bomb:2,ghost:3,zombie:2}],
+  [35,{skel:5,bat:1,spider:2,bomb:2,ghost:2,zombie:2,golem:3}],
+  [42,{skel:4,bat:1,spider:2,bomb:2,ghost:2,zombie:2,golem:3,shaman:3}],
+  [50,{skel:4,bat:2,spider:2,bomb:1,ghost:2,zombie:2,golem:2,shaman:2,slime:3}],
+  [57,{skel:4,bat:2,spider:2,bomb:1,ghost:2,zombie:1,golem:2,shaman:2,slime:2,snake:3}],
+  [64,{skel:3,bat:2,spider:1,bomb:1,ghost:2,zombie:1,golem:1,shaman:2,slime:2,snake:2,wolf:3}],
+  [71,{skel:3,bat:1,spider:1,ghost:1,zombie:1,golem:2,shaman:1,slime:2,snake:2,wolf:3,crab:3}],
+  [78,{skel:3,ghost:2,golem:1,shaman:2,slime:1,snake:1,wolf:2,crab:3,eye:3}],
+  [85,{skel:3,ghost:2,golem:1,shaman:2,slime:1,snake:1,wolf:2,crab:3,eye:3,lich:[2,1]}],
+  [90,{skel:3,ghost:2,golem:1,shaman:1,slime:1,wolf:2,crab:2,eye:3,lich:[3,1],demon:[3,2]}]];
 /* B101F〜：B91Fの顔ぶれに、色違いの魔物が20階ごとに1種類ずつ加わる（どれから来るかは冒険ごとにランダム） */
 const DEEP_VARS={skel_r:3,skel_b:3,zombie_g:3,spider_r:3,ghost_b:3,golem_r:2,bomb_b:2};
 function deepVars(F){const s=MK_S||S;if(!s||F<101)return [];if(!s.dv)s.dv=shuffle(Object.keys(DEEP_VARS));return s.dv.slice(0,Math.floor((F-101)/20)+1);}
@@ -531,7 +536,7 @@ const playOk=k=>playsN()>=(PLAY_GATE[k]||0);
 const FAMILIAR={skel:4,bat:2,zombie:3,bomb:2,spider:3,ghost:3,golem:3,shaman:2};
 function rosterAt(F){let r=BANDS[0][1];for(const [f,o] of BANDS)if(F>=f)r=o;if(F>=101){r={...r};deepVars(F).forEach(k=>r[k]=DEEP_VARS[k]);}const m={},cl=clearsN();let cut=0;
   for(const k in r){const v=r[k],w=Array.isArray(v)?v[0]:v,need=Array.isArray(v)?v[1]:0;if(cl>=need&&playOk(k))m[k]=w;else if(cl>=need)cut+=w;}
-  if(cut>0){const fb=Object.entries(FAMILIAR).filter(([k])=>playOk(k)),tot=fb.reduce((x,y)=>x+y[1],0);for(const [k,v] of fb)m[k]=(m[k]||0)+cut*v/tot;}return m;}
+  if(cut>0)m.skel=(m.skel||0)+cut;return m;}
 function rareAt(F){const cl=clearsN();return Object.keys(RARE_GATE).filter(k=>F>=RARE_GATE[k][0]&&cl>=RARE_GATE[k][1]);}
 /* where a monster can first be met, for the bestiary hint */
 function gateText(k){if(BOSS_KINDS.includes(k))return 'ボス';if(EK[k]&&EK[k].mini)return '中ボス';
@@ -1565,9 +1570,7 @@ function advanceFloor(msgs){
     showBanner(`B${F}F`,bossFloorName(F),k==='abyss'?'世界の元凶が、目を覚ました。':`${EK[k].icon} ${EK[k].name}が待ち構えている。倒すまで先へは進めない。`,'#ff8a7a');
     msgs.push(`B${F}F ${bossFloorName(F)}`);sfx('boss');return;}
   const z=zoneAt(F);
-  if(z.f===F){if(z.minor)msgs.push(`B${F}F「${z.name}」に入った`);else{showBanner(`B${F}F`,z.name,z.desc);msgs.push(`B${F}F「${z.name}」へ`);}sfx('descend');}
-  const arr=ROSTER.filter(x=>x[0]===F).map(x=>EK[x[1]].icon+EK[x[1]].name);
-  if(arr.length)msgs.push(`${arr.join('・')}の気配がする…`);
+  if(z.f===F&&F>100){showBanner(`B${F}F`,z.name,z.desc);msgs.push(`B${F}F「${z.name}」へ`);sfx('descend');}
 }
 function checkBoss(msgs){
   if(!S.bossUp||bossAlive()||S.bossFlag)return;
@@ -1800,8 +1803,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshA
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='1.2.5';
+const VERSION='1.2.6';
 const CHANGELOG=[
+  {v:'1.2.6',d:'2026-11-19',items:['職業を「🎲 おまかせ」で選べるようになりました','魔物の出てくる階を、浅い階から深い階まで散らしました','途中の階の名前と、魔物の予告を出さないようにしました']},
   {v:'1.2.5',d:'2026-11-19',items:['色違いの魔物に、ちゃんと色がつくようにしました','B101Fより深い階では、色違いの魔物が20階ごとに1種類ずつ増えるようにしました','冒険を1回終えるたびに、職業が1つずつ増えるようにしました']},
   {v:'1.2.4',d:'2026-11-19',items:['レベルアップとショップの説明を短くしました']},
   {v:'1.2.3',d:'2026-11-19',items:['B60Fのボスを少し戦いやすくしました']},
@@ -1908,7 +1912,7 @@ function showTailor(back){const me=()=>showTailor(back),K=['skull','sword','shie
   bindTiles('.tile[data-k]:not([disabled])',b=>{UNL.theme=b.dataset.k;unlSave();applyTheme();me();});$('pgBack').onclick=back;}
 /* bestiary */
 const BOSS_KINDS=['ogre','dragon','vampire','kraken','abyss'];
-const BEAST_ORDER=[...['skel','bat','zombie','bomb','spider','ghost','golem','shaman'],...Object.keys(EK).filter(k=>!CUT_KINDS.includes(k)).filter(k=>EK[k].from||(!BOSS_KINDS.includes(k)&&!EK[k].mini&&!['skel','bat','zombie','bomb','spider','ghost','golem','shaman'].includes(k))).sort((a,b)=>firstFloor(a)-firstFloor(b)),...BOSS_KINDS];
+const BEAST_ORDER=[...['skel','bat','spider','bomb','ghost','zombie','golem','shaman'],...Object.keys(EK).filter(k=>!CUT_KINDS.includes(k)).filter(k=>EK[k].from||(!BOSS_KINDS.includes(k)&&!EK[k].mini&&!['skel','bat','spider','bomb','ghost','zombie','golem','shaman'].includes(k))).sort((a,b)=>firstFloor(a)-firstFloor(b)),...BOSS_KINDS];
 function noteMet(k){if(TUT||UNL.met[k])return;UNL.met[k]=1;unlSave();const D=EK[k];if(!D||k==='skel'||BOSS_KINDS.includes(k)||D.mini||typeof firstRun==='undefined'||firstRun()||!inGame)return;
   achToast({ic:iconHtml(k),n:D.name,d:D.desc.replace(/\s+/g,''),secret:0,custom:D.rare?'★ めずらしい魔物に出会った':'はじめて出会った魔物'});}
 function noteKills(list){if(TUT||!list.length)return;for(const t of list){const k=kindOf(t);UNL.kills[k]=(UNL.kills[k]||0)+1;UNL.met[k]=1;if(S){S.kk=S.kk||{};S.kk[k]=(S.kk[k]||0)+1;const D=EK[k]||{};if(D.dh||D.dg||D.dx||D.sp||D.db||D.fz)(S._dq=S._dq||[]).push(k);}}unlSave();checkClassKills();}
@@ -1959,7 +1963,7 @@ const CLASSES={
   alchemist:{ic:'⚗️',n:'錬金術師',hidden:2,d:'あらゆるものを混ぜ合わせる、変わり者の学者。',fx:'🛡️🧪💰を混ぜてつなげる（それぞれの効果が出るが、混ぜると効果半減）・剣の攻撃力が低い（1・強化+1）・最大HP42',cond:()=>false}
 };
 const MAIN_CLS=Object.keys(CLASSES).filter(k=>!CLASSES[k].hidden);
-const classOk=k=>{const c=CLASSES[k];if(c.hidden)return !!UNL.got['h_'+k];return k==='warrior'||!!UNL.got['c_'+k];};
+const classOk=k=>{const c=CLASSES[k];if(!c)return false;if(c.hidden)return !!UNL.got['h_'+k];return k==='warrior'||!!UNL.got['c_'+k];};
 /* 基本の職業：最初は戦士だけ。冒険を1回終えるたびに、盗賊→僧侶→魔術師の順で1人ずつ仲間になる */
 const BASE_UNL=[['thief'],['cleric'],['mage']];
 function unlockBase(){if(TUT||!S)return null;const g=(ACH.st&&ACH.st.games)||0,got=[];
@@ -1983,17 +1987,20 @@ function applyClass(s,k){
   if(k==='alchemist'){s.weaponDmg=1;s.wpnUp=1;s.maxHp=42;s.hp=42;}
 }
 function pickClass(then,cancel,peek){
-  const ks=Object.keys(CLASSES);
-  if(ks.filter(classOk).length<=1){then('warrior');return;}
-  const cur=partyCls(),me=p=>pickClass(then,cancel,p);
+  const ks=Object.keys(CLASSES),okK=ks.filter(classOk);
+  if(okK.length<=1){then('warrior');return;}
+  const rndSel=UNL.cls==='random',cur=partyCls(),me=p=>pickClass(then,cancel,p);
   const how=c=>c.hidden===2?'元凶を倒すと、現れるらしい':c.kill?`3回目の冒険から。B${c.floor}F以上で ${EK[c.kill[0]].name}を${c.kill[1]}体倒すと…`:'';
   const pk=peek&&!classOk(peek)?CLASSES[peek]:null,c=CLASSES[cur],bu=pk&&BASE_UNL.find(x=>x[0]===peek);
-  const card=bu?`<span class="ci" style="filter:grayscale(1);opacity:.6">${pk.ic}</span><div><b>🔒 ${pk.n}</b><p>冒険を終えるたびに 1人ずつ仲間になる</p></div>`:pk?`<span class="ci">❔</span><div><b>？？？</b><p>🗨️ ${how(pk)}</p></div>`:`<span class="ci">${c.ic}</span><div><b>${c.n}</b><p>${c.fx}</p></div>`;
+  const card=bu?`<span class="ci" style="filter:grayscale(1);opacity:.6">${pk.ic}</span><div><b>🔒 ${pk.n}</b><p>冒険を終えるたびに 1人ずつ仲間になる</p></div>`:pk?`<span class="ci">❔</span><div><b>？？？</b><p>🗨️ ${how(pk)}</p></div>`
+    :rndSel?`<span class="ci">🎲</span><div><b>おまかせ</b><p>${okK.map(k=>CLASSES[k].ic).join(' ')} から1つ</p></div>`:`<span class="ci">${c.ic}</span><div><b>${c.n}</b><p>${c.fx}</p></div>`;
   openModal(`${pgHead('🧭 職業','戻る','pcCancel')}<div class="pcard">${card}</div>
-    <div class="tgrid" style="--c:3">${ks.map(k=>{const x=CLASSES[k],ok=classOk(k);return `<button class="tile ${ok?'':'lock'} ${ok&&k===cur?'sel':''}" data-k="${k}"><span class="ti">${ok||!x.hidden?x.ic:'❔'}</span>${ok||!x.hidden?`<small style="${x.n.length>4?'font-size:11px':''}">${x.n}</small>`:''}</button>`;}).join('')}</div>
-    <button class="gopri tofoot after" id="pcGo">▶ 出発<small>${c.ic} ${c.n}</small></button>`);
-  bindTiles('.tile[data-k]',b=>{const k=b.dataset.k;if(classOk(k)){UNL.cls=k;unlSave();me();}else me(k);});
-  $('pcGo').onclick=()=>{closeModal();then(cur);};$('pcCancel').onclick=cancel||closeModal;
+    <div class="tgrid" style="--c:3"><button class="tile ${rndSel?'sel':''}" data-k="random"><span class="ti">🎲</span><small>おまかせ</small></button>${ks.map(k=>{const x=CLASSES[k],ok=classOk(k);return `<button class="tile ${ok?'':'lock'} ${ok&&!rndSel&&k===cur?'sel':''}" data-k="${k}"><span class="ti">${ok||!x.hidden?x.ic:'❔'}</span>${ok||!x.hidden?`<small style="${x.n.length>4?'font-size:11px':''}">${x.n}</small>`:''}</button>`;}).join('')}</div>
+    <button class="gopri tofoot after" id="pcGo">▶ 出発<small>${rndSel?'🎲 おまかせ':`${c.ic} ${c.n}`}</small></button>`);
+  bindTiles('.tile[data-k]',b=>{const k=b.dataset.k;if(k==='random'||classOk(k)){UNL.cls=k;unlSave();me();}else me(k);});
+  $('pcGo').onclick=()=>{closeModal();if(!rndSel)return then(cur);const k=okK[rnd(okK.length)],x=CLASSES[k];
+    achToast({ic:'🎲',n:`${x.ic} ${x.n}`,d:'今回の職業に決まった',secret:0,custom:'おまかせ'});then(k);};
+  $('pcCancel').onclick=cancel||closeModal;
 }
 /* event rooms */
 const EVENTS=[
