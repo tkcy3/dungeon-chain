@@ -396,7 +396,7 @@ Object.assign(EK,{
   m_ancient:{icon:'🗿',name:'古代兵器',desc:'中ボス。2ターンに1回、とてつもない一撃を放つ。',mini:1,w:0,b:'golem',flt:HUE(210),at:3},
   m_oni:{icon:'👺',name:'炎の鬼',desc:'中ボス。3ターンごとに 3倍の炎を吐く。',mini:1,w:0,b:'dragon'}
 });
-const MINI_ORDER=['m_wolf','m_queen','m_knight','m_hydra','m_ancient','m_oni'];
+const MINI_ORDER=['m_queen','m_ancient','m_knight','m_wolf','m_hydra','m_oni'];
 const bhOf=e=>{const k=kindOf(e);return (EK[k]&&EK[k].b)||k;};
 const icoOf=e=>e.ic||EK[kindOf(e)].icon;
 const SHAPES=['🐸','🐙','🦔','🪼','🦩','🐌','🦥','🐡','🦖','🧸','🪆','🥸'];
@@ -431,27 +431,37 @@ function makeEnemy0(s){
   if(s.miniFlag){s.miniFlag=false;return makeMini(s);}
   const F=s.floor||1;let w;
   if(!unlocked('s1'))w=[['skel',10],['bat',F>=2?4:0],['zombie',F>=6?3:0],['bomb',F>=8?2:0],['spider',F>=12?3:0],['ghost',F>=16?2:0],['golem',F>=21?2:0],['shaman',F>=26?2:0]];
-  else{if(F>=10&&Math.random()<.004){const rp=Object.keys(EK).filter(k=>EK[k].rare&&(EK[k].from||1)<=F);if(rp.length)return makeKind(rp[rnd(rp.length)],T);}
+  else{if(Math.random()<.004){const rp=rareAt(F);if(rp.length)return makeKind(rp[rnd(rp.length)],T);}
     w=Object.entries(rosterAt(F));}
   let x=Math.random()*w.reduce((a,b)=>a+b[1],0);
   for(const [k,v] of w){if((x-=v)<0)return makeKind(k,T);}
   return makeKind('skel',T);
 }
 /* each depth band has its own small cast; new faces arrive a couple at a time */
+/* depth bands. value = weight, or [weight, clears needed] (clears = times the root of evil was defeated) */
 const BANDS=[
-  [1,{skel:10,bat:4,rat:3}],
-  [6,{skel:9,bat:3,zombie:3,bomb:1.5,rat:2,mush:1.2}],
-  [12,{skel:7,zombie:2.5,spider:3.5,ghost:3,bomb:1.5}],
-  [16,{skel:5,zombie:2,spider:3,ghost:3,bomb:2,snake:3}],
-  [21,{skel:5,golem:3,ghost:2,spider:2,scorp:3,bomb:2,boomsh:1}],
-  [26,{skel:4,shaman:3,zombie:3,golem:2,slime:3,scorp:2}],
-  [33,{skel:3,shaman:3,imp:3,slime:3,golem:2,fencer:2,boomsh:1}],
-  [41,{skel_r:3,wolf:3,crab:3,egg:2,bomb_b:2,golem_r:2,zombie_g:2,spider_r:2}],
-  [61,{skel_b:3,imp:3,ghost_b:3,fencer:3,zombie_g:2,snake:2,wolf:2,shaman:2}],
-  [81,{eye:3,lich:2,crab:3,slime:2,ghost_b:2,golem_r:2,skel_b:2}],
-  [95,{eye:3,lich:3,demon:3,crab:2,ghost_b:2,golem_r:2,skel_b:2}]];
-function rosterAt(F){if(F>100){const m={};BANDS.slice(7).forEach(([,o])=>{for(const k in o)m[k]=(m[k]||0)+o[k];});return m;}
-  let r=BANDS[0][1];for(const [f,o] of BANDS)if(F>=f)r=o;return r;}
+  [1,{skel:10,bat:4}],
+  [6,{skel:9,bat:3,zombie:3,bomb:2}],
+  [12,{skel:7,bat:1,zombie:3,spider:4,ghost:3,bomb:2}],
+  [21,{skel:5,zombie:2,spider:3,ghost:3,bomb:2,golem:3}],
+  [36,{skel:4,zombie:2,spider:2,ghost:3,bomb:2,golem:3,shaman:3}],
+  [51,{skel:4,zombie:2,ghost:2,golem:2,shaman:2,rat:3,snake:3,slime:3,mush:1}],
+  [61,{skel:3,bat:2,ghost:2,shaman:2,slime:2,snake:2,imp:3,fencer:3}],
+  [71,{skel:3,golem:2,imp:2,fencer:2,scorp:3,wolf:3,crab:3,egg:2}],
+  [81,{skel:3,ghost:2,shaman:2,crab:3,scorp:2,eye:3,lich:[2,1]}],
+  [91,{skel:3,ghost:2,crab:2,eye:3,wolf:2,lich:[3,1],demon:[3,2]}],
+  [101,{skel_r:3,skel_b:3,zombie_g:3,spider_r:3,ghost_b:3,golem_r:2,bomb_b:2,boomsh:1,eye:2,crab:2,lich:[2,1],demon:[2,2]}]];
+const RARE_GATE={chick:[51,0],duck:[51,0],cat:[51,0],skel_g:[51,0],mimic:[61,0],nanika:[51,1],star:[101,0],snowman:[101,0],ufo:[51,3]};
+function firstFloor(k){if(RARE_GATE[k])return RARE_GATE[k][0]+.5+RARE_GATE[k][1]*20;for(const [f,o] of BANDS)if(o[k]!==undefined){const v=o[k];return f+(Array.isArray(v)?v[1]*20:0);}return 999;}
+const clearsN=()=>(ACH&&ACH.st&&ACH.st.clears)||0;
+function rosterAt(F){let r=BANDS[0][1];for(const [f,o] of BANDS)if(F>=f)r=o;const m={},cl=clearsN();
+  for(const k in r){const v=r[k],w=Array.isArray(v)?v[0]:v,need=Array.isArray(v)?v[1]:0;if(cl>=need)m[k]=w;}return m;}
+function rareAt(F){const cl=clearsN();return Object.keys(RARE_GATE).filter(k=>F>=RARE_GATE[k][0]&&cl>=RARE_GATE[k][1]);}
+/* where a monster can first be met, for the bestiary hint */
+function gateText(k){if(BOSS_KINDS.includes(k))return 'ボス';if(EK[k]&&EK[k].mini)return '中ボス';
+  if(RARE_GATE[k]){const [f,c]=RARE_GATE[k];return `★レア・B${f}F以降${c?`・元凶を${c}回倒すと`:''}`;}
+  for(const [f,o] of BANDS)if(o[k]!==undefined){const c=Array.isArray(o[k])?o[k][1]:0;return `B${f}F以降${c?`・元凶を${c}回倒すと`:''}`;}
+  return '何かから生まれるらしい';}
 function makeMini(s){const F=s.floor||1,k=MINI_ORDER[Math.floor(F/20)%MINI_ORDER.length],e=makeKind(k,s.turn);
   e.mini=true;e.hp=e.maxHp=Math.round(e.hp*3.6+8);e.atk+=2;e.armor+=2;s.bossAnnounce=EK[k].icon+' 中ボス「'+EK[k].name+'」';return e;}
 function makeBoss(s){
@@ -521,7 +531,7 @@ function enemyPhase(msgs){
     if(D.au)e.armor=Math.min(D.au+(e.mini?4:0),e.armor+1);
     if(D.gr&&e.age%D.gr===0){e.atk++;}
     if(D.sh)e.ic=SHAPES[rnd(SHAPES.length)];
-    if(D.sm&&e.age%D.sm[1]===0){let kk=D.sm[0];if(kk==='?'){const pool=Object.keys(EK).filter(x=>EK[x].from&&EK[x].from<=floorOf()&&!EK[x].rare);kk=pool[rnd(pool.length)]||'skel';}summon(kk);msgs.push(`${D.icon} ${EK[kk].icon}${EK[kk].name}を呼んだ！`);}
+    if(D.sm&&e.age%D.sm[1]===0){let kk=D.sm[0];if(kk==='?'){const pool=Object.keys(rosterAt(floorOf()));kk=pool[rnd(pool.length)]||'skel';}summon(kk);msgs.push(`${D.icon} ${EK[kk].icon}${EK[kk].name}を呼んだ！`);}
     if(D.hc&&e.age>=D.hc[1]){const n=makeKind(D.hc[0],S.turn);n.ry=e.ry;S.board[r][c]=n;msgs.push(`${D.icon} から ${EK[D.hc[0]].icon}${EK[D.hc[0]].name}が生まれた！`);continue;}
     if(D.fl&&e.age>=D.fl){S.board[r][c]={t:'coin',ry:e.ry};msgs.push(`${D.icon} ${D.name}は去っていった`);if(kindOf(e)==='cat'){addGold(15);msgs.push('🐈‍⬛ なんだか運がいい… 💰+15');}}
   }
@@ -1858,7 +1868,7 @@ function villagePerks(s){if(TUT)return;if(vilOk('smith'))s.weaponDmg+=1;}
 function applyCarry(){if(TUT||!vilOk('church')||!UNL.carry||!RELICS[UNL.carry]||!(UNL.relSeen||{})[UNL.carry])return;if(RELICS[UNL.carry].x&&!unlocked('s4'))return;S.relics=[UNL.carry];if(RELICS[UNL.carry].on)RELICS[UNL.carry].on();}
 /* bestiary */
 const BOSS_KINDS=['ogre','dragon','vampire','kraken','abyss'];
-const BEAST_ORDER=[...['skel','bat','zombie','bomb','spider','ghost','golem','shaman'],...Object.keys(EK).filter(k=>EK[k].from||(!BOSS_KINDS.includes(k)&&!EK[k].mini&&!['skel','bat','zombie','bomb','spider','ghost','golem','shaman'].includes(k))).sort((a,b)=>(EK[a].from||99)-(EK[b].from||99)),...MINI_ORDER,...BOSS_KINDS];
+const BEAST_ORDER=[...['skel','bat','zombie','bomb','spider','ghost','golem','shaman'],...Object.keys(EK).filter(k=>EK[k].from||(!BOSS_KINDS.includes(k)&&!EK[k].mini&&!['skel','bat','zombie','bomb','spider','ghost','golem','shaman'].includes(k))).sort((a,b)=>firstFloor(a)-firstFloor(b)),...MINI_ORDER,...BOSS_KINDS];
 function noteMet(k){if(TUT||UNL.met[k])return;UNL.met[k]=1;unlSave();const D=EK[k];if(!D||k==='skel'||BOSS_KINDS.includes(k)||D.mini||typeof firstRun==='undefined'||firstRun()||!inGame)return;
   achToast({ic:D.icon,n:D.name,d:D.desc.replace(/\s+/g,''),secret:0,custom:D.rare?'★ めずらしい魔物に出会った':'はじめて出会った魔物',flt:D.flt});}
 function noteKills(list){if(TUT||!list.length)return;for(const t of list){const k=kindOf(t);UNL.kills[k]=(UNL.kills[k]||0)+1;UNL.met[k]=1;if(S){S.kk=S.kk||{};S.kk[k]=(S.kk[k]||0)+1;const D=EK[k]||{};if(D.dh||D.dg||D.dx||D.sp||D.db||D.fz)(S._dq=S._dq||[]).push(k);if(t.mini&&unlocked('s2'))S.pending.push('relic');}}unlSave();checkClassKills();}
@@ -1873,7 +1883,7 @@ function clearReward(){const pool=Object.keys(CLASSES).filter(k=>CLASSES[k].hidd
 function showBestiary(back){
   const seen=BEAST_ORDER.filter(k=>UNL.met[k]).length;
   const row=k=>{const e=EK[k],m=UNL.met[k],boss=BOSS_KINDS.includes(k),tag=boss?'ボス':e.mini?'中ボス':e.rare?'★レア':'';
-    if(!m)return `<div class="ach lock"><span class="ai">❔</span><span><b>？？？</b><small>${tag||'まだ出会っていない'}</small></span></div>`;
+    if(!m)return `<div class="ach lock"><span class="ai">❔</span><span><b>？？？</b><small>${gateText(k)}</small></span></div>`;
     return `<div class="ach"><span class="ai" style="${e.flt?'filter:'+e.flt:''}">${e.icon}</span><span><b>${e.name}${tag?`<span style="font-size:11px;color:${e.rare?'#ffd54a':'#ff9ad9'}">（${tag}）</span>`:''}</b><small>${e.desc}<br><i>倒した数：${UNL.kills[k]||0}</i></small></span></div>`;};
   openModal(`<h2>📖 魔物図鑑</h2><p style="text-align:center">${seen} / ${BEAST_ORDER.length} 種と遭遇</p><div class="alist">${BEAST_ORDER.map(row).join('')}</div>
     <button class="opt" id="bsBack" style="text-align:center;position:sticky;bottom:0;background:#2e2535;box-shadow:0 -8px 12px #211a25">戻る</button>`);
