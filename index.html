@@ -318,7 +318,7 @@ function newState(cls){
 }
 function randTile(s,noEnemy){
   const aw=t=>{const a=s.anom&&ANOMS[s.anom];return a&&a.w&&a.w[t]||1;};
-  const w=[['skull',noEnemy?0:(17+Math.min(8,s.turn/40))*aw('skull')*(!TUT&&playsN()>=3?.92:1)*(s.relics&&s.relics.includes('bell')?.82:1)],['sword',20*aw('sword')],['shield',19*aw('shield')],['potion',17*aw('potion')],['coin',20*aw('coin')]];
+  const w=[['skull',noEnemy?0:(17+Math.min(8,s.turn/40))*aw('skull')*(!TUT&&playsN()>=3?.92:1)*(s.relics&&s.relics.includes('bell')?.82:1)*(s.bossKind==='vampire'&&s.board&&s.board.length&&s.board.flat().some(e=>e&&e.boss)?.6:1)],['sword',20*aw('sword')],['shield',19*aw('shield')],['potion',17*aw('potion')],['coin',20*aw('coin')]];
   let x=Math.random()*w.reduce((a,b)=>a+b[1],0);
   for(const [t,v] of w){if((x-=v)<0)return t==='skull'?makeEnemy(s):{t};}
   return {t:'coin'};
@@ -401,7 +401,7 @@ const EK={
   shaman:{icon:'🧙',name:'呪術師',desc:'まわりの敵を守る。呪術師の隣にいる敵は、剣の攻撃が半分しか効かない（「護」の印）。先に倒そう。',gd:1},
   ogre:{icon:'👹',name:'オーガ王',desc:'とにかく 硬くて 攻撃が重い。'},
   dragon:{icon:'🐉',name:'ドラゴン',desc:'3ターンごとに 3倍の ブレス攻撃。🔥の数字を見て 防御を固めよう。'},
-  vampire:{icon:'🧛',name:'ヴァンパイア',desc:'毎ターン HPを3回復し、2ターンごとに コウモリを呼ぶ。'},
+  vampire:{icon:'🧛',name:'ヴァンパイア',desc:'毎ターン HPを2回復し、3ターンごとに コウモリを呼ぶ。'},
   kraken:{icon:'🐙',name:'クラーケン',desc:'毎ターン 装甲が1増える（最大10）。長引くほど硬くなる。'},
   abyss:{icon:'👁️',name:'深淵の眼',desc:'世界の元凶。毎ターン装甲+1（最大10）、2ターンごとに手下を呼び、3ターンごとに2.5倍の波動を放つ。'}
 };
@@ -536,7 +536,7 @@ function makeBoss(s){
     e.maxHp=e.hp;noteMet(k);s.bossUp=true;s.bossKind=k;s.bossTurn=s.turn;s.bossAnnounce=EK[k].icon+' '+EK[k].name+(m>1?'（さらに強大）':'');return e;}
   const e={t:'skull',kind:k,boss:true,fresh:true,hp:Math.round((22+T/2.5+T*T/2500)*m),atk:Math.round((3+T/35)*m),armor:Math.round((2+T/50)*m)};
   if(k==='dragon'){e.hp=Math.round(e.hp*1.1);e.armor=2;e.ch=0;}
-  if(k==='vampire'){e.armor=Math.round(e.armor/2);e.sm=0;}
+  if(k==='vampire'){e.hp=Math.round(e.hp*.85);e.armor=Math.round(e.armor/2);e.sm=0;}
   if(k==='kraken'){e.hp=Math.round(e.hp*1.2);e.armor=1;}
   if(n===1){e.hp=Math.round(e.hp*.85);e.atk=Math.max(3,e.atk-1);}
   if(s.curse){e.hp=Math.round(e.hp*(1+.12*s.curse));e.atk+=Math.floor(s.curse/3);}
@@ -589,7 +589,7 @@ function enemyPhase(msgs){
     if(e.fresh||e.frz>0)continue;const k=bhOf(e);
     if(k==='kraken')e.armor=Math.min(10,e.armor+1);
     if(k==='abyss'){e.armor=Math.min(10,e.armor+1);e.sm=(e.sm||0)+1;if(e.sm>=2){e.sm=0;const pool=['skel','zombie','spider','ghost','golem','shaman'];summon(pool[rnd(pool.length)]);msgs.push('👁️ 手下を呼び出した！');}}
-    if(k==='vampire'){e.hp=Math.min(e.maxHp,e.hp+3);e.sm=(e.sm||0)+1;if(e.sm>=2){e.sm=0;summon('bat');msgs.push('🧛 コウモリを呼んだ！');}}
+    if(k==='vampire'){e.hp=Math.min(e.maxHp,e.hp+2);e.sm=(e.sm||0)+1;if(e.sm>=3){e.sm=0;summon('bat');msgs.push('🧛 コウモリを呼んだ！');}}
   }
   for(const [e,r,c] of live){
     if(e.fresh||e.frz>0||S.board[r][c]!==e)continue;const D=EK[kindOf(e)]||{};e.age=(e.age||0)+1;
@@ -1789,8 +1789,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshA
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='1.2.2';
+const VERSION='1.2.3';
 const CHANGELOG=[
+  {v:'1.2.3',d:'2026-11-19',items:['B60Fのボスを少し戦いやすくしました']},
   {v:'1.2.2',d:'2026-11-19',items:['最初の2回は戦士で冒険し、2回目を終えると盗賊・僧侶・魔術師が仲間になるようにしました','ヴァンパイアとゾンビの条件を見直し、手に入りやすくしました']},
   {v:'1.2.1',d:'2026-11-19',items:['隠し職業の手に入り方を変えました。世界の元凶を倒すたびに、まだ持っていない隠し職業が1つ手に入ります（3回目の冒険から）']},
   {v:'1.2.0',d:'2026-11-19',items:['パズルに集中できるよう、村・手記・扉をなくして作りをすっきりさせました','4つの職業を最初から選べるようになりました','タイトル画面に「🏆 実績」を追加し、実績・魔物図鑑・戦績をまとめました','盤面の色は「設定」から選べます']},
