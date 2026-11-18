@@ -1206,7 +1206,7 @@ const SFX={
     else if(g==='potion'){tone(380,t,.28,{type:'sine',gain:.16,slideTo:950});tone(600,t+.08,.2,{type:'sine',gain:.08,slideTo:1300});}
     else{tone(988,t,.08,{gain:.06});tone(1319,t+.07,.22,{gain:.06});}},
   kill(){const t=T0();withVar(()=>{air3(t,.27,.1,400,{type:'bandpass',q:1.5,to:6000,toAt:.21,peak:.2});air3(t+.2,.87,.2,7000,{to:300,toAt:.73,peak:.006,rv:1});});},
-  hurt(){const t=T0()+.22;tone(230,t,.32,{type:'sawtooth',gain:.17,slideTo:65,filter:900});noise(t,.2,.12,300);},
+  hurt(){const t=T0()+.22;withVar(()=>{tone(85,t,.28,{type:'sine',gain:.32,slideTo:55,attack:.003});tone(110,t,.18,{type:'triangle',gain:.14,slideTo:90,attack:.003,filter:700});noise(t,.16,.28,700,{type:'lowpass'});noise(t,.05,.12,1500,{type:'bandpass',q:1});});},
   block(){const t=T0()+.22;tone(1400,t,.09,{type:'triangle',gain:.1});tone(1000,t+.04,.12,{type:'triangle',gain:.07});},
   skill(){const t=T0();tone(220,t,.4,{type:'sine',gain:.16,slideTo:1300});noise(t,.35,.08,2000);},
   level(){const t=T0();[72,76,79,84].forEach((m,i)=>tone(mf(m),t+i*.09,.22,{type:'square',gain:.06,filter:4000}));},
