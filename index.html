@@ -822,7 +822,7 @@ function shieldOptions(){
   const p=[
     {label:'🛡️ 盾の補強',desc:'最大防御+3、防御全回復',apply:()=>{S.maxArmor+=3;S.armor=S.maxArmor;}},
     {label:'🩹 応急手当',desc:'HP+40',apply:()=>{S.hp=Math.min(S.maxHp,S.hp+40);}},
-    {label:'🪨 鉄の皮膚',desc:'最大HP+12、HP+12',apply:()=>{S.maxHp+=12;S.hp+=12;}}];
+    {label:'🪨 鉄の皮膚',desc:'最大HP+20、HP+20',apply:()=>{S.maxHp+=20;S.hp+=20;}}];
   if(S.armorPer<(S.cls==='heavy'?8:3))p.push({label:'📘 盾の心得',desc:`🛡️1枚あたりの防御+1（現在${S.armorPer}）`,apply:()=>S.armorPer++});
   return pick(p,3);
 }
@@ -1868,8 +1868,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshA
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.13';
+const VERSION='0.4.14';
 const CHANGELOG=[
+  {v:'0.4.14',d:'2026-11-20',items:['🪨鉄の皮膚を最大HP+12→+20に']},
   {v:'0.4.13',d:'2026-11-20',items:['🔮魔術師と🏹狩人を強くしました']},
   {v:'0.4.12',d:'2026-11-20',items:['冒険を重ねるたびに、まだ見ぬ魔物が少しずつ現れるようにしました']},
   {v:'0.4.11',d:'2026-11-20',items:['新しい魔物が現れるペースをゆるやかにしました','魔物の顔ぶれが冒険ごとに変わります']},
