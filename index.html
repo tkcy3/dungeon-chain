@@ -52,6 +52,7 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 .sh .fill{background:linear-gradient(#55c6d3,#21707a)}
 .bar.flash{animation:fl .4s}
 @keyframes fl{0%{filter:brightness(2.2)}100%{filter:none}}
+#stats .clsChip{color:#f0d9a8;border:1px solid #5d4a69;border-radius:999px;padding:0 6px;max-width:9em;overflow:hidden;text-overflow:ellipsis}
 #stats{width:100%;font-size:11px;white-space:nowrap;overflow:hidden;color:#b9a9bd;display:flex;justify-content:space-between;flex-wrap:wrap;gap:2px 8px}
 #preview{width:100%;height:42px;overflow:hidden;font-size:12.5px;white-space:nowrap;text-align:center;background:#1c161f;border-radius:8px;padding:3px 6px;display:flex;flex-direction:column;justify-content:center;line-height:1.35}
 #preview .sub{font-size:11.5px;color:#c9a}
@@ -1063,7 +1064,7 @@ function updateAll(){
   setBar('bXp',S.xp,S.xpNeed,`✨ 経験 ${S.xp}/${S.xpNeed}`);
   setBar('bGd',S.gold,S.goldNeed,`💰 ${S.gold}/${S.goldNeed}`);
   setBar('bSh',S.shieldPts,S.shieldNeed,`🔰 盾pt ${S.shieldPts}/${S.shieldNeed}`);
-  $('stats').innerHTML=`<span>${(CLASSES[S.cls]||CLASSES.warrior).ic}${S.curse?`<small style="color:#ff8a8a">呪${S.curse}</small>`:''}${S.relics&&S.relics.length?`<small id="relicBtn" style="margin-left:3px">${relicsHtml()}</small>`:''}</span><span>⚔️ 基礎${S.baseDmg}＋剣×${S.weaponDmg}</span><span>🧪×${S.healPer}</span><span>🛡️×${S.armorPer}</span><span>💰×${S.goldPer}</span>`;
+  $('stats').innerHTML=`<span class="clsChip">${(CLASSES[S.cls]||CLASSES.warrior).ic} ${(CLASSES[S.cls]||CLASSES.warrior).n}${S.curse?`<small style="color:#ff8a8a">呪${S.curse}</small>`:''}${S.relics&&S.relics.length?`<small id="relicBtn" style="margin-left:3px">${relicsHtml()}</small>`:''}</span><span>⚔️ 基礎${S.baseDmg}＋剣×${S.weaponDmg}</span><span>🧪×${S.healPer}</span><span>🛡️×${S.armorPer}</span><span>💰×${S.goldPer}</span>`;
   const sk=$('skills');sk.innerHTML='';
   for(let i=0;i<4;i++){const s=S.skills[i];const b=document.createElement('button');b.className='sk'+(s?'':' empty');
     if(s){const d=SKILLS[s.id];b.innerHTML=`<span class="ic">${d.icon}</span><span>${d.name}</span>`+(s.cur>0?`<span class="cd">あと${s.cur}</span>`:'');if(s.cur>0)b.classList.add('off');}
@@ -1801,8 +1802,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshA
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='1.2.8';
+const VERSION='1.2.9';
 const CHANGELOG=[
+  {v:'1.2.9',d:'2026-11-19',items:['冒険中、能力の行に職業名を出し、タップすると職業の特徴が見られるようにしました']},
   {v:'1.2.8',d:'2026-11-19',items:['「新しい冒険」をすっきりさせました。物語は最初の1回だけ流れ、設定からもう一度見られます']},
   {v:'1.2.7',d:'2026-11-19',items:['戦士のアイコンを 💪 に変えました']},
   {v:'1.2.6',d:'2026-11-19',items:['職業を「🎲 おまかせ」で選べるようになりました','魔物の出てくる階を、浅い階から深い階まで散らしました','途中の階の名前と、魔物の予告を出さないようにしました']},
@@ -2198,7 +2200,9 @@ const BAR_TIPS={
 };
 Object.keys(BAR_TIPS).forEach(id=>attachLP($(id),BAR_TIPS[id]));
 attachLP($('itFloor'),()=>S?floorTip():'');
-attachLP($('stats'),()=>tipHead('📊','能力')+`⚔️ 基礎攻撃力${S.baseDmg}＋剣1本あたり${S.weaponDmg}<br>🧪 1個の回復量 ${S.healPer}<br>🛡️ 1枚の防御 ${S.armorPer}<br>💰 1枚の価値 ${S.goldPer}`);
+/* 能力の行：タップでも長押しでも、いまの職業とその特徴・能力を出す */
+const statsTipHtml=()=>{const c=CLASSES[S.cls]||CLASSES.warrior;return tipHead(c.ic,c.n)+`<div style="color:#f0d9a8;margin-bottom:6px">${c.fx}</div>⚔️ 基礎攻撃力${S.baseDmg}＋剣1本あたり${S.weaponDmg}<br>🧪 1個の回復量 ${S.healPer}<br>🛡️ 1枚の防御 ${S.armorPer}<br>💰 1枚の価値 ${S.goldPer}`;};
+attachLP($('stats'),statsTipHtml,()=>{if(!inGame||modalOpen)return;tapTip($('stats'),statsTipHtml());});
 document.addEventListener('contextmenu',e=>{if(!(e.target&&e.target.closest&&e.target.closest('textarea')))e.preventDefault();});
 
 /* ---------- boot ---------- */
