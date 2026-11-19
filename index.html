@@ -277,8 +277,11 @@ const SKILLS={
   bless:{name:'祝福',icon:'🌟',cd:20,desc:'3ターンの間、チェーンが3つ長い扱いになる（効果の倍率アップ）'}
 };
 
+const MAG_UP=5;
 const atkP=()=>S?S.baseDmg+3*S.weaponDmg:7;
-const SKD={fire:()=>Math.round(.6*atkP()+(S?S.turn:0)/9),thunder:()=>Math.round(atkP()+(S?S.turn:0)/5),snipe:()=>Math.round(2*atkP()+(S?S.turn:0)/3)};
+/* 魔術師はスキルで戦う：攻撃スキルの威力は剣ではなく「魔力」で決まる */
+const pw=()=>S&&S.cls==='mage'?(S.mag||8):atkP();
+const SKD={fire:()=>Math.round(.6*pw()+(S?S.turn:0)/9),thunder:()=>Math.round(pw()+(S?S.turn:0)/5),snipe:()=>Math.round(2*pw()+(S?S.turn:0)/3)};
 const execLine=e=>Math.max(SKD.fire(),Math.ceil(e.maxHp*.5));
 function skillDesc(k){
   if(k==='fire')return `全ての敵に${SKD.fire()}ダメージ`;
@@ -764,11 +767,12 @@ function levelOptions(){
   const opts=[];
   if(TUT){['fire','heal','wall'].forEach(k=>opts.push({label:`${SKILLS[k].icon} 新スキル「${SKILLS[k].name}」`,desc:skillDesc(k),apply:()=>S.skills.push({id:k,cd:cdOf(k),cur:0})}));return opts;}
   {const full=S.skills.length>=4,un=shuffle(Object.keys(SKILLS).filter(k=>!S.skills.some(s=>s.id===k)&&!(S.cls==='zombie'&&(k==='wall'||k==='alchemy'))));
-    un.slice(0,full?1:2).forEach(k=>opts.push({label:`${SKILLS[k].icon} 新スキル「${SKILLS[k].name}」`+(full?'（入れ替え）':''),desc:`${skillDesc(k)}（再使用まで${cdOf(k)}ターン）`,replaceId:full?k:null,apply:()=>S.skills.push({id:k,cd:cdOf(k),cur:0})}));}
+    un.slice(0,full||S.cls==='mage'?1:2).forEach(k=>opts.push({label:`${SKILLS[k].icon} 新スキル「${SKILLS[k].name}」`+(full?'（入れ替え）':''),desc:`${skillDesc(k)}（再使用まで${cdOf(k)}ターン）`,replaceId:full?k:null,apply:()=>S.skills.push({id:k,cd:cdOf(k),cur:0})}));}
   const stat=[
     {label:'❤️ 体力強化',desc:'最大HP+16、HP+16',apply:()=>{S.maxHp+=16;S.hp+=16;}},
     {label:'💪 腕力強化',desc:`基礎攻撃力+${S.baseUp||5}（現在${S.baseDmg}）`,apply:()=>{S.baseDmg+=S.baseUp||5;}}];
-  if(S.skills.length)stat.push({label:'🧘 集中',desc:`スキルの再使用ターン-3　${S.skills.map(x=>`${SKILLS[x.id].icon}${x.cd}→${Math.max(4,x.cd-3)}`).join(' ')}`,apply:()=>S.skills.forEach(s=>s.cd=Math.max(4,s.cd-3))});
+  if(S.skills.length){const fo=S.cls==='mage'?5:3,mn=S.cls==='mage'?3:4;stat.push({label:'🧘 集中',desc:`スキルの再使用ターン-${fo}　${S.skills.map(x=>`${SKILLS[x.id].icon}${x.cd}→${Math.max(mn,x.cd-fo)}`).join(' ')}`,apply:()=>S.skills.forEach(s=>s.cd=Math.max(mn,s.cd-fo))});}
+  if(S.cls==='mage')opts.push({label:'📖 魔力',desc:`攻撃スキルの威力アップ（魔力${S.mag||8}→${(S.mag||8)+MAG_UP}）`,apply:()=>{S.mag=(S.mag||8)+MAG_UP;}});
   shuffle(stat);while(opts.length<3&&stat.length)opts.push(stat.pop());
   return opts;
 }
@@ -1802,8 +1806,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshA
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.3.11';
+const VERSION='0.3.12';
 const CHANGELOG=[
+  {v:'0.3.12',d:'2026-11-19',items:['魔術師を「スキルで戦う職業」にしました。攻撃スキルの威力は📖魔力で決まり、レベルアップで伸ばせます']},
   {v:'0.3.11',d:'2026-11-19',items:['ずっとベータ版のつもりなので、バージョン番号を 0.〜 に振り直しました']},
   {v:'0.3.10',d:'2026-11-19',items:['職業の説明の「最大HP」を「初期HP」に直しました（レベルアップで伸びます）']},
   {v:'0.3.9',d:'2026-11-19',items:['冒険中、能力の行に職業名を出し、タップすると職業の特徴が見られるようにしました']},
@@ -1956,7 +1961,7 @@ function showRecords(back){
 const CLASSES={
   warrior:{ic:'💪',n:'戦士',d:'剣の扱いに長けた、頑丈な探索者。',fx:'初期HP60・防御5で、最初から防御が満タン。癖がなく扱いやすい',stage:'s0'},
   thief:{ic:'🗝️',n:'盗賊',d:'金目のものに目がない、身軽な流れ者。',fx:'💰の価値3（通常2）・ショップの必要額2割引・初期HP40',stage:'s1'},
-  mage:{ic:'🔮',n:'魔術師',d:'古い術を受け継ぐ、線の細い学者。',fx:'最初から🔥火球を習得・スキルの再使用ターン25%短縮・初期HP40',stage:'s3'},
+  mage:{ic:'🔮',n:'魔術師',d:'古い術を受け継ぐ、線の細い学者。',fx:'スキルで戦う。攻撃スキルの威力は📖魔力で決まり、レベルアップで伸ばせる（剣・腕力は伸びにくい）・集中の効果が大きい（-5）・再使用ターン25%短縮・最初から🔥火球・初期HP40',stage:'s3'},
   cleric:{ic:'📿',n:'僧侶',d:'祈りで傷を癒やしてきた、穏やかな巡礼者。',fx:'🧪の回復量3（通常2）・回復の余りは経験値に・基礎攻撃力が伸びやすく（+7）、剣は伸びにくい（+1）',stage:'s2'},
   vampire:{ic:'🧛',n:'ヴァンパイア',hidden:1,d:'血の渇きに導かれ、地の底へ還る夜の貴族。',fx:'🧪では回復できない（💰に変わる）・敵を倒すたびに血を吸ってHP回復（レベルで増加）・初期HP46',
     kill:['vampire',1],floor:50,cond:()=>false},
@@ -1982,7 +1987,7 @@ function applyClass(s,k){
   s.cls=k;
   if(k==='warrior'){s.maxHp=60;s.hp=60;s.maxArmor=5;s.armor=5;}
   if(k==='thief'){s.goldPer=3;s.goldNeed=Math.round(s.goldNeed*.8);s.maxHp=40;s.hp=40;}
-  if(k==='mage'){s.cdMul=.75;s.maxHp=40;s.hp=40;s.skills=[{id:'fire',cd:Math.max(4,Math.round(SKILLS.fire.cd*.75)),cur:0}];}
+  if(k==='mage'){s.mag=8;s.baseUp=3;s.wpnUp=1;s.cdMul=.75;s.maxHp=40;s.hp=40;s.skills=[{id:'fire',cd:Math.max(4,Math.round(SKILLS.fire.cd*.75)),cur:0}];}
   if(k==='cleric'){s.healPer=3;s.weaponDmg=1;s.baseDmg=2;s.baseUp=7;s.wpnUp=1;s.maxHp=53;s.hp=53;}
   if(k==='vampire'){s.healPer=0;s.maxHp=46;s.hp=46;}
   if(k==='zombie'){s.healPer=1;s.maxHp=74;s.hp=74;s.maxArmor=0;s.armor=0;s.revive=1;}
@@ -2203,7 +2208,7 @@ const BAR_TIPS={
 Object.keys(BAR_TIPS).forEach(id=>attachLP($(id),BAR_TIPS[id]));
 attachLP($('itFloor'),()=>S?floorTip():'');
 /* 能力の行：タップでも長押しでも、いまの職業とその特徴・能力を出す */
-const statsTipHtml=()=>{const c=CLASSES[S.cls]||CLASSES.warrior;return tipHead(c.ic,c.n)+`<div style="color:#f0d9a8;margin-bottom:6px">${c.fx}</div>⚔️ 基礎攻撃力${S.baseDmg}＋剣1本あたり${S.weaponDmg}<br>🧪 1個の回復量 ${S.healPer}<br>🛡️ 1枚の防御 ${S.armorPer}<br>💰 1枚の価値 ${S.goldPer}`;};
+const statsTipHtml=()=>{const c=CLASSES[S.cls]||CLASSES.warrior;return tipHead(c.ic,c.n)+`<div style="color:#f0d9a8;margin-bottom:6px">${c.fx}</div>⚔️ 基礎攻撃力${S.baseDmg}＋剣1本あたり${S.weaponDmg}${S.cls==='mage'?`<br>📖 魔力 ${S.mag||8}`:''}<br>🧪 1個の回復量 ${S.healPer}<br>🛡️ 1枚の防御 ${S.armorPer}<br>💰 1枚の価値 ${S.goldPer}`;};
 attachLP($('stats'),statsTipHtml,()=>{if(!inGame||modalOpen)return;tapTip($('stats'),statsTipHtml());});
 document.addEventListener('contextmenu',e=>{if(!(e.target&&e.target.closest&&e.target.closest('textarea')))e.preventDefault();});
 
