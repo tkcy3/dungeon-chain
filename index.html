@@ -197,7 +197,7 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 .tsub button{flex:1;max-width:76px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0 6px;border-radius:10px;border:1px solid #3a2f3e;background:#241c27;color:#bba9c4;font-size:11px}
 .tsub button span{font-size:20px;filter:saturate(.75)}
 .tsub button.glow{border-color:#e8b33a;color:#f0d9a8;box-shadow:0 0 10px rgba(232,179,58,.35)}
-.a2h{display:flex;align-items:center;justify-content:center;gap:10px;font-size:17px;margin:14px 0}.a2h b{display:inline-flex;align-items:center;gap:4px;padding:8px 12px;border-radius:10px;background:#2e2535;border:1px solid #5d4a69;font-weight:400}.a2h i{font-style:normal;color:#8f8396}
+.a2h{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;font-size:17px;margin:14px 0}.a2h b{display:inline-flex;align-items:center;gap:4px;padding:8px 12px;border-radius:10px;background:#2e2535;border:1px solid #5d4a69;font-weight:400}.a2h i{font-style:normal;color:#8f8396}
 .a2g{display:flex;justify-content:center;gap:26px;margin:18px 0 6px;font-size:13px;color:#c9bfcf;text-align:center}.a2g span{display:block;font-size:30px}
 #cloud{font-size:12.5px;color:#8f8396;margin-top:14px}
 #ver{font-size:12.5px;color:#7f7682;margin-top:6px;background:none;border:0;padding:4px 8px;font-family:inherit}#ver.new{color:#e8b33a}
@@ -1091,7 +1091,7 @@ function showAddHome(){try{localStorage.setItem('dchain_a2h_v1','1');}catch(e){}
   const ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   openModal(`${pgHead('📲 ホーム画面に追加','✕ 閉じる')}
     <div class="a2g"><div><span>📱</span>全画面</div><div><span>⚡</span>すぐ起動</div><div><span>🏰</span>アイコン</div></div>
-    ${ios?'<div class="a2h"><b>⬆️ 共有</b><i>›</i><b>➕ ホーム画面に追加</b></div>'
+    ${ios?'<div class="a2h"><b>⋯</b><i>›</i><b>⬆️ 共有</b><i>›</i><b>➕ ホーム画面に追加</b></div><p style="text-align:center;font-size:13px;color:#8f8396">Safariの右下 ⋯ から</p>'
          :'<div class="a2h"><b>⋮</b><i>›</i><b>📲 ホーム画面に追加</b></div><p style="text-align:center;font-size:13px;color:#8f8396">Chromeの右上 ⋮ から</p>'}`);
   $('pgBack').onclick=closeModal;}
 $('btnHome').onclick=showAddHome;
