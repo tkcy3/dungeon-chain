@@ -2145,9 +2145,10 @@ function shareRun(prog){if(TUT||!S||!shareOn())return;try{if(!S.rid)S.rid=Math.r
   let ok=false;try{ok=navigator.sendBeacon&&navigator.sendBeacon(SHARE_URL,body);}catch(e){}
   if(!ok)fetch(SHARE_URL,{method:'POST',mode:'no-cors',body,keepalive:true}).catch(()=>{});}catch(e){}}
 /* 冒険の途中でやめたままでも記録が残るよう、タイトルに戻るときと画面を離れるときに「途中経過」を送る（同じターンでは1回だけ） */
-function shareProgress(){if(!inGame||TUT||!S||!S.turn||S.hp<=0||S._snapTurn===S.turn)return;S._snapTurn=S.turn;shareRun(true);}
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')shareProgress();});
-window.addEventListener('pagehide',shareProgress);
+/* 画面を離れるたびに送ると記録が増えすぎるので、前回から10ターン以上進んでいるときだけ送る */
+function shareProgress(minGap){if(!inGame||TUT||!S||!S.turn||S.hp<=0)return;if(S.turn-(S._snapTurn||0)<(minGap||1))return;S._snapTurn=S.turn;shareRun(true);}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')shareProgress(10);});
+window.addEventListener('pagehide',()=>shareProgress(10));
 function recordRun(){if(TUT||!S)return;shareRun();RUNS.push({d:Date.now(),n:getName(),cu:S.curse||0,c:S.cls||'warrior',f:floorOf(),t:S.turn,k:S.kills,l:S.level,ch:S.maxChain||0,cl:S.cleared||0,e:GIVEUP?1:0});RUNS=RUNS.slice(-300);runsSave();}
 const VC={c1:'#3987e5',c2:'#d95926',c3:'#199e70',c4:'#c98500',grid:'#3a3238',ink:'#ece4d8',ink2:'#a99fae',surf:'#211a25'};
 const CLS_COL={warrior:VC.c1,thief:VC.c2,mage:VC.c3,cleric:VC.c4,vampire:'#d55181',zombie:'#0ca30c',hunter:'#9085e9',dragoon:'#9085e9',gambler:'#9085e9',knight:'#9085e9',alchemist:'#9085e9',heavy:'#c9a24a'};
