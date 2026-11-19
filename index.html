@@ -196,7 +196,10 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 .tsub{display:flex;gap:8px;justify-content:center;margin-top:18px;width:100%;max-width:320px}
 .tsub button{flex:1;max-width:76px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0 6px;border-radius:10px;border:1px solid #3a2f3e;background:#241c27;color:#bba9c4;font-size:11px}
 .tsub button span{font-size:20px;filter:saturate(.75)}
-.tsub button.glow{border-color:#e8b33a;color:#f0d9a8;box-shadow:0 0 10px rgba(232,179,58,.35)}
+#a2hChip{display:flex;width:100%;max-width:320px;margin-top:14px;border:1px solid #6b5636;border-radius:12px;background:rgba(36,28,39,.92);overflow:hidden}
+#a2hChip button{background:none;border:0;color:#eee;font-family:inherit}
+#a2hGo{flex:1;display:flex;align-items:center;gap:10px;padding:9px 12px;text-align:left}#a2hGo span{font-size:24px}#a2hGo b{flex:1;font-weight:400;font-size:15px;color:#f0d9a8}#a2hGo small{display:block;font-size:12px;color:#a99bb0;margin-top:1px}#a2hGo i{font-style:normal;color:#8f8396;font-size:18px}
+#a2hX{width:44px;border-left:1px solid #3a2f3e!important;color:#8f8396!important;font-size:15px}
 .a2h{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;font-size:17px;margin:14px 0}.a2h b{display:inline-flex;align-items:center;gap:4px;padding:8px 12px;border-radius:10px;background:#2e2535;border:1px solid #5d4a69;font-weight:400}.a2h i{font-style:normal;color:#8f8396}
 .a2g{display:flex;justify-content:center;gap:26px;margin:18px 0 6px;font-size:13px;color:#c9bfcf;text-align:center}.a2g span{display:block;font-size:30px}
 #cloud{font-size:12.5px;color:#8f8396;margin-top:14px}
@@ -251,8 +254,8 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
       <button id="btnAch"><span>🏆</span>実績</button>
       <button id="btnSet"><span>⚙️</span>設定</button>
       <button id="btnImport"><span>📥</span>読み込み</button>
-      <button id="btnHome" class="hidden"><span>📲</span>ホームへ</button>
     </div>
+    <div id="a2hChip" class="hidden"><button id="a2hGo"><span>📲</span><b>ホーム画面に追加<small>全画面ですぐ遊べる</small></b><i>›</i></button><button id="a2hX" aria-label="閉じる">✕</button></div>
     <div id="cloud">セーブ: 確認中…</div>
     <button id="ver"></button>
     </div>
@@ -1083,18 +1086,20 @@ $('btnImport').onclick=showImport;
 /* ホーム画面に追加：Chromeならワンタップでインストール、それ以外は手順を絵で */
 var A2H=null;
 function isApp(){return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;}
-function refreshHomeBtn(){const b=$('btnHome');if(!b)return;b.classList.toggle('hidden',isApp());let seen=0;try{seen=localStorage.getItem('dchain_a2h_v1');}catch(e){}b.classList.toggle('glow',!seen);}
+/* タイトルには1回冒険を終えてから一度だけ出す。✕か一度開いたら以後は設定から */
+function refreshHomeBtn(){const c=$('a2hChip');if(!c)return;let done=0;try{done=localStorage.getItem('dchain_a2h_v1');}catch(e){}
+  c.classList.toggle('hidden',isApp()||!!done||!((ACH&&ACH.st&&ACH.st.games)>=1));}
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();A2H=e;refreshHomeBtn();});
 addEventListener('appinstalled',()=>{A2H=null;try{localStorage.setItem('dchain_a2h_v1','1');}catch(e){}refreshHomeBtn();});
-function showAddHome(){try{localStorage.setItem('dchain_a2h_v1','1');}catch(e){}refreshHomeBtn();
+function showAddHome(back){try{localStorage.setItem('dchain_a2h_v1','1');}catch(e){}refreshHomeBtn();
   if(A2H){const e=A2H;A2H=null;e.prompt();e.userChoice.then(r=>{if(r&&r.outcome!=='accepted')A2H=null;refreshHomeBtn();}).catch(()=>{});return;}
   const ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-  openModal(`${pgHead('📲 ホーム画面に追加','✕ 閉じる')}
+  openModal(`${pgHead('📲 ホーム画面に追加',back?'設定':'✕ 閉じる')}
     <div class="a2g"><div><span>📱</span>全画面</div><div><span>⚡</span>すぐ起動</div><div><span>🏰</span>アイコン</div></div>
     ${ios?'<div class="a2h"><b>⋯</b><i>›</i><b>⬆️ 共有</b><i>›</i><b>➕ ホーム画面に追加</b></div><p style="text-align:center;font-size:13px;color:#8f8396">Safariの右下 ⋯ から</p>'
          :'<div class="a2h"><b>⋮</b><i>›</i><b>📲 ホーム画面に追加</b></div><p style="text-align:center;font-size:13px;color:#8f8396">Chromeの右上 ⋮ から</p>'}`);
-  $('pgBack').onclick=closeModal;}
-$('btnHome').onclick=showAddHome;
+  $('pgBack').onclick=back||closeModal;}
+$('a2hGo').onclick=()=>showAddHome();$('a2hX').onclick=()=>{try{localStorage.setItem('dchain_a2h_v1','1');}catch(e){}refreshHomeBtn();};
 $('menuBtn').onclick=()=>{if(!modalOpen&&inGame)showMenu();};
 
 /* ---------- HUD ---------- */
@@ -1857,7 +1862,7 @@ let settingsBack=null;
 /* ---------- version & changelog ---------- */
 const VERSION='0.4.10';
 const CHANGELOG=[
-  {v:'0.4.10',d:'2026-11-19',items:['タイトルに📲ボタンを追加。ホーム画面に置くと全画面ですぐ遊べます']},
+  {v:'0.4.10',d:'2026-11-19',items:['📲 ホーム画面に追加できるようにしました（設定から）。全画面ですぐ遊べます']},
   {v:'0.4.9',d:'2026-11-19',items:['🎲で決まる冒険者名の種類を大幅に増やしました（256通り→約6,000通り）']},
   {v:'0.4.8',d:'2026-11-19',items:['冒険の途中でやめたときも、途中経過を記録として送るようにしました','一度「あきらめる」を選ぶと、その後の冒険も「あきらめた」扱いで記録される不具合を直しました']},
   {v:'0.4.7',d:'2026-11-19',items:['作者に送る記録に、冒険者名・選んだ強化・スキル・とどめを刺した敵などを加えました（設定でオフにできます）']},
@@ -1915,6 +1920,7 @@ function showSettings(back,msg){
     <button class="prow" id="stShare"><span class="ri">📤</span><span class="rt">記録を作者に送る<br><small style="color:#b9adc0;font-size:12.5px">冒険者名・職業・到達階など</small></span><span class="rs" style="color:${shareOn()?'#8fe08f':'#f08a8a'}">${shareOn()?'ON':'OFF'}</span></button>
     <button class="prow" id="stStory"><span class="ri">📜</span><span class="rt">物語をもう一度</span><span class="rs">›</span></button>
     <button class="prow" id="stTheme"><span class="ri">🎨</span><span class="rt">盤面の色</span><span class="rs">›</span></button>
+    ${isApp()?'':'<button class="prow" id="stA2h"><span class="ri">📲</span><span class="rt">ホーム画面に追加<br><small style="color:#b9adc0;font-size:12.5px">全画面ですぐ遊べる</small></span><span class="rs">›</span></button>'}
     ${inGame?'':'<button class="prow" id="stData"><span class="ri">🗑️</span><span class="rt">データを消す</span><span class="rs">›</span></button>'}
     ${msg?`<p id="stMsg" style="text-align:center;color:#8fe08f;font-size:14.5px">${msg}</p>`:''}`);
   const flip=k=>{AU.on[k]=!AU.on[k];saveAudio();refreshAudioBtns();if(k==='bgm'&&AU.on.bgm&&inGame)bgmStart();if(k==='vib'&&AU.on.vib)vib(30);showSettings();};
@@ -1922,7 +1928,7 @@ function showSettings(back,msg){
   $('st1').onclick=()=>flip('bgm');$('st2').onclick=()=>flip('sfx');$('st3').onclick=()=>flip('vib');
   $('stShare').onclick=()=>{try{localStorage.setItem(LS_SHARE,shareOn()?'0':'1');}catch(e){}showSettings();};
   $('stStory').onclick=()=>{closeModal();playStory(()=>{if(inGame)return;bgmStop();showSettings();});};
-  $('stTheme').onclick=()=>showTailor(()=>showSettings());if(!inGame)$('stData').onclick=showDataReset;
+  $('stTheme').onclick=()=>showTailor(()=>showSettings());if($('stA2h'))$('stA2h').onclick=()=>showAddHome(()=>showSettings());if(!inGame)$('stData').onclick=showDataReset;
   $('stClose').onclick=()=>{const b=settingsBack;settingsBack=null;if(b)b();else closeModal();};
 }
 /* データを消す：危ない操作はここにまとめる（説明は確認画面で出す） */
