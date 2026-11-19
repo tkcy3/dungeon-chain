@@ -1802,8 +1802,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshA
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='1.2.9';
+const VERSION='1.2.10';
 const CHANGELOG=[
+  {v:'1.2.10',d:'2026-11-19',items:['職業の説明の「最大HP」を「初期HP」に直しました（レベルアップで伸びます）']},
   {v:'1.2.9',d:'2026-11-19',items:['冒険中、能力の行に職業名を出し、タップすると職業の特徴が見られるようにしました']},
   {v:'1.2.8',d:'2026-11-19',items:['「新しい冒険」をすっきりさせました。物語は最初の1回だけ流れ、設定からもう一度見られます']},
   {v:'1.2.7',d:'2026-11-19',items:['戦士のアイコンを 💪 に変えました']},
@@ -1952,19 +1953,19 @@ function showRecords(back){
 }
 /* classes */
 const CLASSES={
-  warrior:{ic:'💪',n:'戦士',d:'剣の扱いに長けた、頑丈な探索者。',fx:'最大HP60・最大防御5で、最初から防御が満タン。癖がなく扱いやすい',stage:'s0'},
-  thief:{ic:'🗝️',n:'盗賊',d:'金目のものに目がない、身軽な流れ者。',fx:'💰の価値3（通常2）・ショップの必要額2割引・最大HP40',stage:'s1'},
-  mage:{ic:'🔮',n:'魔術師',d:'古い術を受け継ぐ、線の細い学者。',fx:'最初から🔥火球を習得・スキルの再使用ターン25%短縮・最大HP40',stage:'s3'},
+  warrior:{ic:'💪',n:'戦士',d:'剣の扱いに長けた、頑丈な探索者。',fx:'初期HP60・防御5で、最初から防御が満タン。癖がなく扱いやすい',stage:'s0'},
+  thief:{ic:'🗝️',n:'盗賊',d:'金目のものに目がない、身軽な流れ者。',fx:'💰の価値3（通常2）・ショップの必要額2割引・初期HP40',stage:'s1'},
+  mage:{ic:'🔮',n:'魔術師',d:'古い術を受け継ぐ、線の細い学者。',fx:'最初から🔥火球を習得・スキルの再使用ターン25%短縮・初期HP40',stage:'s3'},
   cleric:{ic:'📿',n:'僧侶',d:'祈りで傷を癒やしてきた、穏やかな巡礼者。',fx:'🧪の回復量3（通常2）・回復の余りは経験値に・基礎攻撃力が伸びやすく（+7）、剣は伸びにくい（+1）',stage:'s2'},
-  vampire:{ic:'🧛',n:'ヴァンパイア',hidden:1,d:'血の渇きに導かれ、地の底へ還る夜の貴族。',fx:'🧪では回復できない（💰に変わる）・敵を倒すたびに血を吸ってHP回復（レベルで増加）・最大HP46',
+  vampire:{ic:'🧛',n:'ヴァンパイア',hidden:1,d:'血の渇きに導かれ、地の底へ還る夜の貴族。',fx:'🧪では回復できない（💰に変わる）・敵を倒すたびに血を吸ってHP回復（レベルで増加）・初期HP46',
     kill:['vampire',1],floor:50,cond:()=>false},
-  zombie:{ic:'🧟',n:'ゾンビ',hidden:1,d:'何度倒れても、なぜか起き上がってくる者。',fx:'最大HP74だが防具は使えない（🛡️は傷をふさいでHP回復）・🧪の回復量1・冒険中に一度だけ蘇る',
+  zombie:{ic:'🧟',n:'ゾンビ',hidden:1,d:'何度倒れても、なぜか起き上がってくる者。',fx:'初期HP74だが防具は使えない（🛡️は傷をふさいでHP回復）・🧪の回復量1・冒険中に一度だけ蘇る',
     kill:['zombie',20],floor:50,cond:()=>false},
-  hunter:{ic:'🏹',n:'狩人',hidden:2,d:'獲物の最後の一匹を、決して逃さない射手。',fx:'チェーンの最後につないだ敵に2倍ダメージ・最初から🎯狙撃を習得・最大HP45',cond:()=>false},
-  dragoon:{ic:'🐉',n:'竜騎士',hidden:2,d:'竜の背で戦った、一撃に全てを懸ける騎士。',fx:'5つ以上のチェーンは倍率がさらに伸びる・4つ以下の攻撃は威力半分・最大HP55',cond:()=>false},
-  gambler:{ic:'🃏',n:'ギャンブラー',hidden:2,d:'迷宮の宝も、命も、すべて賭けの種。',fx:'攻撃のダメージが毎回0.5〜2倍に揺れる・💰の価値3・最大HP50',cond:()=>false},
-  knight:{ic:'🛡️',n:'騎士',hidden:2,d:'重い鎧に身を包んだ、誇り高き守り手。',fx:'最大防御8・防御が満タンのとき攻撃1.5倍・🧪の回復量1・最大HP50',cond:()=>false},
-  alchemist:{ic:'⚗️',n:'錬金術師',hidden:2,d:'あらゆるものを混ぜ合わせる、変わり者の学者。',fx:'🛡️🧪💰を混ぜてつなげる（それぞれの効果が出るが、混ぜると効果半減）・剣の攻撃力が低い（1・強化+1）・最大HP42',cond:()=>false}
+  hunter:{ic:'🏹',n:'狩人',hidden:2,d:'獲物の最後の一匹を、決して逃さない射手。',fx:'チェーンの最後につないだ敵に2倍ダメージ・最初から🎯狙撃を習得・初期HP45',cond:()=>false},
+  dragoon:{ic:'🐉',n:'竜騎士',hidden:2,d:'竜の背で戦った、一撃に全てを懸ける騎士。',fx:'5つ以上のチェーンは倍率がさらに伸びる・4つ以下の攻撃は威力半分・初期HP55',cond:()=>false},
+  gambler:{ic:'🃏',n:'ギャンブラー',hidden:2,d:'迷宮の宝も、命も、すべて賭けの種。',fx:'攻撃のダメージが毎回0.5〜2倍に揺れる・💰の価値3・初期HP50',cond:()=>false},
+  knight:{ic:'🛡️',n:'騎士',hidden:2,d:'重い鎧に身を包んだ、誇り高き守り手。',fx:'防御の上限8から始まる・防御が満タンのとき攻撃1.5倍・🧪の回復量1・初期HP50',cond:()=>false},
+  alchemist:{ic:'⚗️',n:'錬金術師',hidden:2,d:'あらゆるものを混ぜ合わせる、変わり者の学者。',fx:'🛡️🧪💰を混ぜてつなげる（それぞれの効果が出るが、混ぜると効果半減）・剣の攻撃力が低い（1・強化+1）・初期HP42',cond:()=>false}
 };
 const MAIN_CLS=Object.keys(CLASSES).filter(k=>!CLASSES[k].hidden);
 const classOk=k=>{const c=CLASSES[k];if(!c)return false;if(c.hidden)return !!UNL.got['h_'+k];return k==='warrior'||!!UNL.got['c_'+k];};
