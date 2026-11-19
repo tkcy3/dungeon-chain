@@ -277,10 +277,11 @@ const SKILLS={
   bless:{name:'祝福',icon:'🌟',cd:20,desc:'3ターンの間、チェーンが3つ長い扱いになる（効果の倍率アップ）'}
 };
 
-const MAG_UP=5;
+const MAG_UP=9,HOLY=.13,BASH=.25;
+const UNDEAD=k=>/^(skel|zombie|ghost|lich|vampire)/.test(k||'');
 const atkP=()=>S?S.baseDmg+3*S.weaponDmg:7;
 /* 魔術師はスキルで戦う：攻撃スキルの威力は剣ではなく「魔力」で決まる */
-const pw=()=>S&&S.cls==='mage'?(S.mag||8):atkP();
+const pw=()=>S&&S.cls==='mage'?(S.mag||10):atkP();
 const SKD={fire:()=>Math.round(.6*pw()+(S?S.turn:0)/9),thunder:()=>Math.round(pw()+(S?S.turn:0)/5),snipe:()=>Math.round(2*pw()+(S?S.turn:0)/3)};
 const execLine=e=>Math.max(SKD.fire(),Math.ceil(e.maxHp*.5));
 function skillDesc(k){
@@ -679,7 +680,7 @@ const MIXLOSS=.45;
 const ROLLS=[.5,.75,1,1,1.25,1.5,2];
 const lastEnemyOf=cells=>{for(let i=cells.length-1;i>=0;i--)if(isEnemy(tileAt(cells[i])))return cells[i];return null;};
 function bonusTxtOf(n){const m=chainMult(n),b=chainBonus(n);return (m>1?`効果×${fmtM(m)}`:'')+(b?`・経験値+${b}`:'');}
-function addGold(a){S.gold+=a;while(S.gold>=S.goldNeed){S.gold-=S.goldNeed;S.goldNeed=Math.round(S.goldNeed*1.12+24*(S.cls==='thief'?.8:1));S.pending.push('shop');}}
+function addGold(a){S.gold+=a;while(S.gold>=S.goldNeed){S.gold-=S.goldNeed;S.goldNeed=Math.round(S.goldNeed*1.12+24*(S.cls==='thief'?2.2:1));S.pending.push('shop');}}
 function commitChain(){
   const hp0=S.hp,full0=S.hp>=S.maxHp;
   const cells=chain.slice();chain=[];
@@ -699,13 +700,17 @@ function commitChain(){
     msgs.push(hitN?`敵に${dmg}ダメージ${killed?`、${killed}体撃破`:''}`:`剣${swords}本を消費`);vampDrain(killed,msgs);
   }else{
     cells.forEach(p=>remove.add(p[0]*N+p[1]));
+    /* 盤面の敵（条件に合うもの）にまとめてダメージ：僧侶の聖なる🧪・重騎士の盾で殴る */
+    const aoe=(d,f,label)=>{if(d<=0)return;let k=0,xp=0;const now=performance.now();for(let r=0;r<N;r++)for(let c=0;c<N;c++){const t=S.board[r][c];if(!isEnemy(t)||remove.has(r*N+c)||!f(t))continue;applyDmg(t,d);if(t.hp<=0){remove.add(r*N+c);k++;xp+=xpOf(t);}else t.hit=now;}
+      S.kills+=k;if(xp)gainXp(xp);relicKills(k);msgs.push(`${label}${d}ダメージ${k?`、${k}体撃破`:''}`);};
     const eff=(g,n)=>{
     if(g==='shield'&&S.cls==='zombie'){const h=Math.min(Math.round(n*mult),S.maxHp-S.hp);S.hp+=h;msgs.push(`🧟傷をふさいだ HP+${h}`);flash('bHp');}
     else if(g==='shield'){const add=Math.round(n*S.armorPer*mult*(hasR('crest')?1.5:1)),used=Math.min(add,S.maxArmor-S.armor);S.armor+=used;const over=add-used;
+      if(S.cls==='heavy')aoe(Math.round(add*BASH),()=>true,'🏰 盾で殴る！全ての敵に');
       if(over>0){S.shieldPts+=over;while(S.shieldPts>=S.shieldNeed){S.shieldPts-=S.shieldNeed;S.shieldNeed=Math.round(S.shieldNeed*1.25)+10;S.pending.push('shield');}}
       msgs.push(`防御+${used}`+(over?`（超過${over}は盾ポイントへ）`:''));flash('bAr');}
     else if(g==='potion'&&S.cls==='vampire'){const a=Math.round(n*mult);addGold(a);msgs.push(`🧪は口に合わない → 💰+${a}`);flash('bGd');}
-    else if(g==='potion'){const heal=Math.round(n*S.healPer*mult),h=Math.min(heal,S.maxHp-S.hp),_hl=h>0&&S.run&&(S.run.heal=1),cl=S.cls==='cleric',sell=Math.floor((heal-h)/(cl?3:4))*(hasR('urn')?2:1);S.hp+=h;if(sell){if(cl){gainXp(sell);flash('bXp');}else{addGold(sell);flash('bGd');}}msgs.push(`HP+${h}`+(sell?`（余り→${cl?'✨経験値':'💰'}+${sell}）`:''));flash('bHp');}
+    else if(g==='potion'){const heal=Math.round(n*S.healPer*mult),h=Math.min(heal,S.maxHp-S.hp),_hl=h>0&&S.run&&(S.run.heal=1),cl=S.cls==='cleric',sell=Math.floor((heal-h)/(cl?3:4))*(hasR('urn')?2:1);S.hp+=h;if(cl)aoe(Math.ceil(heal*HOLY),t=>UNDEAD(kindOf(t)),'✨ 聖なる力！アンデッドに');if(sell){if(cl){gainXp(sell);flash('bXp');}else{addGold(sell);flash('bGd');}}msgs.push(`HP+${h}`+(sell?`（余り→${cl?'✨経験値':'💰'}+${sell}）`:''));flash('bHp');}
     else if(g==='coin'){const a=Math.round(n*S.goldPer*mult);addGold(a);msgs.push(`お金+${a}`);flash('bGd');}
     };
     if(g==='mix'){const cnt={};cells.forEach(p=>{const t=tileAt(p).t;cnt[t]=(cnt[t]||0)+1;});const ty=Object.keys(cnt).length;if(ty>1){mult*=MIXLOSS;msgs.push('⚗️ 調合');}for(const k of ['shield','potion','coin'])if(cnt[k])eff(k,cnt[k]);}else eff(g,cells.length);
@@ -766,13 +771,16 @@ function pick(pool,n){return shuffle(pool.slice()).slice(0,n);}
 function levelOptions(){
   const opts=[];
   if(TUT){['fire','heal','wall'].forEach(k=>opts.push({label:`${SKILLS[k].icon} 新スキル「${SKILLS[k].name}」`,desc:skillDesc(k),apply:()=>S.skills.push({id:k,cd:cdOf(k),cur:0})}));return opts;}
-  {const full=S.skills.length>=4,un=shuffle(Object.keys(SKILLS).filter(k=>!S.skills.some(s=>s.id===k)&&!(S.cls==='zombie'&&(k==='wall'||k==='alchemy'))));
+  {const full=S.skills.length>=4;let un=shuffle(Object.keys(SKILLS).filter(k=>!S.skills.some(s=>s.id===k)&&!(S.cls==='zombie'&&(k==='wall'||k==='alchemy'))));
+    if(S.cls==='mage'){const dmg=['thunder','snipe','fire','execute'];un=[...un.filter(k=>dmg.includes(k)),...un.filter(k=>!dmg.includes(k))];}
     un.slice(0,full||S.cls==='mage'?1:2).forEach(k=>opts.push({label:`${SKILLS[k].icon} 新スキル「${SKILLS[k].name}」`+(full?'（入れ替え）':''),desc:`${skillDesc(k)}（再使用まで${cdOf(k)}ターン）`,replaceId:full?k:null,apply:()=>S.skills.push({id:k,cd:cdOf(k),cur:0})}));}
   const stat=[
     {label:'❤️ 体力強化',desc:'最大HP+16、HP+16',apply:()=>{S.maxHp+=16;S.hp+=16;}},
     {label:'💪 腕力強化',desc:`基礎攻撃力+${S.baseUp||5}（現在${S.baseDmg}）`,apply:()=>{S.baseDmg+=S.baseUp||5;}}];
   if(S.skills.length){const fo=S.cls==='mage'?5:3,mn=S.cls==='mage'?3:4;stat.push({label:'🧘 集中',desc:`スキルの再使用ターン-${fo}　${S.skills.map(x=>`${SKILLS[x.id].icon}${x.cd}→${Math.max(mn,x.cd-fo)}`).join(' ')}`,apply:()=>S.skills.forEach(s=>s.cd=Math.max(mn,s.cd-fo))});}
-  if(S.cls==='mage')opts.push({label:'📖 魔力',desc:`攻撃スキルの威力アップ（魔力${S.mag||8}→${(S.mag||8)+MAG_UP}）`,apply:()=>{S.mag=(S.mag||8)+MAG_UP;}});
+  if(S.cls==='cleric'&&S.healPer<14)stat.push({label:'🧪 祈り',desc:`🧪1個の回復量+2（現在${S.healPer}）`,apply:()=>{S.healPer+=2;}});
+  if(S.cls==='heavy'&&S.armorPer<8)stat.push({label:'📘 盾の心得',desc:`🛡️1枚あたりの防御+1（現在${S.armorPer}）`,apply:()=>S.armorPer++});
+  if(S.cls==='mage')opts.push({label:'📖 魔力',desc:`攻撃スキルの威力アップ（魔力${S.mag||10}→${(S.mag||10)+MAG_UP}）`,apply:()=>{S.mag=(S.mag||10)+MAG_UP;}});
   shuffle(stat);while(opts.length<3&&stat.length)opts.push(stat.pop());
   return opts;
 }
@@ -783,8 +791,9 @@ function shopOptions(){
     {label:'❤️ 生命の護符',desc:'最大HP+25、HP+25',apply:()=>{S.maxHp+=25;S.hp+=25;}},
     {label:'💪 修行',desc:`基礎攻撃力+${S.baseUp||5}（現在${S.baseDmg}）`,apply:()=>{S.baseDmg+=S.baseUp||5;}}];
   if(S.cls==='zombie')p.splice(1,1);
-  if(S.healPer<8&&S.cls!=='vampire')p.push({label:'🧪 薬の調合',desc:`🧪1個の回復量+2（現在${S.healPer}）`,apply:()=>{S.healPer+=2;}});
-  if(S.goldPer<4)p.push({label:'🧤 盗賊の手袋',desc:`💰1枚の価値+1（現在${S.goldPer}）`,apply:()=>S.goldPer++});
+  if(S.healPer<(S.cls==='cleric'?14:8)&&S.cls!=='vampire')p.push({label:'🧪 薬の調合',desc:`🧪1個の回復量+2（現在${S.healPer}）`,apply:()=>{S.healPer+=2;}});
+  if(S.cls==='heavy'&&S.armorPer<8)p.push({label:'📘 盾の心得',desc:`🛡️1枚あたりの防御+1（現在${S.armorPer}）`,apply:()=>S.armorPer++});
+  if(S.goldPer<(S.cls==='thief'?6:4))p.push({label:'🧤 盗賊の手袋',desc:`💰1枚の価値+1（現在${S.goldPer}）`,apply:()=>S.goldPer++});
   return pick(p,3);
 }
 function shieldOptions(){
@@ -792,7 +801,7 @@ function shieldOptions(){
     {label:'🛡️ 盾の補強',desc:'最大防御+3、防御全回復',apply:()=>{S.maxArmor+=3;S.armor=S.maxArmor;}},
     {label:'🩹 応急手当',desc:'HP+40',apply:()=>{S.hp=Math.min(S.maxHp,S.hp+40);}},
     {label:'🪨 鉄の皮膚',desc:'最大HP+12、HP+12',apply:()=>{S.maxHp+=12;S.hp+=12;}}];
-  if(S.armorPer<3)p.push({label:'📘 盾の心得',desc:`🛡️1枚あたりの防御+1（現在${S.armorPer}）`,apply:()=>S.armorPer++});
+  if(S.armorPer<(S.cls==='heavy'?8:3))p.push({label:'📘 盾の心得',desc:`🛡️1枚あたりの防御+1（現在${S.armorPer}）`,apply:()=>S.armorPer++});
   return pick(p,3);
 }
 let pendTimer=null,dying=false;
@@ -812,8 +821,11 @@ function showNextPending(){
   const opts=kind==='level'?levelOptions():kind==='shop'?shopOptions():kind==='relic'?relicOptions():shieldOptions();
   if(!opts.length){S.pending.shift();showNextPending();return;}
   openModal(`<h2>${head[0]}</h2><p style="text-align:center">${head[1]}</p>`+opts.map((o,i)=>`<button class="opt" data-i="${i}">${o.label}<small>${o.desc}</small></button>`).join(''));
-  $('mbox').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{const o=opts[+b.dataset.i];if(o.replaceId){chooseReplace(o.replaceId,kind,opts);return;}if(kind==='shop'&&S.run)S.run.shops=(S.run.shops||0)+1;o.apply();finishPending();});
+  $('mbox').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{const o=opts[+b.dataset.i];if(o.replaceId){chooseReplace(o.replaceId,kind,opts);return;}if(kind==='shop'&&S.run)S.run.shops=(S.run.shops||0)+1;o.apply();if(kind==='shop'&&S.cls==='thief'&&!S._sh2&&opts.length>1){S._sh2=1;showShop2(opts.filter(x=>x!==o));return;}S._sh2=0;finishPending();});
 }
+/* 盗賊はショップでもう1つ選べる */
+function showShop2(rest){updateAll();openModal(`<h2>🗝️ もう1つ</h2><p style="text-align:center">盗賊の目利き。もう1つ選べる。</p>`+rest.map((o,i)=>`<button class="opt" data-i="${i}">${o.label}<small>${o.desc}</small></button>`).join(''));
+  $('mbox').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{rest[+b.dataset.i].apply();S._sh2=0;finishPending();});}
 function finishPending(){S.pending.shift();closeModal();if(!TUT){achState();achSave();}saveGame();updateAll();showNextPending();if(TUT&&TSTEPS[TUT.i].wait==='level'&&!S.pending.length)tutDone();}
 function chooseReplace(k,kind,opts){
   const d=SKILLS[k];
@@ -1674,6 +1686,7 @@ const ACHS=[
   {id:'cl_thief',ic:'🗝️',n:'盗賊の誉れ',d:'盗賊で世界の元凶を倒す'},
   {id:'cl_mage',ic:'🔮',n:'魔術師の誉れ',d:'魔術師で世界の元凶を倒す'},
   {id:'cl_cleric',ic:'📿',n:'僧侶の誉れ',d:'僧侶で世界の元凶を倒す'},
+  {id:'cl_heavy',ic:'🏰',n:'重騎士の誉れ',d:'重騎士で世界の元凶を倒す'},
   {id:'f250',ic:'🌠',n:'深淵の向こう',d:'B250Fに到達する'},
   {id:'f300',ic:'🪐',n:'終わりなき底',d:'B300Fに到達する'},
   {id:'s_nodmg',ic:'🫥',n:'影のように',d:'B10Fまで一度もHPを減らさずに到達する',secret:1},
@@ -1693,7 +1706,7 @@ const ACHS=[
   {id:'s_almost',ic:'💀',n:'あと一歩',d:'B100Fで力尽きる',secret:1},
   {id:'s_c15x50',ic:'🎆',n:'連鎖の申し子',d:'15チェーン以上を累計50回達成する',secret:1},
   {id:'s_beast100',ic:'📕',n:'魔物学者',d:'魔物図鑑をすべて埋める',secret:1},
-  {id:'s_allcls10',ic:'🎭',n:'四つの道',d:'4つの職業すべてで10回ずつ冒険に出る',secret:1},
+  {id:'s_allcls10',ic:'🎭',n:'五つの道',d:'5つの基本職業すべてで10回ずつ冒険に出る',secret:1},
   {id:'s_comeback',ic:'🔥',n:'雪辱',d:'前回の冒険より50階以上深く潜る',secret:1},
   {id:'s_steady',ic:'🪨',n:'安定の探索者',d:'5回連続でB50F以上に到達する',secret:1}
 ];
@@ -1806,8 +1819,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshA
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.3.12';
+const VERSION='0.4.0';
 const CHANGELOG=[
+  {v:'0.4.0',d:'2026-11-19',items:['新しい職業「🏰 重騎士」が加わりました（冒険を4回終えると仲間に）','盗賊と僧侶にそれぞれの戦い方を持たせました','騎士は引退しました']},
   {v:'0.3.12',d:'2026-11-19',items:['魔術師を「スキルで戦う職業」にしました。攻撃スキルの威力は📖魔力で決まり、レベルアップで伸ばせます']},
   {v:'0.3.11',d:'2026-11-19',items:['ずっとベータ版のつもりなので、バージョン番号を 0.〜 に振り直しました']},
   {v:'0.3.10',d:'2026-11-19',items:['職業の説明の「最大HP」を「初期HP」に直しました（レベルアップで伸びます）']},
@@ -1930,7 +1944,7 @@ function noteKills(list){if(TUT||!list.length)return;for(const t of list){const 
 function unlockClass(k){if(UNL.got['h_'+k])return false;UNL.got['h_'+k]=Date.now();unlSave();const c=CLASSES[k];
   achToast({ic:c.ic,n:`隠し職業「${c.n}」`,d:c.hidden===2?`隠し職業 ${h2Got()} / ${H2().length}（あと${H2().length-h2Got()}種類）`:'次の冒険から選べるようになった',secret:0,custom:'隠し職業が解放された'});return true;}
 function checkClassKills(){if(!S||TUT||!S.kk)return;for(const k in CLASSES){const c=CLASSES[k];if(c.kill&&h2Ready()&&(S.kk[c.kill[0]]||0)>=c.kill[1]&&(S.floor||1)>=(c.floor||0))unlockClass(k);}}
-const H2=()=>Object.keys(CLASSES).filter(k=>CLASSES[k].hidden===2),h2Got=()=>H2().filter(k=>UNL.got['h_'+k]).length;
+const H2=()=>Object.keys(CLASSES).filter(k=>CLASSES[k].hidden===2&&!CLASSES[k].retired),h2Got=()=>H2().filter(k=>UNL.got['h_'+k]).length;
 /* 隠し職業：基本の職業がすべてそろい、3回目以降の冒険なら、元凶を倒すたびに1つもらえる */
 const h2Ready=()=>MAIN_CLS.every(classOk)&&playsN()>=3;
 function rewardHtml(k){const n=h2Got(),t=H2().length,bar=`<div class="rwbar"><div style="width:${n/t*100}%"></div></div>`;
@@ -1960,9 +1974,10 @@ function showRecords(back){
 /* classes */
 const CLASSES={
   warrior:{ic:'💪',n:'戦士',d:'剣の扱いに長けた、頑丈な探索者。',fx:'初期HP60・防御5で、最初から防御が満タン。癖がなく扱いやすい',stage:'s0'},
-  thief:{ic:'🗝️',n:'盗賊',d:'金目のものに目がない、身軽な流れ者。',fx:'💰の価値3（通常2）・ショップの必要額2割引・初期HP40',stage:'s1'},
-  mage:{ic:'🔮',n:'魔術師',d:'古い術を受け継ぐ、線の細い学者。',fx:'スキルで戦う。攻撃スキルの威力は📖魔力で決まり、レベルアップで伸ばせる（剣・腕力は伸びにくい）・集中の効果が大きい（-5）・再使用ターン25%短縮・最初から🔥火球・初期HP40',stage:'s3'},
-  cleric:{ic:'📿',n:'僧侶',d:'祈りで傷を癒やしてきた、穏やかな巡礼者。',fx:'🧪の回復量3（通常2）・回復の余りは経験値に・基礎攻撃力が伸びやすく（+7）、剣は伸びにくい（+1）',stage:'s2'},
+  thief:{ic:'🗝️',n:'盗賊',d:'金目のものに目がない、身軽な流れ者。',fx:'お金で強くなる。ショップで強化を2つ選べる（そのぶん必要額は高め）・💰の価値を最大6まで伸ばせる・初期HP40',stage:'s1'},
+  mage:{ic:'🔮',n:'魔術師',d:'古い術を受け継ぐ、線の細い学者。',fx:'スキルで戦う。攻撃スキルの威力は📖魔力で決まり、レベルアップで伸ばせる（剣・腕力は伸びにくい）・集中の効果が大きい（-5）・再使用ターン25%短縮・最初から🔥火球・初期HP46',stage:'s3'},
+  cleric:{ic:'📿',n:'僧侶',d:'祈りで傷を癒やしてきた、穏やかな巡礼者。',fx:'🧪で戦う。🧪をつなぐと回復に加えて、盤面のアンデッド（💀🧟👻など）に聖なるダメージ・🧪の回復量3（通常2）・回復の余りは経験値に',stage:'s2'},
+  heavy:{ic:'🏰',n:'重騎士',d:'城壁のような鎧をまとった、動かぬ守り手。',fx:'守りで戦う。🛡️をつなぐと、増えた防御の半分を全ての敵にダメージ（盾で殴る）・🛡️1枚の防御2・最初から防御8が満タン・剣と腕力は伸びにくい・初期HP50',stage:'s0'},
   vampire:{ic:'🧛',n:'ヴァンパイア',hidden:1,d:'血の渇きに導かれ、地の底へ還る夜の貴族。',fx:'🧪では回復できない（💰に変わる）・敵を倒すたびに血を吸ってHP回復（レベルで増加）・初期HP46',
     kill:['vampire',1],floor:50,cond:()=>false},
   zombie:{ic:'🧟',n:'ゾンビ',hidden:1,d:'何度倒れても、なぜか起き上がってくる者。',fx:'初期HP74だが防具は使えない（🛡️は傷をふさいでHP回復）・🧪の回復量1・冒険中に一度だけ蘇る',
@@ -1970,13 +1985,13 @@ const CLASSES={
   hunter:{ic:'🏹',n:'狩人',hidden:2,d:'獲物の最後の一匹を、決して逃さない射手。',fx:'チェーンの最後につないだ敵に2倍ダメージ・最初から🎯狙撃を習得・初期HP45',cond:()=>false},
   dragoon:{ic:'🐉',n:'竜騎士',hidden:2,d:'竜の背で戦った、一撃に全てを懸ける騎士。',fx:'5つ以上のチェーンは倍率がさらに伸びる・4つ以下の攻撃は威力半分・初期HP55',cond:()=>false},
   gambler:{ic:'🃏',n:'ギャンブラー',hidden:2,d:'迷宮の宝も、命も、すべて賭けの種。',fx:'攻撃のダメージが毎回0.5〜2倍に揺れる・💰の価値3・初期HP50',cond:()=>false},
-  knight:{ic:'🛡️',n:'騎士',hidden:2,d:'重い鎧に身を包んだ、誇り高き守り手。',fx:'防御の上限8から始まる・防御が満タンのとき攻撃1.5倍・🧪の回復量1・初期HP50',cond:()=>false},
+  knight:{ic:'🛡️',n:'騎士',hidden:2,retired:1,d:'重い鎧に身を包んだ、誇り高き守り手。',fx:'防御の上限8から始まる・防御が満タンのとき攻撃1.5倍・🧪の回復量1・初期HP50',cond:()=>false},
   alchemist:{ic:'⚗️',n:'錬金術師',hidden:2,d:'あらゆるものを混ぜ合わせる、変わり者の学者。',fx:'🛡️🧪💰を混ぜてつなげる（それぞれの効果が出るが、混ぜると効果半減）・剣の攻撃力が低い（1・強化+1）・初期HP42',cond:()=>false}
 };
 const MAIN_CLS=Object.keys(CLASSES).filter(k=>!CLASSES[k].hidden);
-const classOk=k=>{const c=CLASSES[k];if(!c)return false;if(c.hidden)return !!UNL.got['h_'+k];return k==='warrior'||!!UNL.got['c_'+k];};
+const classOk=k=>{const c=CLASSES[k];if(!c||c.retired)return false;if(c.hidden)return !!UNL.got['h_'+k];return k==='warrior'||!!UNL.got['c_'+k];};
 /* 基本の職業：最初は戦士だけ。冒険を1回終えるたびに、盗賊→僧侶→魔術師の順で1人ずつ仲間になる */
-const BASE_UNL=[['thief'],['cleric'],['mage']];
+const BASE_UNL=[['thief'],['cleric'],['mage'],['heavy']];
 function unlockBase(){if(TUT||!S)return null;const g=(ACH.st&&ACH.st.games)||0,got=[];
   for(const [k] of BASE_UNL){if(BASE_UNL.filter(([x])=>classOk(x)).length>=g)break;if(!classOk(k)){UNL.got['c_'+k]=Date.now();got.push(k);}}
   if(!got.length)return null;unlSave();achToast({ic:got.map(k=>CLASSES[k].ic).join(''),n:got.map(k=>CLASSES[k].n).join('・'),d:'次の冒険から選べる',secret:0,custom:'仲間が増えた'});return got;}
@@ -1986,9 +2001,10 @@ function vampDrain(k,msgs){if(S.cls!=='vampire'||k<=0)return '';const h=Math.min
 function applyClass(s,k){
   s.cls=k;
   if(k==='warrior'){s.maxHp=60;s.hp=60;s.maxArmor=5;s.armor=5;}
-  if(k==='thief'){s.goldPer=3;s.goldNeed=Math.round(s.goldNeed*.8);s.maxHp=40;s.hp=40;}
-  if(k==='mage'){s.mag=8;s.baseUp=3;s.wpnUp=1;s.cdMul=.75;s.maxHp=40;s.hp=40;s.skills=[{id:'fire',cd:Math.max(4,Math.round(SKILLS.fire.cd*.75)),cur:0}];}
-  if(k==='cleric'){s.healPer=3;s.weaponDmg=1;s.baseDmg=2;s.baseUp=7;s.wpnUp=1;s.maxHp=53;s.hp=53;}
+  if(k==='thief'){s.goldNeed=Math.round(s.goldNeed*2.2);s.maxHp=40;s.hp=40;}
+  if(k==='mage'){s.mag=10;s.baseUp=3;s.wpnUp=1;s.cdMul=.75;s.maxHp=46;s.hp=46;s.skills=[{id:'fire',cd:Math.max(4,Math.round(SKILLS.fire.cd*.75)),cur:0}];}
+  if(k==='cleric'){s.healPer=3;s.maxHp=40;s.hp=40;}
+  if(k==='heavy'){s.maxArmor=8;s.armor=8;s.armorPer=2;s.baseUp=3;s.wpnUp=1;s.maxHp=50;s.hp=50;}
   if(k==='vampire'){s.healPer=0;s.maxHp=46;s.hp=46;}
   if(k==='zombie'){s.healPer=1;s.maxHp=74;s.hp=74;s.maxArmor=0;s.armor=0;s.revive=1;}
   if(k==='hunter'){s.maxHp=45;s.hp=45;s.skills=[{id:'snipe',cd:cdOf('snipe'),cur:0}];}
@@ -1998,7 +2014,7 @@ function applyClass(s,k){
   if(k==='alchemist'){s.weaponDmg=1;s.wpnUp=1;s.maxHp=42;s.hp=42;}
 }
 function pickClass(then,cancel,peek){
-  const ks=Object.keys(CLASSES),okK=ks.filter(classOk);
+  const ks=Object.keys(CLASSES).filter(k=>!CLASSES[k].retired),okK=ks.filter(classOk);
   if(okK.length<=1){then('warrior');return;}
   const rndSel=UNL.cls==='random',cur=partyCls(),me=p=>pickClass(then,cancel,p);
   const how=c=>c.hidden===2?'元凶を倒すと、現れるらしい':c.kill?`3回目の冒険から。B${c.floor}F以上で ${EK[c.kill[0]].name}を${c.kill[1]}体倒すと…`:'';
@@ -2090,7 +2106,7 @@ function runsLoad(){try{const r=JSON.parse(localStorage.getItem(LS_RUNS)||'[]');
 function runsSave(){try{localStorage.setItem(LS_RUNS,JSON.stringify(RUNS.slice(-300)));}catch(e){}}
 function recordRun(){if(TUT||!S)return;RUNS.push({d:Date.now(),n:getName(),cu:S.curse||0,c:S.cls||'warrior',f:floorOf(),t:S.turn,k:S.kills,l:S.level,ch:S.maxChain||0,cl:S.cleared||0,e:GIVEUP?1:0});RUNS=RUNS.slice(-300);runsSave();}
 const VC={c1:'#3987e5',c2:'#d95926',c3:'#199e70',c4:'#c98500',grid:'#3a3238',ink:'#ece4d8',ink2:'#a99fae',surf:'#211a25'};
-const CLS_COL={warrior:VC.c1,thief:VC.c2,mage:VC.c3,cleric:VC.c4,vampire:'#d55181',zombie:'#0ca30c',hunter:'#9085e9',dragoon:'#9085e9',gambler:'#9085e9',knight:'#9085e9',alchemist:'#9085e9'};
+const CLS_COL={warrior:VC.c1,thief:VC.c2,mage:VC.c3,cleric:VC.c4,vampire:'#d55181',zombie:'#0ca30c',hunter:'#9085e9',dragoon:'#9085e9',gambler:'#9085e9',knight:'#9085e9',alchemist:'#9085e9',heavy:'#c9a24a'};
 const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;');
 const fmtD=ts=>{const d=new Date(ts);return `${d.getMonth()+1}/${d.getDate()}`;};
 const placeOf=f=>f%20===0?bossFloorName(f):zoneAt(f).name;
@@ -2129,7 +2145,7 @@ function showStats(back,bl){
   const last10=runs.slice(-10),prev10=runs.slice(-20,-10),avg=a=>a.length?a.reduce((x,r)=>x+r.f,0)/a.length:0;
   const a1=avg(last10),a0=avg(prev10),diff=prev10.length?Math.round(a1-a0):null;
   const tile=(lab,val,sub)=>`<div class="vz-tile"><small>${lab}</small><b>${val}</b>${sub?`<small>${sub}</small>`:''}</div>`;
-  const ks=Object.keys(CLASSES).filter(k=>!CLASSES[k].hidden||classOk(k)||RUNS.some(r=>r.c===k));
+  const ks=Object.keys(CLASSES).filter(k=>!CLASSES[k].retired&&(!CLASSES[k].hidden||classOk(k))||RUNS.some(r=>r.c===k));
   const clsRows=ks.map(k=>{const c=CLASSES[k],rr=runs.filter(r=>r.c===k),ok=classOk(k);
     return {label:`${c.ic} ${c.n}`,v:rr.length,col:CLS_COL[k],txt:!ok?'🔒':rr.length?`${rr.length}回・B${Math.max(...rr.map(r=>r.f))}F${rr.some(r=>r.cl)?'・👑'+rr.filter(r=>r.cl).length:''}`:'—'};});
   const monRows=BEAST_ORDER.filter(k=>UNL.kills[k]).map(k=>({label:`${EK[k].icon} ${EK[k].name}`,v:UNL.kills[k]})).sort((a,b)=>b.v-a.v);
@@ -2208,7 +2224,7 @@ const BAR_TIPS={
 Object.keys(BAR_TIPS).forEach(id=>attachLP($(id),BAR_TIPS[id]));
 attachLP($('itFloor'),()=>S?floorTip():'');
 /* 能力の行：タップでも長押しでも、いまの職業とその特徴・能力を出す */
-const statsTipHtml=()=>{const c=CLASSES[S.cls]||CLASSES.warrior;return tipHead(c.ic,c.n)+`<div style="color:#f0d9a8;margin-bottom:6px">${c.fx}</div>⚔️ 基礎攻撃力${S.baseDmg}＋剣1本あたり${S.weaponDmg}${S.cls==='mage'?`<br>📖 魔力 ${S.mag||8}`:''}<br>🧪 1個の回復量 ${S.healPer}<br>🛡️ 1枚の防御 ${S.armorPer}<br>💰 1枚の価値 ${S.goldPer}`;};
+const statsTipHtml=()=>{const c=CLASSES[S.cls]||CLASSES.warrior;return tipHead(c.ic,c.n)+`<div style="color:#f0d9a8;margin-bottom:6px">${c.fx}</div>⚔️ 基礎攻撃力${S.baseDmg}＋剣1本あたり${S.weaponDmg}${S.cls==='mage'?`<br>📖 魔力 ${S.mag||10}`:''}<br>🧪 1個の回復量 ${S.healPer}<br>🛡️ 1枚の防御 ${S.armorPer}<br>💰 1枚の価値 ${S.goldPer}`;};
 attachLP($('stats'),statsTipHtml,()=>{if(!inGame||modalOpen)return;tapTip($('stats'),statsTipHtml());});
 document.addEventListener('contextmenu',e=>{if(!(e.target&&e.target.closest&&e.target.closest('textarea')))e.preventDefault();});
 
