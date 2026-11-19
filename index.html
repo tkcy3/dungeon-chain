@@ -1322,6 +1322,7 @@ const SFX={
   skill(){const t=T0();busyTo(t+.4);tone(220,t,.4,{type:'sine',gain:.16,slideTo:1300});noise(t,.35,.08,2000);},
   level(){const t=T0();busyTo(t+.5);[72,76,79,84].forEach((m,i)=>tone(mf(m),t+i*.09,.22,{type:'square',gain:.06,filter:4000}));},
   shop(){const t=T0();[84,88,91].forEach((m,i)=>tone(mf(m),t+i*.07,.2,{type:'triangle',gain:.1}));},
+  victory(){const t=T0();busyTo(t+1.5);[60,64,67,72,76,79].forEach((m,i)=>tone(mf(m),t+i*.08,.24,{type:'square',gain:.05,filter:5000}));[72,76,79,84].forEach(m=>tone(mf(m),t+.56,1,{type:'triangle',gain:.07}));},
   boss(){const t=T0()+.3;tone(70,t,1.2,{type:'sawtooth',gain:.16,slideTo:40,filter:400});noise(t,1,.06,200);},
   praise(tier){const t=T0(),base=[72,74,76,79,81][tier]||72,seq=[0,4,7,12,16,19,24].slice(0,3+tier);busyTo(t+.5+tier*.06);
     seq.forEach((iv,i)=>tone(mf(base+iv),t+i*.06,.22,{type:'square',gain:.055,filter:5000}));
@@ -1591,7 +1592,14 @@ function checkBoss(msgs){
   if(!S.bossUp||bossAlive()||S.bossFlag)return;
   S.bossUp=false;const F=floorOf();achBoss(S.bossKind,S.turn-(S.bossTurn||S.turn));
   if(F%100===0){S.pending.push('clear');msgs.push('👑 世界の元凶を倒した！');}
-  else{msgs.push('🗝️ ボスを倒した！下への階段が開いた');sfx('level');}
+  else{
+    /* フロアボス撃破：大きく褒めて、少しごほうび（HP30%回復・防御満タン） */
+    const D=EK[S.bossKind]||{icon:'👑',name:'ボス'},P=['見事！','お見事！','やったね！','さすが！','強い！'][rnd(5)];
+    const h=Math.min(Math.ceil(S.maxHp*.3),S.maxHp-S.hp);S.hp+=h;const a=S.maxArmor-S.armor;S.armor=S.maxArmor;
+    showBanner('🏆 討伐！',`${D.icon} ${D.name}を倒した`,`${P}　ごほうび：${h?`HP+${h}`:''}${h&&a?'・':''}${a?'防御満タン':''}${!h&&!a?'下への階段が開いた':''}`,'#ffd54a');
+    msgs.push(`🏆 ${D.name}を倒した！${P}`+(h?` HP+${h}`:'')+(a?' 防御満タン':''));
+    const all=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++)if((r+c)%2===0)all.push([r,c]);burst(all,'#ffd54a',.8);
+    flash('bHp');sfx('victory');vib([60,40,60,40,160]);}
 }
 function showClear(){
   unlock('clear');let rk=null;if(!TUT){unlSave();checkUnlocks();rk=clearReward();achStat('clears');unlock('cl_'+(S.cls||'warrior'));achLong();achSave();}
@@ -1819,8 +1827,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshA
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.1';
+const VERSION='0.4.2';
 const CHANGELOG=[
+  {v:'0.4.2',d:'2026-11-19',items:['フロアボスを倒すと、ファンファーレとともに褒められ、HPと防御が少し回復するようにしました']},
   {v:'0.4.1',d:'2026-11-19',items:['隠し職業のバランスを見直しました（錬金術師とヴァンパイアを少し弱く）']},
   {v:'0.4.0',d:'2026-11-19',items:['新しい職業「🏰 重騎士」が加わりました（冒険を4回終えると仲間に）','盗賊と僧侶にそれぞれの戦い方を持たせました','騎士は引退しました']},
   {v:'0.3.12',d:'2026-11-19',items:['魔術師を「スキルで戦う職業」にしました。攻撃スキルの威力は📖魔力で決まり、レベルアップで伸ばせます']},
