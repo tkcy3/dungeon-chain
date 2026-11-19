@@ -318,7 +318,7 @@ const isEnemy=t=>t&&t.t==='skull';
 /* ---------- state ---------- */
 function newState(cls){
   GIVEUP=false;
-  const s={v:1,ts:Date.now(),turn:0,kills:0,level:1,xp:0,xpNeed:16,
+  const s={v:1,ts:Date.now(),rid:Math.random().toString(36).slice(2,10),turn:0,kills:0,level:1,xp:0,xpNeed:16,
     hp:50,maxHp:50,armor:0,maxArmor:4,armorPer:1,
     baseDmg:1,weaponDmg:2,healPer:2,goldPer:2,
     gold:0,goldNeed:70,shieldPts:0,shieldNeed:30,
@@ -547,14 +547,19 @@ const playsN=()=>Math.max(1,(ACH&&ACH.st&&ACH.st.games)||1);
 const playOk=k=>playsN()>=(PLAY_GATE[k]||0);
 /* まだ出会えない魔物の枠は、おなじみの魔物で埋める */
 const FAMILIAR={skel:4,bat:2,zombie:3,bomb:2,spider:3,ghost:3,golem:3,shaman:2};
-function rosterAt(F){let r=BANDS[0][1];for(const [f,o] of BANDS)if(F>=f)r=o;if(F>=101){r={...r};deepVars(F).forEach(k=>r[k]=DEEP_VARS[k]);}const m={},cl=clearsN();let cut=0;
-  for(const k in r){const v=r[k],w=Array.isArray(v)?v[0]:v,need=Array.isArray(v)?v[1]:0;if(cl>=need&&playOk(k))m[k]=w;else if(cl>=need)cut+=w;}
-  if(cut>0)m.skel=(m.skel||0)+cut;return m;}
+/* 冒険ごとに顔ぶれ（最大7種）をくじで決め、B5Fから14階ごとに1種ずつ登場。強さの順は保つ */
+const CAST_POOL=['bat','spider','bomb','ghost','zombie','golem','shaman','slime','snake','wolf','crab','eye'],CAST_N=7,CAST_GAP=14;
+function castOf(){const s=MK_S||S;if(!s)return [];if(!s.cast){const a=shuffle(CAST_POOL.filter(playOk)).slice(0,CAST_N);s.cast=CAST_POOL.filter(k=>a.includes(k));}return s.cast;}
+function rosterAt(F){const c=castOf(),n=c.filter((k,i)=>F>=5+i*CAST_GAP).length,m={skel:Math.max(3,10-n)},cl=clearsN();
+  c.slice(0,n).forEach((k,i)=>m[k]=i===n-1?3:2);
+  if(F>=85&&cl>=1)m.lich=F>=90?3:2;if(F>=90&&cl>=2)m.demon=3;
+  if(F>=101)deepVars(F).forEach(k=>m[k]=DEEP_VARS[k]);return m;}
 function rareAt(F){const cl=clearsN();return Object.keys(RARE_GATE).filter(k=>F>=RARE_GATE[k][0]&&cl>=RARE_GATE[k][1]);}
 /* where a monster can first be met, for the bestiary hint */
 function gateText(k){if(BOSS_KINDS.includes(k))return 'ボス';if(EK[k]&&EK[k].mini)return '中ボス';
   if(RARE_GATE[k]){const [f,c]=RARE_GATE[k];return `★レア・B${f}F以降${c?`・元凶を${c}回倒すと`:''}`;}
-  for(const [f,o] of BANDS)if(o[k]!==undefined){const c=Array.isArray(o[k])?o[k][1]:0;return `B${f}F以降${c?`・元凶を${c}回倒すと`:''}${PLAY_GATE[k]?`・冒険${PLAY_GATE[k]}回目から`:''}`;}
+  if(CAST_POOL.includes(k))return `B5F〜B89F${PLAY_GATE[k]?`・冒険${PLAY_GATE[k]}回目から`:''}`;
+  for(const [f,o] of BANDS)if(o[k]!==undefined){const c=Array.isArray(o[k])?o[k][1]:0;return `B${f}F以降${c?`・元凶を${c}回倒すと`:''}`;}
   return '何かから生まれるらしい';}
 function makeMini(s){const F=s.floor||1,k=MINI_ORDER[Math.floor(F/20)%MINI_ORDER.length],e=makeKind(k,s.turn);
   e.mini=true;e.hp=e.maxHp=Math.round(e.hp*3.6+8);e.atk+=2;e.armor+=2;s.bossAnnounce=EK[k].icon+' 中ボス「'+EK[k].name+'」';return e;}
@@ -1860,8 +1865,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshA
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.10';
+const VERSION='0.4.11';
 const CHANGELOG=[
+  {v:'0.4.11',d:'2026-11-20',items:['新しい魔物が現れるペースをゆるやかにしました','魔物の顔ぶれが冒険ごとに変わります']},
   {v:'0.4.10',d:'2026-11-19',items:['📲 ホーム画面に追加できるようにしました（設定から）。全画面ですぐ遊べます']},
   {v:'0.4.9',d:'2026-11-19',items:['🎲で決まる冒険者名の種類を大幅に増やしました（256通り→約6,000通り）']},
   {v:'0.4.8',d:'2026-11-19',items:['冒険の途中でやめたときも、途中経過を記録として送るようにしました','一度「あきらめる」を選ぶと、その後の冒険も「あきらめた」扱いで記録される不具合を直しました']},
