@@ -547,8 +547,8 @@ const playsN=()=>Math.max(1,(ACH&&ACH.st&&ACH.st.games)||1);
 const playOk=k=>playsN()>=(PLAY_GATE[k]||0);
 /* まだ出会えない魔物の枠は、おなじみの魔物で埋める */
 const FAMILIAR={skel:4,bat:2,zombie:3,bomb:2,spider:3,ghost:3,golem:3,shaman:2};
-/* 冒険ごとに顔ぶれ（最大7種）をくじで決め、B5Fから14階ごとに1種ずつ登場。強さの順は保つ */
-const CAST_POOL=['bat','spider','bomb','ghost','zombie','golem','shaman','slime','snake','wolf','crab','eye'],CAST_N=7,CAST_GAP=14;
+/* 冒険ごとに顔ぶれ（最大7種）をくじで決め、B5Fから12階ごとに1種ずつ登場（B77Fで出そろう）。強さの順は保つ */
+const CAST_POOL=['bat','spider','bomb','ghost','zombie','golem','shaman','slime','snake','wolf','crab','eye'],CAST_N=7,CAST_GAP=12;
 function castOf(){const s=MK_S||S;if(!s)return [];if(!s.cast){const a=shuffle(CAST_POOL.filter(playOk)).slice(0,CAST_N);s.cast=CAST_POOL.filter(k=>a.includes(k));}return s.cast;}
 function rosterAt(F){const c=castOf(),n=c.filter((k,i)=>F>=5+i*CAST_GAP).length,m={skel:Math.max(3,10-n)},cl=clearsN();
   c.slice(0,n).forEach((k,i)=>m[k]=i===n-1?3:2);
@@ -558,7 +558,7 @@ function rareAt(F){const cl=clearsN();return Object.keys(RARE_GATE).filter(k=>F>
 /* where a monster can first be met, for the bestiary hint */
 function gateText(k){if(BOSS_KINDS.includes(k))return 'ボス';if(EK[k]&&EK[k].mini)return '中ボス';
   if(RARE_GATE[k]){const [f,c]=RARE_GATE[k];return `★レア・B${f}F以降${c?`・元凶を${c}回倒すと`:''}`;}
-  if(CAST_POOL.includes(k))return `B5F〜B89F${PLAY_GATE[k]?`・冒険${PLAY_GATE[k]}回目から`:''}`;
+  if(CAST_POOL.includes(k))return `B5F〜B77F${PLAY_GATE[k]?`・冒険${PLAY_GATE[k]}回目から`:''}`;
   for(const [f,o] of BANDS)if(o[k]!==undefined){const c=Array.isArray(o[k])?o[k][1]:0;return `B${f}F以降${c?`・元凶を${c}回倒すと`:''}`;}
   return '何かから生まれるらしい';}
 function makeMini(s){const F=s.floor||1,k=MINI_ORDER[Math.floor(F/20)%MINI_ORDER.length],e=makeKind(k,s.turn);
