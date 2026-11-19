@@ -1034,14 +1034,12 @@ function showNewGameMenu(over){
   if(typeof over!=='boolean'){chooseNewSlot(ov=>showNewGameMenu(!!ov),NG_BACK||undefined);return;}
   NG_BACK=null;
   const first=!tutDoneFlag()&&!best;
-  openModal(`${pgHead('⚔️ 新しい冒険','✕ やめる','ng4')}${nameField()}<p style="text-align:center;margin:0 0 12px">${over?`<span class="chip" style="border-color:#8a3a3a;color:#ffb0a0">💾 ${SLOT+1} に上書き</span>`:`<span class="chip">💾 ${SLOT+1}</span>`}</p>
-    <div class="tgrid" style="--c:3">
-      <button class="tile big ${first?'sel':''}" id="ng1"><span class="ti">📜</span><small>物語から</small></button>
-      <button class="tile big ${first?'':'sel'}" id="ng2"><span class="ti">⚔️</span><small>すぐ冒険</small></button>
-      <button class="tile big" id="ng3"><span class="ti">🎓</span><small>練習から</small></button></div>`);
+  openModal(`${pgHead('⚔️ 新しい冒険','✕ やめる','ng4')}${nameField()}<p style="text-align:center;margin:0 0 14px">${over?`<span class="chip" style="border-color:#8a3a3a;color:#ffb0a0">💾 ${SLOT+1} に上書き</span>`:`<span class="chip">💾 ${SLOT+1}</span>`}</p>
+    <button class="prow" id="ng3"><span class="ri">🎓</span><span class="rt">練習から</span><span class="rs">›</span></button>
+    <button class="gopri tofoot after" id="ng2">⚔️ 冒険へ</button>`);
   const back=()=>showNewGameMenu(over);
-  $('ng1').onclick=()=>{if(first){closeModal();playStory(()=>startTutorial(true));return;}pickClass(c=>{closeModal();playStory(()=>newAdventure(c));},back);};
-  $('ng2').onclick=()=>pickClass(c=>newAdventure(c),back);
+  /* はじめての人は 物語 → 練習 の順に。2回目からは職業を選んですぐ出発 */
+  $('ng2').onclick=()=>{if(first){closeModal();playStory(()=>startTutorial(true));return;}pickClass(c=>newAdventure(c),back);};
   $('ng3').onclick=()=>{closeModal();startTutorial(true);};
   $('ng4').onclick=closeModal;wireNameField();
 }
@@ -1803,8 +1801,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshA
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='1.2.7';
+const VERSION='1.2.8';
 const CHANGELOG=[
+  {v:'1.2.8',d:'2026-11-19',items:['「新しい冒険」をすっきりさせました。物語は最初の1回だけ流れ、設定からもう一度見られます']},
   {v:'1.2.7',d:'2026-11-19',items:['戦士のアイコンを 💪 に変えました']},
   {v:'1.2.6',d:'2026-11-19',items:['職業を「🎲 おまかせ」で選べるようになりました','魔物の出てくる階を、浅い階から深い階まで散らしました','途中の階の名前と、魔物の予告を出さないようにしました']},
   {v:'1.2.5',d:'2026-11-19',items:['色違いの魔物に、ちゃんと色がつくようにしました','B101Fより深い階では、色違いの魔物が20階ごとに1種類ずつ増えるようにしました','冒険を1回終えるたびに、職業が1つずつ増えるようにしました']},
@@ -1844,12 +1843,14 @@ function showSettings(back,msg){
   const tg=(id,ic,label,on)=>`<button class="tile big tg ${on?'':'off'}" id="${id}"><span class="ti">${ic}</span><small>${label}</small><em>${on?'ON':'OFF'}</em></button>`;
   openModal(`${pgHead('⚙️ 設定','戻る','stClose')}<div class="tgrid" style="--c:3">${tg('st1','🎵','BGM',AU.on.bgm)}${tg('st2','🔊','効果音',AU.on.sfx)}${tg('st3',VIB_IC==='振動'?'📳':VIB_IC,'振動',AU.on.vib)}</div>
     <button class="prow" id="stVer" style="margin-top:14px"><span class="ri">📋</span><span class="rt">更新内容${verUnseen()?'<span class="newb">NEW</span>':''}</span><span class="rs">v${VERSION}</span></button>
+    <button class="prow" id="stStory"><span class="ri">📜</span><span class="rt">物語をもう一度</span><span class="rs">›</span></button>
     <button class="prow" id="stTheme"><span class="ri">🎨</span><span class="rt">盤面の色</span><span class="rs">›</span></button>
     ${inGame?'':'<button class="prow" id="stData"><span class="ri">🗑️</span><span class="rt">データを消す</span><span class="rs">›</span></button>'}
     ${msg?`<p id="stMsg" style="text-align:center;color:#8fe08f;font-size:14.5px">${msg}</p>`:''}`);
   const flip=k=>{AU.on[k]=!AU.on[k];saveAudio();refreshAudioBtns();if(k==='bgm'&&AU.on.bgm&&inGame)bgmStart();if(k==='vib'&&AU.on.vib)vib(30);showSettings();};
   $('stVer').onclick=()=>showChangelog(()=>showSettings());
   $('st1').onclick=()=>flip('bgm');$('st2').onclick=()=>flip('sfx');$('st3').onclick=()=>flip('vib');
+  $('stStory').onclick=()=>{closeModal();playStory(()=>{if(inGame)return;bgmStop();showSettings();});};
   $('stTheme').onclick=()=>showTailor(()=>showSettings());if(!inGame)$('stData').onclick=showDataReset;
   $('stClose').onclick=()=>{const b=settingsBack;settingsBack=null;if(b)b();else closeModal();};
 }
