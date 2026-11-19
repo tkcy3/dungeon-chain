@@ -1833,8 +1833,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshA
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.5';
+const VERSION='0.4.6';
 const CHANGELOG=[
+  {v:'0.4.6',d:'2026-11-19',items:['冒険の記録（職業・到達階など）を作者に送れるようになりました。設定でオフにできます']},
   {v:'0.4.5',d:'2026-11-19',items:['重騎士の「盾で殴る」で敵を倒したときも、撃破の音と演出が出るようにしました','僧侶の🧪でアンデッドがひるんだとき、光の輪が出るようにしました']},
   {v:'0.4.4',d:'2026-11-19',items:['各職業の特徴をはっきりさせました（特徴をいかすほど強くなるように）','ギャンブラーの倍率が、攻撃だけでなく🛡️🧪💰にも効くようになりました','ゾンビは二度まで蘇るようになりました']},
   {v:'0.4.3',d:'2026-11-19',items:['僧侶：🧪をつなぐと、アンデッドがひるんで攻撃してこなくなりました','狩人：いちばん硬い敵を狙い撃つようになりました','ギャンブラー：次の攻撃の倍率が前もって見えるようになりました','魔術師と重騎士の特徴を強めました']},
@@ -1885,6 +1886,7 @@ function showSettings(back,msg){
   const tg=(id,ic,label,on)=>`<button class="tile big tg ${on?'':'off'}" id="${id}"><span class="ti">${ic}</span><small>${label}</small><em>${on?'ON':'OFF'}</em></button>`;
   openModal(`${pgHead('⚙️ 設定','戻る','stClose')}<div class="tgrid" style="--c:3">${tg('st1','🎵','BGM',AU.on.bgm)}${tg('st2','🔊','効果音',AU.on.sfx)}${tg('st3',VIB_IC==='振動'?'📳':VIB_IC,'振動',AU.on.vib)}</div>
     <button class="prow" id="stVer" style="margin-top:14px"><span class="ri">📋</span><span class="rt">更新内容${verUnseen()?'<span class="newb">NEW</span>':''}</span><span class="rs">v${VERSION}</span></button>
+    <button class="prow" id="stShare"><span class="ri">📤</span><span class="rt">記録を作者に送る<br><small style="color:#b9adc0;font-size:12.5px">職業や到達階（名前は送らない）</small></span><span class="rs" style="color:${shareOn()?'#8fe08f':'#f08a8a'}">${shareOn()?'ON':'OFF'}</span></button>
     <button class="prow" id="stStory"><span class="ri">📜</span><span class="rt">物語をもう一度</span><span class="rs">›</span></button>
     <button class="prow" id="stTheme"><span class="ri">🎨</span><span class="rt">盤面の色</span><span class="rs">›</span></button>
     ${inGame?'':'<button class="prow" id="stData"><span class="ri">🗑️</span><span class="rt">データを消す</span><span class="rs">›</span></button>'}
@@ -1892,6 +1894,7 @@ function showSettings(back,msg){
   const flip=k=>{AU.on[k]=!AU.on[k];saveAudio();refreshAudioBtns();if(k==='bgm'&&AU.on.bgm&&inGame)bgmStart();if(k==='vib'&&AU.on.vib)vib(30);showSettings();};
   $('stVer').onclick=()=>showChangelog(()=>showSettings());
   $('st1').onclick=()=>flip('bgm');$('st2').onclick=()=>flip('sfx');$('st3').onclick=()=>flip('vib');
+  $('stShare').onclick=()=>{try{localStorage.setItem(LS_SHARE,shareOn()?'0':'1');}catch(e){}showSettings();};
   $('stStory').onclick=()=>{closeModal();playStory(()=>{if(inGame)return;bgmStop();showSettings();});};
   $('stTheme').onclick=()=>showTailor(()=>showSettings());if(!inGame)$('stData').onclick=showDataReset;
   $('stClose').onclick=()=>{const b=settingsBack;settingsBack=null;if(b)b();else closeModal();};
@@ -2045,7 +2048,7 @@ function pickClass(then,cancel,peek){
     <button class="gopri tofoot after" id="pcGo">▶ 出発<small>${rndSel?'🎲 おまかせ':`${c.ic} ${c.n}`}</small></button>`);
   bindTiles('.tile[data-k]',b=>{const k=b.dataset.k;if(k==='random'||classOk(k)){UNL.cls=k;unlSave();me();}else me(k);});
   $('pcGo').onclick=()=>{closeModal();if(!rndSel)return then(cur);const k=okK[rnd(okK.length)],x=CLASSES[k];
-    achToast({ic:'🎲',n:`${x.ic} ${x.n}`,d:'今回の職業に決まった',secret:0,custom:'おまかせ'});then(k);};
+    achToast({ic:'🎲',n:`${x.ic} ${x.n}`,d:'今回の職業に決まった',secret:0,custom:'おまかせ'});then(k);if(S)S.rndPick=1;};
   $('pcCancel').onclick=cancel||closeModal;
 }
 /* event rooms */
@@ -2123,7 +2126,15 @@ function copyBtn(id,getText){const b=$(id);if(!b)return;const lab=b.innerHTML;b.
 const LS_RUNS='dchain_runs_v1';let RUNS=[];
 function runsLoad(){try{const r=JSON.parse(localStorage.getItem(LS_RUNS)||'[]');if(Array.isArray(r))RUNS=r;}catch(e){}}
 function runsSave(){try{localStorage.setItem(LS_RUNS,JSON.stringify(RUNS.slice(-300)));}catch(e){}}
-function recordRun(){if(TUT||!S)return;RUNS.push({d:Date.now(),n:getName(),cu:S.curse||0,c:S.cls||'warrior',f:floorOf(),t:S.turn,k:S.kills,l:S.level,ch:S.maxChain||0,cl:S.cleared||0,e:GIVEUP?1:0});RUNS=RUNS.slice(-300);runsSave();}
+/* 冒険の記録を、作者のGoogleフォーム（→スプレッドシート）へ送る。名前は送らない。設定でオフにできる */
+const SHARE_URL='https://docs.google.com/forms/d/e/1FAIpQLSfncydVDFEmGqlUP8mH0GAe7VuoDICT9k98s-NkCF9Cbj2CdQ/formResponse',SHARE_ENTRY='entry.1097035413',LS_SHARE='dchain_share_v1',LS_DEV='dchain_dev_v1';
+const shareOn=()=>{try{return localStorage.getItem(LS_SHARE)!=='0';}catch(e){return true;}};
+function devId(){try{let v=localStorage.getItem(LS_DEV);if(!v){v=Math.random().toString(36).slice(2,10);localStorage.setItem(LS_DEV,v);}return v;}catch(e){return 'x';}}
+function shareRun(){if(TUT||!S||!shareOn())return;try{
+  const d={v:VERSION,id:devId(),cls:S.cls||'warrior',rnd:S.rndPick?1:0,floor:floorOf(),turn:S.turn,lv:S.level,kills:S.kills,chain:S.maxChain||0,clear:S.cleared||0,boss:(S.bossUp&&bossAlive())?S.bossKind:'',quit:GIVEUP?1:0};
+  const body=new URLSearchParams();body.append(SHARE_ENTRY,JSON.stringify(d));
+  fetch(SHARE_URL,{method:'POST',mode:'no-cors',body,keepalive:true}).catch(()=>{});}catch(e){}}
+function recordRun(){if(TUT||!S)return;shareRun();RUNS.push({d:Date.now(),n:getName(),cu:S.curse||0,c:S.cls||'warrior',f:floorOf(),t:S.turn,k:S.kills,l:S.level,ch:S.maxChain||0,cl:S.cleared||0,e:GIVEUP?1:0});RUNS=RUNS.slice(-300);runsSave();}
 const VC={c1:'#3987e5',c2:'#d95926',c3:'#199e70',c4:'#c98500',grid:'#3a3238',ink:'#ece4d8',ink2:'#a99fae',surf:'#211a25'};
 const CLS_COL={warrior:VC.c1,thief:VC.c2,mage:VC.c3,cleric:VC.c4,vampire:'#d55181',zombie:'#0ca30c',hunter:'#9085e9',dragoon:'#9085e9',gambler:'#9085e9',knight:'#9085e9',alchemist:'#9085e9',heavy:'#c9a24a'};
 const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;');
