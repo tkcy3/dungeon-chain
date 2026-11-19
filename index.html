@@ -391,7 +391,7 @@ function flushDeath(msgs,depth=0){if(!S||!S._dq||!S._dq.length)return;const q=S.
   if(db&&depth<3){const rm=new Set(),dead=[];let xp=0;
     for(let r=0;r<N;r++)for(let c=0;c<N;c++){const e=S.board[r][c];if(!isEnemy(e))continue;applyDmg(e,db);e.hit=performance.now();if(e.hp<=0){rm.add(r*N+c);dead.push(e);xp+=xpOf(e);}}
     msgs.push(`🍄 胞子が弾けた！全ての敵に${db}ダメージ`+(dead.length?`、${dead.length}体撃破`:''));
-    if(dead.length){S.kills+=dead.length;if(xp)gainXp(xp);achKills(dead);relicKills(dead.length);removeAndFill(rm);flushDeath(msgs,depth+1);}}
+    if(dead.length){S.kills+=dead.length;if(xp)gainXp(xp);achKills(dead);relicKills(dead.length);{const pts=[...rm].map(i=>[(i/N)|0,i%N]),now=performance.now();burst(pts,'#c9ff8a',1.5);pts.forEach(p=>RINGS.push({p,t0:now,col:'#c9ff8a'}));sfx('kill',dead.length);}removeAndFill(rm);flushDeath(msgs,depth+1);}}
 }
 function relicKills(k){if(k<=0)return;if(hasR('ring')){const h=Math.min(k,S.maxHp-S.hp);S.hp+=h;}if(hasR('purse'))addGold(k);if(S.anom==='blood')addGold(2*k);if(S.anom==='feast')gainXp(k);}
 /* ---------- enemy kinds ---------- */
@@ -706,21 +706,22 @@ function commitChain(){
     cells.forEach(p=>remove.add(p[0]*N+p[1]));
     if(S.cls==='gambler'&&GAMB_ALL){const r=gRoll();mult*=r;S.nextRoll=ROLLS[rnd(ROLLS.length)];msgs.push(`🃏 ×${r}`);}
     /* 盤面の敵（条件に合うもの）にまとめてダメージ：僧侶の聖なる🧪・重騎士の盾で殴る */
-    const aoe=(d,f,label)=>{if(d<=0)return;let k=0,xp=0;const now=performance.now();for(let r=0;r<N;r++)for(let c=0;c<N;c++){const t=S.board[r][c];if(!isEnemy(t)||remove.has(r*N+c)||!f(t))continue;applyDmg(t,d);if(t.hp<=0){remove.add(r*N+c);k++;xp+=xpOf(t);}else t.hit=now;}
+    const aoe=(d,f,label,col)=>{if(d<=0)return;let k=0,xp=0;const now=performance.now(),hits=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){const t=S.board[r][c];if(!isEnemy(t)||remove.has(r*N+c)||!f(t))continue;hits.push([r,c]);applyDmg(t,d);if(t.hp<=0){remove.add(r*N+c);k++;xp+=xpOf(t);}else t.hit=now;}
+      if(hits.length){burst(hits,col||'#ffd54a',k?1.5:.8);hits.forEach(p=>RINGS.push({p,t0:now,col:col||'#ffd54a'}));if(k>=3)FLASH=now;}
       S.kills+=k;if(xp)gainXp(xp);relicKills(k);msgs.push(`${label}${d}ダメージ${k?`、${k}体撃破`:''}`);};
     const eff=(g,n)=>{
     if(g==='shield'&&S.cls==='zombie'){const h=Math.min(Math.round(n*mult),S.maxHp-S.hp);S.hp+=h;msgs.push(`🧟傷をふさいだ HP+${h}`);flash('bHp');}
     else if(g==='shield'){const add=Math.round(n*S.armorPer*mult*(hasR('crest')?1.5:1)),used=Math.min(add,S.maxArmor-S.armor);S.armor+=used;const over=add-used;
-      if(S.cls==='heavy')aoe(Math.round(add*BASH),()=>true,'🏰 盾で殴る！全ての敵に');
+      if(S.cls==='heavy')aoe(Math.round(add*BASH),()=>true,'🏰 盾で殴る！全ての敵に','#8fc8ff');
       if(over>0){S.shieldPts+=over;while(S.shieldPts>=S.shieldNeed){S.shieldPts-=S.shieldNeed;S.shieldNeed=Math.round(S.shieldNeed*1.25)+10;S.pending.push('shield');}}
       msgs.push(`防御+${used}`+(over?`（超過${over}は盾ポイントへ）`:''));flash('bAr');}
     else if(g==='potion'&&S.cls==='vampire'){const a=Math.round(n*mult);addGold(a);msgs.push(`🧪は口に合わない → 💰+${a}`);flash('bGd');}
-    else if(g==='potion'){const heal=Math.round(n*S.healPer*mult),h=Math.min(heal,S.maxHp-S.hp),_hl=h>0&&S.run&&(S.run.heal=1),cl=S.cls==='cleric',sell=Math.floor((heal-h)/(cl?3:4))*(hasR('urn')?2:1);S.hp+=h;if(cl&&n>=HOLY_N){let k=0;S.board.flat().forEach(t=>{if(isEnemy(t)&&UNDEAD(kindOf(t))&&!t.boss){t.frz=Math.max(t.frz||0,1);k++;}});if(k)msgs.push(`✨ 聖なる光！アンデッド${k}体がひるんだ`);}if(sell){if(cl){gainXp(sell);flash('bXp');}else{addGold(sell);flash('bGd');}}msgs.push(`HP+${h}`+(sell?`（余り→${cl?'✨経験値':'💰'}+${sell}）`:''));flash('bHp');}
+    else if(g==='potion'){const heal=Math.round(n*S.healPer*mult),h=Math.min(heal,S.maxHp-S.hp),_hl=h>0&&S.run&&(S.run.heal=1),cl=S.cls==='cleric',sell=Math.floor((heal-h)/(cl?3:4))*(hasR('urn')?2:1);S.hp+=h;if(cl&&n>=HOLY_N){let k=0;const now=performance.now();S.board.forEach((row,r)=>row.forEach((t,c)=>{if(isEnemy(t)&&UNDEAD(kindOf(t))&&!t.boss){t.frz=Math.max(t.frz||0,1);k++;RINGS.push({p:[r,c],t0:now,col:'#fff3b0'});}}));if(k)msgs.push(`✨ 聖なる光！アンデッド${k}体がひるんだ`);}if(sell){if(cl){gainXp(sell);flash('bXp');}else{addGold(sell);flash('bGd');}}msgs.push(`HP+${h}`+(sell?`（余り→${cl?'✨経験値':'💰'}+${sell}）`:''));flash('bHp');}
     else if(g==='coin'){const a=Math.round(n*S.goldPer*mult);addGold(a);msgs.push(`お金+${a}`);flash('bGd');}
     };
     if(g==='mix'){const cnt={};cells.forEach(p=>{const t=tileAt(p).t;cnt[t]=(cnt[t]||0)+1;});const ty=Object.keys(cnt).length;if(ty>1){mult*=MIXLOSS;msgs.push('⚗️ 調合');}for(const k of ['shield','potion','coin'])if(cnt[k])eff(k,cnt[k]);}else eff(g,cells.length);
   }
-  if(g==='atk'&&S.kills>killsBefore)sfx('kill',S.kills-killsBefore);else sfx('clear',g);
+  {const kd=S.kills-killsBefore;if(g==='atk'&&kd)sfx('kill',kd);else{sfx('clear',g);if(kd){sfx('kill',kd);vib([25,30,25]);}}}
   if(bonus){gainXp(hasR('starfrag')?bonus*2:bonus);flash('bXp');}
   if(cells.length>=5){if(hasR('chalice')){addGold(4);msgs.push('🏆 💰+4');}if(hasR('clover'))gainXp(1);}
   if(mult>1)msgs.unshift('✨'+bonusTxtOf(cells.length));
@@ -1832,8 +1833,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshA
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.4';
+const VERSION='0.4.5';
 const CHANGELOG=[
+  {v:'0.4.5',d:'2026-11-19',items:['重騎士の「盾で殴る」で敵を倒したときも、撃破の音と演出が出るようにしました','僧侶の🧪でアンデッドがひるんだとき、光の輪が出るようにしました']},
   {v:'0.4.4',d:'2026-11-19',items:['各職業の特徴をはっきりさせました（特徴をいかすほど強くなるように）','ギャンブラーの倍率が、攻撃だけでなく🛡️🧪💰にも効くようになりました','ゾンビは二度まで蘇るようになりました']},
   {v:'0.4.3',d:'2026-11-19',items:['僧侶：🧪をつなぐと、アンデッドがひるんで攻撃してこなくなりました','狩人：いちばん硬い敵を狙い撃つようになりました','ギャンブラー：次の攻撃の倍率が前もって見えるようになりました','魔術師と重騎士の特徴を強めました']},
   {v:'0.4.2',d:'2026-11-19',items:['フロアボスを倒すと、ファンファーレとともに褒められ、HPと防御が少し回復するようにしました']},
