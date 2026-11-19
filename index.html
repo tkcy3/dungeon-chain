@@ -310,6 +310,7 @@ const isEnemy=t=>t&&t.t==='skull';
 
 /* ---------- state ---------- */
 function newState(cls){
+  GIVEUP=false;
   const s={v:1,ts:Date.now(),turn:0,kills:0,level:1,xp:0,xpNeed:16,
     hp:50,maxHp:50,armor:0,maxArmor:4,armorPer:1,
     baseDmg:1,weaponDmg:2,healPer:2,goldPer:2,
@@ -874,7 +875,7 @@ function showMenu(){
     <button class="tile big" id="m2"><span class="ti">💾</span><small>書き出し</small></button></div>
     <button class="prow danger" id="m4" style="margin-top:22px"><span class="ri">🏳️</span><span class="rt">あきらめる</span></button>`);
   $('m1').onclick=()=>showHelp(showMenu);$('m2').onclick=showExport;if(rec)$('m7').onclick=()=>showRecords(showMenu);$('m8').onclick=()=>showSettings(showMenu);
-  $('m3').onclick=()=>{saveGame();closeModal();showTitle();};
+  $('m3').onclick=()=>{shareProgress();saveGame();closeModal();showTitle();};
   $('m4').onclick=()=>{openModal(`<div class="big" style="text-align:center">🏳️</div><h2>あきらめる？</h2><p style="text-align:center">この冒険のセーブは消えます。</p><button class="opt" id="n" style="text-align:center">続ける</button><button class="opt" id="y" style="text-align:center;border-color:#8a3a3a;color:#ffc4c4">あきらめる</button>`);
     $('y').onclick=()=>{closeModal();GIVEUP=true;gameOver();};$('n').onclick=showMenu;};
   $('m5').onclick=closeModal;
@@ -1835,8 +1836,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshA
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.7';
+const VERSION='0.4.8';
 const CHANGELOG=[
+  {v:'0.4.8',d:'2026-11-19',items:['冒険の途中でやめたときも、途中経過を記録として送るようにしました','一度「あきらめる」を選ぶと、その後の冒険も「あきらめた」扱いで記録される不具合を直しました']},
   {v:'0.4.7',d:'2026-11-19',items:['作者に送る記録に、冒険者名・選んだ強化・スキル・とどめを刺した敵などを加えました（設定でオフにできます）']},
   {v:'0.4.6',d:'2026-11-19',items:['冒険の記録（職業・到達階など）を作者に送れるようになりました。設定でオフにできます']},
   {v:'0.4.5',d:'2026-11-19',items:['重騎士の「盾で殴る」で敵を倒したときも、撃破の音と演出が出るようにしました','僧侶の🧪でアンデッドがひるんだとき、光の輪が出るようにしました']},
@@ -2133,14 +2135,19 @@ function runsSave(){try{localStorage.setItem(LS_RUNS,JSON.stringify(RUNS.slice(-
 const SHARE_URL='https://docs.google.com/forms/d/e/1FAIpQLSfncydVDFEmGqlUP8mH0GAe7VuoDICT9k98s-NkCF9Cbj2CdQ/formResponse',SHARE_ENTRY='entry.1097035413',LS_SHARE='dchain_share_v1',LS_DEV='dchain_dev_v1';
 const shareOn=()=>{try{return localStorage.getItem(LS_SHARE)!=='0';}catch(e){return true;}};
 function devId(){try{let v=localStorage.getItem(LS_DEV);if(!v){v=Math.random().toString(36).slice(2,10);localStorage.setItem(LS_DEV,v);}return v;}catch(e){return 'x';}}
-function shareRun(){if(TUT||!S||!shareOn())return;try{
+function shareRun(prog){if(TUT||!S||!shareOn())return;try{if(!S.rid)S.rid=Math.random().toString(36).slice(2,10);
   const R=S.run||{},nm=k=>(EK[k]&&EK[k].name)||k||'';
-  const d={v:VERSION,id:devId(),name:getName(),no:(ACH.st&&ACH.st.games)||0,cls:S.cls||'warrior',rnd:S.rndPick?1:0,floor:floorOf(),turn:S.turn,lv:S.level,kills:S.kills,chain:S.maxChain||0,clear:S.cleared||0,
-    boss:(S.bossUp&&bossAlive())?nm(S.bossKind):'',killer:GIVEUP?'':nm(S._topK),quit:GIVEUP?1:0,min:R.t0?Math.round((Date.now()-R.t0)/60000):null,shops:R.shops||0,
+  const d={v:VERSION,id:devId(),rid:S.rid,prog:prog?1:0,name:getName(),no:(ACH.st&&ACH.st.games)||0,cls:S.cls||'warrior',rnd:S.rndPick?1:0,floor:floorOf(),turn:S.turn,lv:S.level,kills:S.kills,chain:S.maxChain||0,clear:S.cleared||0,
+    boss:(S.bossUp&&bossAlive())?nm(S.bossKind):'',killer:GIVEUP||prog?'':nm(S._topK),quit:!prog&&GIVEUP?1:0,min:R.t0?Math.round((Date.now()-R.t0)/60000):null,shops:R.shops||0,
     up:R.up||{},skills:(S.skills||[]).map(x=>x.id),sku:R.sku||{},
     stat:{hp:S.maxHp,ar:S.maxArmor,base:S.baseDmg,wpn:S.weaponDmg,heal:S.healPer,arp:S.armorPer,gold:S.goldPer,mag:S.mag||0}};
   const body=new URLSearchParams();body.append(SHARE_ENTRY,JSON.stringify(d));
-  fetch(SHARE_URL,{method:'POST',mode:'no-cors',body,keepalive:true}).catch(()=>{});}catch(e){}}
+  let ok=false;try{ok=navigator.sendBeacon&&navigator.sendBeacon(SHARE_URL,body);}catch(e){}
+  if(!ok)fetch(SHARE_URL,{method:'POST',mode:'no-cors',body,keepalive:true}).catch(()=>{});}catch(e){}}
+/* 冒険の途中でやめたままでも記録が残るよう、タイトルに戻るときと画面を離れるときに「途中経過」を送る（同じターンでは1回だけ） */
+function shareProgress(){if(!inGame||TUT||!S||!S.turn||S.hp<=0||S._snapTurn===S.turn)return;S._snapTurn=S.turn;shareRun(true);}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')shareProgress();});
+window.addEventListener('pagehide',shareProgress);
 function recordRun(){if(TUT||!S)return;shareRun();RUNS.push({d:Date.now(),n:getName(),cu:S.curse||0,c:S.cls||'warrior',f:floorOf(),t:S.turn,k:S.kills,l:S.level,ch:S.maxChain||0,cl:S.cleared||0,e:GIVEUP?1:0});RUNS=RUNS.slice(-300);runsSave();}
 const VC={c1:'#3987e5',c2:'#d95926',c3:'#199e70',c4:'#c98500',grid:'#3a3238',ink:'#ece4d8',ink2:'#a99fae',surf:'#211a25'};
 const CLS_COL={warrior:VC.c1,thief:VC.c2,mage:VC.c3,cleric:VC.c4,vampire:'#d55181',zombie:'#0ca30c',hunter:'#9085e9',dragoon:'#9085e9',gambler:'#9085e9',knight:'#9085e9',alchemist:'#9085e9',heavy:'#c9a24a'};
