@@ -196,6 +196,9 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 .tsub{display:flex;gap:8px;justify-content:center;margin-top:18px;width:100%;max-width:320px}
 .tsub button{flex:1;max-width:76px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0 6px;border-radius:10px;border:1px solid #3a2f3e;background:#241c27;color:#bba9c4;font-size:11px}
 .tsub button span{font-size:20px;filter:saturate(.75)}
+.tsub button.glow{border-color:#e8b33a;color:#f0d9a8;box-shadow:0 0 10px rgba(232,179,58,.35)}
+.a2h{display:flex;align-items:center;justify-content:center;gap:10px;font-size:17px;margin:14px 0}.a2h b{display:inline-flex;align-items:center;gap:4px;padding:8px 12px;border-radius:10px;background:#2e2535;border:1px solid #5d4a69;font-weight:400}.a2h i{font-style:normal;color:#8f8396}
+.a2g{display:flex;justify-content:center;gap:26px;margin:18px 0 6px;font-size:13px;color:#c9bfcf;text-align:center}.a2g span{display:block;font-size:30px}
 #cloud{font-size:12.5px;color:#8f8396;margin-top:14px}
 #ver{font-size:12.5px;color:#7f7682;margin-top:6px;background:none;border:0;padding:4px 8px;font-family:inherit}#ver.new{color:#e8b33a}
 .chg h3{font-size:14px;margin:12px 0 4px;color:#f0d9a8}.chg h3 small{color:#8f8396;font-weight:400;margin-left:6px}.chg ul{margin:0;padding-left:18px;font-size:12.5px;line-height:1.65;color:#d9d0dc}
@@ -248,6 +251,7 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
       <button id="btnAch"><span>🏆</span>実績</button>
       <button id="btnSet"><span>⚙️</span>設定</button>
       <button id="btnImport"><span>📥</span>読み込み</button>
+      <button id="btnHome" class="hidden"><span>📲</span>ホームへ</button>
     </div>
     <div id="cloud">セーブ: 確認中…</div>
     <button id="ver"></button>
@@ -988,7 +992,7 @@ function endStory(){
 $('story').addEventListener('click',e=>{if(e.target.id==='storySkip')return;storyNext();});
 $('storySkip').onclick=()=>{storyPage=STORY.length;endStory();};
 /* ---------- screens ---------- */
-function refreshTitle(){refreshVer();
+function refreshTitle(){refreshVer();refreshHomeBtn();
 
   const has=anySave(),n=[0,1,2].filter(i=>slotJson(i)).length;$('btnCont').style.display=has?'':'none';$('btnNew').classList.toggle('pri',!has);$('btnNew').textContent=has?'新しい冒険':'冒険に出る';
   let info='';if(has){let L=null;[0,1,2].forEach(i=>{const s=slotInfo(i);if(s&&!s.broken&&(!L||(s.ts||0)>(L.ts||0)))L=s;});
@@ -1076,6 +1080,21 @@ $('btnSet').onclick=()=>showSettings(null);
 $('ver').onclick=()=>showChangelog(null);
 
 $('btnImport').onclick=showImport;
+/* ホーム画面に追加：Chromeならワンタップでインストール、それ以外は手順を絵で */
+var A2H=null;
+function isApp(){return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;}
+function refreshHomeBtn(){const b=$('btnHome');if(!b)return;b.classList.toggle('hidden',isApp());let seen=0;try{seen=localStorage.getItem('dchain_a2h_v1');}catch(e){}b.classList.toggle('glow',!seen);}
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();A2H=e;refreshHomeBtn();});
+addEventListener('appinstalled',()=>{A2H=null;try{localStorage.setItem('dchain_a2h_v1','1');}catch(e){}refreshHomeBtn();});
+function showAddHome(){try{localStorage.setItem('dchain_a2h_v1','1');}catch(e){}refreshHomeBtn();
+  if(A2H){const e=A2H;A2H=null;e.prompt();e.userChoice.then(r=>{if(r&&r.outcome!=='accepted')A2H=null;refreshHomeBtn();}).catch(()=>{});return;}
+  const ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  openModal(`${pgHead('📲 ホーム画面に追加','✕ 閉じる')}
+    <div class="a2g"><div><span>📱</span>全画面</div><div><span>⚡</span>すぐ起動</div><div><span>🏰</span>アイコン</div></div>
+    ${ios?'<div class="a2h"><b>⬆️ 共有</b><i>›</i><b>➕ ホーム画面に追加</b></div>'
+         :'<div class="a2h"><b>⋮</b><i>›</i><b>📲 ホーム画面に追加</b></div><p style="text-align:center;font-size:13px;color:#8f8396">Chromeの右上 ⋮ から</p>'}`);
+  $('pgBack').onclick=closeModal;}
+$('btnHome').onclick=showAddHome;
 $('menuBtn').onclick=()=>{if(!modalOpen&&inGame)showMenu();};
 
 /* ---------- HUD ---------- */
@@ -1836,8 +1855,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshA
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.9';
+const VERSION='0.4.10';
 const CHANGELOG=[
+  {v:'0.4.10',d:'2026-11-19',items:['タイトルに📲ボタンを追加。ホーム画面に置くと全画面ですぐ遊べます']},
   {v:'0.4.9',d:'2026-11-19',items:['🎲で決まる冒険者名の種類を大幅に増やしました（256通り→約6,000通り）']},
   {v:'0.4.8',d:'2026-11-19',items:['冒険の途中でやめたときも、途中経過を記録として送るようにしました','一度「あきらめる」を選ぶと、その後の冒険も「あきらめた」扱いで記録される不具合を直しました']},
   {v:'0.4.7',d:'2026-11-19',items:['作者に送る記録に、冒険者名・選んだ強化・スキル・とどめを刺した敵などを加えました（設定でオフにできます）']},
