@@ -314,7 +314,7 @@ function newState(cls){
     hp:50,maxHp:50,armor:0,maxArmor:4,armorPer:1,
     baseDmg:1,weaponDmg:2,healPer:2,goldPer:2,
     gold:0,goldNeed:70,shieldPts:0,shieldNeed:30,
-    skills:[],pending:[],bossFlag:false,maxChain:0,bless:0,floor:1,fprog:0,bossUp:false,run:{hit:false,shops:0,mute:0},board:[]};
+    skills:[],pending:[],bossFlag:false,maxChain:0,bless:0,floor:1,fprog:0,bossUp:false,run:{hit:false,shops:0,mute:0,t0:Date.now(),up:{},sku:{}},board:[]};
   if(!TUT){s.curse=0;s.relics=[];}
   for(let r=0;r<N;r++){s.board.push([]);for(let c=0;c<N;c++){const t=randTile(s);t.ry=r;s.board[r].push(t);}}
   applyClass(s,TUT?'warrior':(cls||(S&&S.cls)||'warrior'));
@@ -586,10 +586,10 @@ function summon(k){
 function popAnnounce(msgs){if(S.bossAnnounce){msgs.push(`${S.bossAnnounce} が現れた！`);sfx('boss');delete S.bossAnnounce;}}
 function enemyPhase(msgs){
   const all=()=>{const l=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){const e=S.board[r][c];if(isEnemy(e))l.push([e,r,c]);}return l;};
-  let total=0,pierce=0;const exploded=new Set();
+  let total=0,pierce=0;const exploded=new Set();S._topA=0;S._topK='';
   for(const [e,r,c] of all()){
     if(e.fresh||e.frz>0)continue;
-    const a=enemyAtk(e),k=bhOf(e),D=EK[kindOf(e)]||{};total+=a.d;pierce+=a.p;
+    const a=enemyAtk(e),k=bhOf(e),D=EK[kindOf(e)]||{};total+=a.d;pierce+=a.p;if(a.d+a.p>(S._topA||0)){S._topA=a.d+a.p;S._topK=kindOf(e);}
     if(D.st&&S.gold>0){const g=Math.min(S.gold,1+Math.floor(e.atk/2));S.gold-=g;msgs.push(`${D.icon} 💰を${g}盗まれた`);}
     if(D.sb&&S.armor>0){S.armor--;msgs.push(`${D.icon} 防御を1削られた`);}
     if(k==='golem')e.rest=!e.rest;
@@ -761,7 +761,7 @@ function useSkill(i){
     case 'bless':{S.bless=3;msg='祝福：3ターン チェーンが3つ長い扱いに';break;}
     case 'execute':{let k=0,xp=0;eachEnemy((t,r,c)=>{if(!t.boss&&t.hp<=execLine(t)){fx.push([r,c]);remove.add(r*N+c);k++;xp+=xpOf(t);}});S.kills+=k;xp=Math.round(xp*1.5);if(xp)gainXp(xp);msg=k?`処刑：${k}体撃破（経験値1.5倍）`:'処刑：対象なし';break;}
   }
-  if(S.run)S.run.sk=(S.run.sk||0)+1;
+  if(S.run){S.run.sk=(S.run.sk||0)+1;const su=S.run.sku||(S.run.sku={});su[sk.id]=(su[sk.id]||0)+1;}
   sk.cur=hasR('hourglass')?Math.max(2,Math.round(sk.cd*.85)):sk.cd;{const dr=vampDrain(S.kills-kb);if(dr)msg+=' ／ '+dr;}sfx('skill');skillFx(sk.id,fx,S.kills-kb);
   if(!TUT){achStat('skills');achKills([...remove].map(i=>S.board[(i/N)|0][i%N]).filter(isEnemy));
     if(sk.id==='thunder'&&S.kills-kb>=3)unlock('thunder3');if(sk.id==='freeze'&&S.board.flat().some(e=>isEnemy(e)&&kindOf(e)==='dragon'))unlock('s_frzdragon');}
@@ -827,11 +827,13 @@ function showNextPending(){
   const opts=kind==='level'?levelOptions():kind==='shop'?shopOptions():kind==='relic'?relicOptions():shieldOptions();
   if(!opts.length){S.pending.shift();showNextPending();return;}
   openModal(`<h2>${head[0]}</h2><p style="text-align:center">${head[1]}</p>`+opts.map((o,i)=>`<button class="opt" data-i="${i}">${o.label}<small>${o.desc}</small></button>`).join(''));
-  $('mbox').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{const o=opts[+b.dataset.i];if(o.replaceId){chooseReplace(o.replaceId,kind,opts);return;}if(kind==='shop'&&S.run)S.run.shops=(S.run.shops||0)+1;o.apply();if(kind==='shop'&&S.cls==='thief'&&!S._sh2&&opts.length>1){S._sh2=1;showShop2(opts.filter(x=>x!==o));return;}S._sh2=0;finishPending();});
+  $('mbox').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{const o=opts[+b.dataset.i];if(o.replaceId){chooseReplace(o.replaceId,kind,opts);return;}if(kind==='shop'&&S.run)S.run.shops=(S.run.shops||0)+1;upCount(o);o.apply();if(kind==='shop'&&S.cls==='thief'&&!S._sh2&&opts.length>1){S._sh2=1;showShop2(opts.filter(x=>x!==o));return;}S._sh2=0;finishPending();});
 }
+/* 選んだ強化を数える（記録用）。ラベルから絵文字と「新スキル」の飾りを除く */
+function upCount(o){if(!S||!S.run||!o)return;const u=S.run.up||(S.run.up={});const k=String(o.label).replace(/（.*?）/g,'').replace(/^\S+\s/,'').replace(/新スキル「(.*)」/,'$1').trim().slice(0,12);u[k]=(u[k]||0)+1;}
 /* 盗賊はショップでもう1つ選べる */
 function showShop2(rest){updateAll();openModal(`<h2>🗝️ もう1つ</h2><p style="text-align:center">盗賊の目利き。もう1つ選べる。</p>`+rest.map((o,i)=>`<button class="opt" data-i="${i}">${o.label}<small>${o.desc}</small></button>`).join(''));
-  $('mbox').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{rest[+b.dataset.i].apply();S._sh2=0;finishPending();});}
+  $('mbox').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{upCount(rest[+b.dataset.i]);rest[+b.dataset.i].apply();S._sh2=0;finishPending();});}
 function finishPending(){S.pending.shift();closeModal();if(!TUT){achState();achSave();}saveGame();updateAll();showNextPending();if(TUT&&TSTEPS[TUT.i].wait==='level'&&!S.pending.length)tutDone();}
 function chooseReplace(k,kind,opts){
   const d=SKILLS[k];
@@ -1833,8 +1835,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshA
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.6';
+const VERSION='0.4.7';
 const CHANGELOG=[
+  {v:'0.4.7',d:'2026-11-19',items:['作者に送る記録に、冒険者名・選んだ強化・スキル・とどめを刺した敵などを加えました（設定でオフにできます）']},
   {v:'0.4.6',d:'2026-11-19',items:['冒険の記録（職業・到達階など）を作者に送れるようになりました。設定でオフにできます']},
   {v:'0.4.5',d:'2026-11-19',items:['重騎士の「盾で殴る」で敵を倒したときも、撃破の音と演出が出るようにしました','僧侶の🧪でアンデッドがひるんだとき、光の輪が出るようにしました']},
   {v:'0.4.4',d:'2026-11-19',items:['各職業の特徴をはっきりさせました（特徴をいかすほど強くなるように）','ギャンブラーの倍率が、攻撃だけでなく🛡️🧪💰にも効くようになりました','ゾンビは二度まで蘇るようになりました']},
@@ -1886,7 +1889,7 @@ function showSettings(back,msg){
   const tg=(id,ic,label,on)=>`<button class="tile big tg ${on?'':'off'}" id="${id}"><span class="ti">${ic}</span><small>${label}</small><em>${on?'ON':'OFF'}</em></button>`;
   openModal(`${pgHead('⚙️ 設定','戻る','stClose')}<div class="tgrid" style="--c:3">${tg('st1','🎵','BGM',AU.on.bgm)}${tg('st2','🔊','効果音',AU.on.sfx)}${tg('st3',VIB_IC==='振動'?'📳':VIB_IC,'振動',AU.on.vib)}</div>
     <button class="prow" id="stVer" style="margin-top:14px"><span class="ri">📋</span><span class="rt">更新内容${verUnseen()?'<span class="newb">NEW</span>':''}</span><span class="rs">v${VERSION}</span></button>
-    <button class="prow" id="stShare"><span class="ri">📤</span><span class="rt">記録を作者に送る<br><small style="color:#b9adc0;font-size:12.5px">職業や到達階（名前は送らない）</small></span><span class="rs" style="color:${shareOn()?'#8fe08f':'#f08a8a'}">${shareOn()?'ON':'OFF'}</span></button>
+    <button class="prow" id="stShare"><span class="ri">📤</span><span class="rt">記録を作者に送る<br><small style="color:#b9adc0;font-size:12.5px">冒険者名・職業・到達階など</small></span><span class="rs" style="color:${shareOn()?'#8fe08f':'#f08a8a'}">${shareOn()?'ON':'OFF'}</span></button>
     <button class="prow" id="stStory"><span class="ri">📜</span><span class="rt">物語をもう一度</span><span class="rs">›</span></button>
     <button class="prow" id="stTheme"><span class="ri">🎨</span><span class="rt">盤面の色</span><span class="rs">›</span></button>
     ${inGame?'':'<button class="prow" id="stData"><span class="ri">🗑️</span><span class="rt">データを消す</span><span class="rs">›</span></button>'}
@@ -2126,12 +2129,16 @@ function copyBtn(id,getText){const b=$(id);if(!b)return;const lab=b.innerHTML;b.
 const LS_RUNS='dchain_runs_v1';let RUNS=[];
 function runsLoad(){try{const r=JSON.parse(localStorage.getItem(LS_RUNS)||'[]');if(Array.isArray(r))RUNS=r;}catch(e){}}
 function runsSave(){try{localStorage.setItem(LS_RUNS,JSON.stringify(RUNS.slice(-300)));}catch(e){}}
-/* 冒険の記録を、作者のGoogleフォーム（→スプレッドシート）へ送る。名前は送らない。設定でオフにできる */
+/* 冒険の記録を、作者のGoogleフォーム（→スプレッドシート）へ送る。設定でオフにできる */
 const SHARE_URL='https://docs.google.com/forms/d/e/1FAIpQLSfncydVDFEmGqlUP8mH0GAe7VuoDICT9k98s-NkCF9Cbj2CdQ/formResponse',SHARE_ENTRY='entry.1097035413',LS_SHARE='dchain_share_v1',LS_DEV='dchain_dev_v1';
 const shareOn=()=>{try{return localStorage.getItem(LS_SHARE)!=='0';}catch(e){return true;}};
 function devId(){try{let v=localStorage.getItem(LS_DEV);if(!v){v=Math.random().toString(36).slice(2,10);localStorage.setItem(LS_DEV,v);}return v;}catch(e){return 'x';}}
 function shareRun(){if(TUT||!S||!shareOn())return;try{
-  const d={v:VERSION,id:devId(),cls:S.cls||'warrior',rnd:S.rndPick?1:0,floor:floorOf(),turn:S.turn,lv:S.level,kills:S.kills,chain:S.maxChain||0,clear:S.cleared||0,boss:(S.bossUp&&bossAlive())?S.bossKind:'',quit:GIVEUP?1:0};
+  const R=S.run||{},nm=k=>(EK[k]&&EK[k].name)||k||'';
+  const d={v:VERSION,id:devId(),name:getName(),no:(ACH.st&&ACH.st.games)||0,cls:S.cls||'warrior',rnd:S.rndPick?1:0,floor:floorOf(),turn:S.turn,lv:S.level,kills:S.kills,chain:S.maxChain||0,clear:S.cleared||0,
+    boss:(S.bossUp&&bossAlive())?nm(S.bossKind):'',killer:GIVEUP?'':nm(S._topK),quit:GIVEUP?1:0,min:R.t0?Math.round((Date.now()-R.t0)/60000):null,shops:R.shops||0,
+    up:R.up||{},skills:(S.skills||[]).map(x=>x.id),sku:R.sku||{},
+    stat:{hp:S.maxHp,ar:S.maxArmor,base:S.baseDmg,wpn:S.weaponDmg,heal:S.healPer,arp:S.armorPer,gold:S.goldPer,mag:S.mag||0}};
   const body=new URLSearchParams();body.append(SHARE_ENTRY,JSON.stringify(d));
   fetch(SHARE_URL,{method:'POST',mode:'no-cors',body,keepalive:true}).catch(()=>{});}catch(e){}}
 function recordRun(){if(TUT||!S)return;shareRun();RUNS.push({d:Date.now(),n:getName(),cu:S.curse||0,c:S.cls||'warrior',f:floorOf(),t:S.turn,k:S.kills,l:S.level,ch:S.maxChain||0,cl:S.cleared||0,e:GIVEUP?1:0});RUNS=RUNS.slice(-300);runsSave();}
