@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="70%">
+      <stop offset="0" stop-color="#3b2e42"/><stop offset="1" stop-color="#17121b"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6d27a"/><stop offset="1" stop-color="#d9982a"/></linearGradient>
+    <g id="sword">
+      <!-- blade pointing up-right -->
+      <path d="M-6 6 L30 -30 L40 -40 L36 -26 L6 4 Z" fill="#eef1f5"/>
+      <path d="M30 -30 L40 -40 L36 -26 Z" fill="#c9d1db"/>
+      <path d="M-20 -6 L-14 -12 L14 16 L8 22 Z" fill="#e8b33a"/>
+      <path d="M-4 10 L-26 32" stroke="#8a5a2b" stroke-width="10" stroke-linecap="round"/>
+      <circle cx="-30" cy="36" r="7" fill="#e8b33a"/>
+    </g>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <!-- 2x2 board -->
+  <g>
+    <rect x="96" y="96" width="150" height="150" rx="28" fill="#5a4630" stroke="#e8b33a" stroke-width="6"/>
+    <rect x="266" y="96" width="150" height="150" rx="28" fill="#7c2f33" stroke="#e8b33a" stroke-width="6"/>
+    <rect x="96" y="266" width="150" height="150" rx="28" fill="#5a4630" stroke="#e8b33a" stroke-width="6"/>
+    <rect x="266" y="266" width="150" height="150" rx="28" fill="#2f2a3a"/>
+  </g>
+  
+  <!-- chain links bridging the chained tiles -->
+  <g fill="none" stroke-linecap="round">
+    <g transform="translate(171 256)">
+      <rect x="-15" y="-38" width="30" height="44" rx="15" stroke="#2a1d10" stroke-width="16"/>
+      <rect x="-15" y="-6" width="30" height="44" rx="15" stroke="#2a1d10" stroke-width="16"/>
+      <rect x="-15" y="-38" width="30" height="44" rx="15" stroke="#f2c55a" stroke-width="9"/>
+      <rect x="-15" y="-6" width="30" height="44" rx="15" stroke="#d9982a" stroke-width="9"/>
+    </g>
+    <g transform="translate(256 171) rotate(90)">
+      <rect x="-15" y="-38" width="30" height="44" rx="15" stroke="#2a1d10" stroke-width="16"/>
+      <rect x="-15" y="-6" width="30" height="44" rx="15" stroke="#2a1d10" stroke-width="16"/>
+      <rect x="-15" y="-38" width="30" height="44" rx="15" stroke="#f2c55a" stroke-width="9"/>
+      <rect x="-15" y="-6" width="30" height="44" rx="15" stroke="#d9982a" stroke-width="9"/>
+    </g>
+  </g>
+  <!-- swords -->
+  <use href="#sword" transform="translate(178 338) scale(1.45)"/>
+  <use href="#sword" transform="translate(178 168) scale(1.45)"/>
+  <!-- skull -->
+  <g transform="translate(341 168)">
+    <path d="M-44 4 C-44 -30 -24 -50 0 -50 C24 -50 44 -30 44 4 C44 20 36 28 28 32 L28 46 L-28 46 L-28 32 C-36 28 -44 20 -44 4 Z" fill="#f1ece4"/>
+    <ellipse cx="-17" cy="2" rx="12" ry="13" fill="#7c2f33"/><ellipse cx="17" cy="2" rx="12" ry="13" fill="#7c2f33"/>
+    <path d="M0 20 L-7 30 L7 30 Z" fill="#7c2f33"/>
+    <path d="M-12 38 V46 M0 38 V46 M12 38 V46" stroke="#7c2f33" stroke-width="4"/>
+  </g>
+  <!-- unchained tile: shield -->
+  <g transform="translate(341 341)" opacity=".85">
+    <path d="M0 -40 L32 -28 C32 6 20 28 0 40 C-20 28 -32 6 -32 -28 Z" fill="#5b7fb0"/>
+    <path d="M0 -30 L22 -21 C22 4 13 20 0 29 Z" fill="#7fa3d1"/>
+  </g>
+</svg>
