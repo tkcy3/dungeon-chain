@@ -1,4 +1,5 @@
 {
+  "id": "./",
   "name": "Dungeon Chain",
   "short_name": "Dungeon Chain",
   "description": "つないで、戦って、地の底へ。チェーンで戦うダンジョンRPG",
@@ -10,8 +11,29 @@
   "theme_color": "#0b0a0c",
   "lang": "ja",
   "icons": [
-    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
-    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
-    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://tkcy3.github.io/dungeon-chain/manifest.json"
+    }
   ]
 }

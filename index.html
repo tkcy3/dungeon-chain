@@ -1092,20 +1092,22 @@ $('ver').onclick=()=>showChangelog(null);
 
 $('btnImport').onclick=showImport;
 /* ホーム画面に追加：Chromeならワンタップでインストール、それ以外は手順を絵で */
-var A2H=null;
+var A2H=null,INST=false;
+/* すでにアプリとして入っているか（Chrome）。入っているとインストール案内が出ないため */
+try{navigator.getInstalledRelatedApps&&navigator.getInstalledRelatedApps().then(a=>{INST=a.length>0;}).catch(()=>{});}catch(e){}
 function isApp(){return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;}
 /* タイトルには1回冒険を終えてから一度だけ出す。✕か一度開いたら以後は設定から */
 function refreshHomeBtn(){const c=$('a2hChip');if(!c)return;let done=0;try{done=localStorage.getItem('dchain_a2h_v1');}catch(e){}
   c.classList.toggle('hidden',isApp()||!!done||!((ACH&&ACH.st&&ACH.st.games)>=1));}
-addEventListener('beforeinstallprompt',e=>{e.preventDefault();A2H=e;refreshHomeBtn();});
-addEventListener('appinstalled',()=>{A2H=null;try{localStorage.setItem('dchain_a2h_v1','1');}catch(e){}refreshHomeBtn();});
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();A2H=e;INST=false;refreshHomeBtn();});
+addEventListener('appinstalled',()=>{A2H=null;INST=true;try{localStorage.setItem('dchain_a2h_v1','1');}catch(e){}refreshHomeBtn();});
 function showAddHome(back){try{localStorage.setItem('dchain_a2h_v1','1');}catch(e){}refreshHomeBtn();
   if(A2H){const e=A2H;A2H=null;e.prompt();e.userChoice.then(r=>{if(r&&r.outcome!=='accepted')A2H=null;refreshHomeBtn();}).catch(()=>{});return;}
   const ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   openModal(`${pgHead('📲 ホーム画面に追加',back?'設定':'✕ 閉じる')}
     <div class="a2g"><div><span>📱</span>全画面</div><div><span>⚡</span>すぐ起動</div><div><span>🏰</span>アイコン</div></div>
-    ${ios?'<div class="a2h"><b>⋯</b><i>›</i><b>⬆️ 共有</b><i>›</i><b>➕ ホーム画面に追加</b></div><p style="text-align:center;font-size:13px;color:#8f8396">Safariの右下 ⋯ から</p>'
-         :'<div class="a2h"><b>⋮</b><i>›</i><b>📲 ホーム画面に追加</b></div><p style="text-align:center;font-size:13px;color:#8f8396">Chromeの右上 ⋮ から</p>'}`);
+    ${INST&&!ios?'<div class="a2h"><b>✅ インストール済み</b></div><p style="text-align:center;font-size:14px;color:#b9adc0;line-height:1.7">アプリ一覧から開けます<br>入れ直すときは、アプリ一覧の<br>Dungeon Chain を長押し › アンインストール</p>':ios?'<div class="a2h"><b>⋯</b><i>›</i><b>⬆️ 共有</b><i>›</i><b>➕ ホーム画面に追加</b></div><p style="text-align:center;font-size:13px;color:#8f8396">Safariの右下 ⋯ から</p>'
+         :'<div class="a2h"><b>⋮</b><i>›</i><b>📲 ホーム画面に追加</b></div><p style="text-align:center;font-size:13px;color:#8f8396">Chromeの ⋮ から</p>'}`);
   $('pgBack').onclick=back||closeModal;}
 $('a2hGo').onclick=()=>showAddHome();$('a2hX').onclick=()=>{try{localStorage.setItem('dchain_a2h_v1','1');}catch(e){}refreshHomeBtn();};
 $('menuBtn').onclick=()=>{if(!modalOpen&&inGame)showMenu();};
@@ -1868,8 +1870,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true};saveAudio();refreshA
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.14';
+const VERSION='0.4.15';
 const CHANGELOG=[
+  {v:'0.4.15',d:'2026-11-20',items:['アイコンを新しくしました','📲 インストール済みのときは、そのことが分かるようにしました']},
   {v:'0.4.14',d:'2026-11-20',items:['🪨鉄の皮膚を最大HP+12→+20に']},
   {v:'0.4.13',d:'2026-11-20',items:['🔮魔術師と🏹狩人を強くしました']},
   {v:'0.4.12',d:'2026-11-20',items:['冒険を重ねるたびに、まだ見ぬ魔物が少しずつ現れるようにしました']},
