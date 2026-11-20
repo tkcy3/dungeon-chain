@@ -39,6 +39,9 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 #top .it b.flash{animation:fl .6s}
 #top .it b{color:#fff;font-size:16px;line-height:24px;font-variant-numeric:tabular-nums;font-family:system-ui,-apple-system,"Roboto",sans-serif;display:inline-block;min-width:1.9em;text-align:left}
 .ibtn{position:relative;background:#2a2230;color:#eee;border:1px solid #4a3d52;border-radius:8px;padding:5px 7px;font-size:15px;flex:none}
+.ibtn .vb{position:absolute;right:2px;bottom:2px;display:flex;align-items:flex-end;gap:1px;pointer-events:none}.ibtn .vb b{width:3px;background:#5d4a69;border-radius:1px}.ibtn .vb b:nth-child(1){height:4px}.ibtn .vb b:nth-child(2){height:7px}.ibtn .vb b:nth-child(3){height:10px}
+.ibtn .vb.l1 b:nth-child(-n+1),.ibtn .vb.l2 b:nth-child(-n+2),.ibtn .vb.l3 b{background:#f0c75a}
+.ibtn.pop{animation:ipop .35s}@keyframes ipop{40%{transform:scale(1.25)}}
 .ibtn.offx::after{content:'';position:absolute;left:18%;right:18%;top:50%;height:2px;background:#f77;transform:rotate(-35deg)}
 #bars{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:4px}
 .bar{position:relative;height:20px;background:#241c27;border-radius:6px;overflow:hidden;border:1px solid #3a2f3e}
@@ -1277,7 +1280,7 @@ if(!AU.on.bv)AU.on.bv=1;
 const BGM_VOL=[0,.55,.9,1.3],BGM_LB=['OFF','小','中','大'];
 const bgmLv=()=>AU.on.bgm?AU.on.bv:0;
 function setBgmVol(){if(AU.bgm)AU.bgm.gain.value=BGM_VOL[AU.on.bv||1];}
-function cycleBgm(){const n=(bgmLv()+1)%4;AU.on.bgm=n>0;if(n)AU.on.bv=n;saveAudio();setBgmVol();refreshAudioBtns();if(AU.on.bgm&&inGame)bgmStart();}
+function cycleBgm(){const n=(bgmLv()+1)%4;AU.on.bgm=n>0;if(n)AU.on.bv=n;saveAudio();setBgmVol();refreshAudioBtns();{const b=$('bgmBtn');b.classList.remove('pop');void b.offsetWidth;b.classList.add('pop');}if(AU.on.bgm&&inGame)bgmStart();}
 function vib(p){if(!AU.on.vib)return;try{navigator.vibrate&&navigator.vibrate(p);}catch(e){}}
 const mf=m=>440*Math.pow(2,(m-69)/12);
 function ensureAudio(){
@@ -1387,7 +1390,7 @@ function saveAudio(){try{localStorage.setItem(LS_AUDIO,JSON.stringify(AU.on));}c
 const VIB_IC=(()=>{try{const c=document.createElement('canvas');c.width=c.height=28;const x=c.getContext('2d');
   x.font='22px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';x.textBaseline='top';x.fillText('🫨',0,0);
   const d=x.getImageData(0,0,28,28).data;for(let i=0;i<d.length;i+=4)if(d[i+3]>40&&(Math.abs(d[i]-d[i+1])>30||Math.abs(d[i+1]-d[i+2])>30))return '🫨';}catch(e){}return '振動';})();
-function refreshAudioBtns(){{const v=$('vibBtn');v.textContent=VIB_IC;if(VIB_IC==='振動')v.style.fontSize='12px';}const b=$('bgmBtn'),s=$('sfxBtn');b.style.opacity=AU.on.bgm?1:.4;b.textContent='🎵';s.textContent=AU.on.sfx?'🔊':'🔇';s.style.opacity=AU.on.sfx?1:.4;const v=$('vibBtn');v.style.opacity=AU.on.vib?1:.4;v.classList.toggle('offx',!AU.on.vib);}
+function refreshAudioBtns(){{const v=$('vibBtn');v.textContent=VIB_IC;if(VIB_IC==='振動')v.style.fontSize='12px';}const b=$('bgmBtn'),s=$('sfxBtn');b.style.opacity=AU.on.bgm?1:.4;b.innerHTML='🎵'+(AU.on.bgm?`<i class="vb l${AU.on.bv}"><b></b><b></b><b></b></i>`:'');b.classList.toggle('offx',!AU.on.bgm);b.style.paddingRight='13px';s.textContent=AU.on.sfx?'🔊':'🔇';s.style.opacity=AU.on.sfx?1:.4;const v=$('vibBtn');v.style.opacity=AU.on.vib?1:.4;v.classList.toggle('offx',!AU.on.vib);}
 $('bgmBtn').onclick=cycleBgm;
 $('sfxBtn').onclick=()=>{AU.on.sfx=!AU.on.sfx;saveAudio();refreshAudioBtns();};
 $('vibBtn').onclick=()=>{AU.on.vib=!AU.on.vib;saveAudio();refreshAudioBtns();if(AU.on.vib)vib(30);showToast(AU.on.vib?'振動 ON':'振動 OFF');};
