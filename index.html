@@ -881,10 +881,10 @@ function shopOptions(){
     {label:'⚔️ 武器を鍛える',desc:`剣1本あたりの攻撃力+${S.wpnUp||2}（現在${S.weaponDmg}）`,apply:()=>{S.weaponDmg+=S.wpnUp||2;}},
     {label:'🛡️ 鎧を新調',desc:'最大防御+5、防御+5',apply:()=>{S.maxArmor+=5;S.armor+=5;}},
     {label:'❤️ 生命の護符',desc:'最大HP+25、HP+25',apply:()=>{S.maxHp+=25;S.hp+=25;}},
-    {label:'💪 修行',desc:`基礎攻撃力+${S.baseUp||5}（現在${S.baseDmg}）`,apply:()=>{S.baseDmg+=S.baseUp||5;}}];
+    {label:'📕 武術の書',desc:`基礎攻撃力+${S.baseUp||5}（現在${S.baseDmg}）`,apply:()=>{S.baseDmg+=S.baseUp||5;}}];
   if(S.cls==='zombie')p.splice(1,1);
-  if(S.healPer<(S.cls==='cleric'?14:8)&&S.cls!=='vampire')p.push({label:'🧪 薬の調合',desc:`🧪1個の回復量+2（現在${S.healPer}）`,apply:()=>{S.healPer+=2;}});
-  if(S.cls==='heavy'&&S.armorPer<8)p.push({label:'📘 盾の心得',desc:`🛡️1枚あたりの防御+1（現在${S.armorPer}）`,apply:()=>S.armorPer++});
+  if(S.healPer<(S.cls==='cleric'?14:8)&&S.cls!=='vampire')p.push({label:'📜 調合の秘伝書',desc:`🧪1個の回復量+2（現在${S.healPer}）`,apply:()=>{S.healPer+=2;}});
+  if(S.cls==='heavy'&&S.armorPer<8)p.push({label:'📘 盾術の書',desc:`🛡️1枚あたりの防御+1（現在${S.armorPer}）`,apply:()=>S.armorPer++});
   if(S.goldPer<(S.cls==='thief'?6:4))p.push({label:'🧤 盗賊の手袋',desc:`💰1枚の価値+1（現在${S.goldPer}）`,apply:()=>S.goldPer++});
   return pick(p,3);
 }
@@ -1982,8 +1982,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.24';
+const VERSION='0.4.25';
 const CHANGELOG=[
+  {v:'0.4.25',d:'2026-11-21',items:['💰行商人の品物を、お金で買える物の名前に（修行→武術の書 など）']},
   {v:'0.4.24',d:'2026-11-21',items:['💰行商人の品物に値札をつけました']},
   {v:'0.4.23',d:'2026-11-21',items:['🛡️防具の強化と🏺遺物の見た目も、それぞれらしく変えました']},
   {v:'0.4.22',d:'2026-11-21',items:['🎉レベルアップと💰ショップの見た目を、それぞれらしく変えました']},
