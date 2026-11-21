@@ -73,6 +73,27 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 .sk .cd{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);border-radius:10px;font-size:13px;font-weight:700}
 .ov{position:fixed;inset:0;background:rgba(8,5,10,.82);display:flex;align-items:center;justify-content:center;padding:14px;z-index:10}
 #modal{z-index:15}
+/* レベルアップ＝自分の成長（光・才能カード）／ショップ＝行商人から買う（木の棚・値札） */
+.box.m-lv{position:relative;overflow-x:hidden;border-color:#c9a24a;background:radial-gradient(120% 60% at 50% 0%,rgba(255,214,110,.30),rgba(255,214,110,0) 70%),#211a25;box-shadow:0 0 30px rgba(255,200,90,.25)}
+.m-lv .rays{position:absolute;left:50%;top:-160px;width:520px;height:520px;margin-left:-260px;pointer-events:none;opacity:.16;background:repeating-conic-gradient(from 0deg,#ffe08a 0 6deg,transparent 6deg 18deg);border-radius:50%;-webkit-mask:radial-gradient(circle,#000 20%,transparent 68%);mask:radial-gradient(circle,#000 20%,transparent 68%);animation:rays 18s linear infinite}
+@keyframes rays{to{transform:rotate(360deg)}}
+.lvnum{position:relative;display:flex;align-items:baseline;justify-content:center;gap:10px;margin:2px 0 10px;font-weight:800;color:#f6dc92;text-shadow:0 0 14px rgba(255,200,80,.6)}
+.lvnum small{font-size:15px;color:#cdb98a;font-weight:600}.lvnum .o{font-size:24px;color:#9d8a6a;text-shadow:none}.lvnum i{font-style:normal;color:#9d8a6a;font-size:20px}.lvnum b{font-size:44px;animation:lvpop .6s cubic-bezier(.2,1.6,.4,1)}
+@keyframes lvpop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
+.m-lv .opt{position:relative;background:linear-gradient(180deg,#3b2f26,#2a2130);border:1px solid #b8903e;box-shadow:inset 0 0 12px rgba(255,210,110,.12)}
+.m-lv .opt.got{animation:gotlv .45s ease-in forwards;border-color:#ffe08a;box-shadow:0 0 24px rgba(255,220,120,.8)}
+@keyframes gotlv{40%{transform:scale(1.04)}100%{transform:translateY(-40px) scale(.9);opacity:0}}
+.box.m-shop{position:relative;overflow-x:hidden;border:2px solid #8a5a2b;background:radial-gradient(90% 40% at 50% 0%,rgba(255,170,70,.22),rgba(255,170,70,0) 70%),repeating-linear-gradient(180deg,#2e1f14 0 46px,#271a10 46px 48px)}
+.shophd{display:flex;align-items:center;gap:10px;margin:0 0 6px}.shophd .mc{font-size:46px;line-height:1;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5))}
+.shophd .bub{position:relative;flex:1;background:#f3e6cc;color:#3a2716;border-radius:12px;padding:8px 12px;font-size:15.5px;font-weight:600}
+.shophd .bub::before{content:'';position:absolute;left:-8px;top:50%;margin-top:-7px;border:7px solid transparent;border-right-color:#f3e6cc;border-left:0}
+.shophd .purse{font-size:15px;color:#ffd56a;font-weight:700;white-space:nowrap}
+.m-shop .opt{background:linear-gradient(180deg,#5a3d24,#4a3220);border:1px solid #8a5a2b;border-bottom:5px solid #2a1a0e;border-radius:8px}
+.m-shop .opt small{color:#e2cfae}
+.m-shop .opt.got{animation:gotshop .45s ease-in forwards}
+@keyframes gotshop{30%{transform:scale(1.04);background:#7a5a2a}100%{transform:scale(.9);opacity:0}}
+.coinfly{position:fixed;z-index:40;font-size:20px;pointer-events:none;transition:transform .42s cubic-bezier(.3,.6,.4,1),opacity .42s}
+
 .vz-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0 4px}
 .vz-tile{background:#2a2230;border:1px solid #3d3242;border-radius:10px;padding:7px 6px;text-align:center;display:flex;flex-direction:column;gap:2px}
 .vz-tile small{font-size:12.5px;color:#b9adc0}.vz-tile b{font-size:21px;color:#ece4d8;font-variant-numeric:tabular-nums}.vz-tile b span{font-size:11px;font-weight:600;margin-left:1px;color:#c9bfcf}
@@ -729,7 +750,7 @@ const gRoll=()=>{if(S.nextRoll==null)S.nextRoll=ROLLS[rnd(ROLLS.length)];return 
 const lastEnemyOf=cells=>{let b=null,bv=-1;for(const p of cells){const t=tileAt(p);if(isEnemy(t)&&t.hp+t.armor>bv){bv=t.hp+t.armor;b=p;}}return b;};
 const HUNT=3;
 function bonusTxtOf(n){const m=chainMult(n),b=chainBonus(n);return (m>1?`効果×${fmtM(m)}`:'')+(b?`・経験値+${b}`:'');}
-function addGold(a){S.gold+=a;while(S.gold>=S.goldNeed){S.gold-=S.goldNeed;S.goldNeed=Math.round(S.goldNeed*1.12+24*(S.cls==='thief'?2.2:1));S.pending.push('shop');}}
+function addGold(a){S.gold+=a;while(S.gold>=S.goldNeed){S.gold-=S.goldNeed;(S.prices||(S.prices=[])).push(S.goldNeed);S.goldNeed=Math.round(S.goldNeed*1.12+24*(S.cls==='thief'?2.2:1));S.pending.push('shop');}}
 function commitChain(){
   const hp0=S.hp,full0=S.hp>=S.maxHp;
   const cells=chain.slice();chain=[];
@@ -871,14 +892,30 @@ function showNextPending(){
   sfx(kind==='level'?'level':'shop');
   const opts=kind==='level'?levelOptions():kind==='shop'?shopOptions():kind==='relic'?relicOptions():shieldOptions();
   if(!opts.length){S.pending.shift();showNextPending();return;}
-  openModal(`<h2>${head[0]}</h2><p style="text-align:center">${head[1]}</p>`+opts.map((o,i)=>`<button class="opt" data-i="${i}">${o.label}<small>${o.desc}</small></button>`).join(''));
-  $('mbox').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{const o=opts[+b.dataset.i];if(o.replaceId){chooseReplace(o.replaceId,kind,opts);return;}if(kind==='shop'&&S.run)S.run.shops=(S.run.shops||0)+1;upCount(o);o.apply();if(kind==='shop'&&S.cls==='thief'&&!S._sh2&&opts.length>1){S._sh2=1;showShop2(opts.filter(x=>x!==o));return;}S._sh2=0;finishPending();});
+  const optsHtml=opts.map((o,i)=>`<button class="opt" data-i="${i}">${o.label}<small>${o.desc}</small></button>`).join('');
+  if(kind==='level'){const lv=S.level-S.pending.slice(1).filter(k=>k==='level').length;
+    openModal(`<div class="rays"></div><div class="lvnum"><small>Lv</small><span class="o">${lv-1}</span><i>→</i><b>${lv}</b></div>`+optsHtml,'m-lv');}
+  else if(kind==='shop'){const pr=S.prices&&S.prices.length?S.prices.shift():0;openModal(shopHead(SHOP_HI[rnd(SHOP_HI.length)],pr)+optsHtml,'m-shop');}
+  else openModal(`<h2>${head[0]}</h2><p style="text-align:center">${head[1]}</p>`+optsHtml);
+  $('mbox').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{if(S._picking)return;const o=opts[+b.dataset.i];if(o.replaceId){chooseReplace(o.replaceId,kind,opts);return;}
+    const go=()=>{S._picking=0;if(kind==='shop'&&S.run)S.run.shops=(S.run.shops||0)+1;upCount(o);o.apply();if(kind==='shop'&&S.cls==='thief'&&!S._sh2&&opts.length>1){S._sh2=1;showShop2(opts.filter(x=>x!==o));return;}S._sh2=0;finishPending();};
+    if((kind==='level'||kind==='shop')&&!window.BOTFAST){S._picking=1;gotAnim(b,kind);setTimeout(go,460);}else go();});
 }
 /* 選んだ強化を数える（記録用）。ラベルから絵文字と「新スキル」の飾りを除く */
 function upCount(o){if(!S||!S.run||!o)return;const u=S.run.up||(S.run.up={});const k=String(o.label).replace(/（.*?）/g,'').replace(/^\S+\s/,'').replace(/新スキル「(.*)」/,'$1').trim().slice(0,12);u[k]=(u[k]||0)+1;}
+const SHOP_HI=['いい品、そろってるよ','見ていきな','掘り出し物だよ','お代はもう、いただいたよ','どれにする？'];
+function shopHead(line,pr){return `<div class="shophd"><span class="mc">🧔</span><span class="bub">${line}</span></div>${pr?`<p style="text-align:right;margin:-2px 2px 2px"><span class="purse">💰${pr}</span></p>`:''}`;}
+/* 選んだ瞬間の演出：レベルは光って昇る／ショップはコインが飛んで「毎度あり」 */
+function gotAnim(b,kind){b.classList.add('got');
+  if(kind==='shop'){sfx('shop');const bub=$('mbox').querySelector('.bub');if(bub)bub.textContent='毎度あり！';
+    const src=($('mbox').querySelector('.purse')||bub||b).getBoundingClientRect(),dst=b.getBoundingClientRect();
+    for(let i=0;i<6;i++){const c=document.createElement('span');c.className='coinfly';c.textContent='🪙';c.style.left=(src.left+src.width/2-10)+'px';c.style.top=(src.top+src.height/2-10)+'px';document.body.appendChild(c);
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{c.style.transitionDelay=(i*35)+'ms';c.style.transform=`translate(${dst.left+dst.width*(.3+.08*i)-src.left-src.width/2}px,${dst.top+dst.height/2-src.top-src.height/2}px) scale(.7)`;c.style.opacity='0.2';}));
+      setTimeout(()=>c.remove(),700);}}
+  else sfx('level');vib(30);}
 /* 盗賊はショップでもう1つ選べる */
-function showShop2(rest){updateAll();openModal(`<h2>🗝️ もう1つ</h2><p style="text-align:center">盗賊の目利き。もう1つ選べる。</p>`+rest.map((o,i)=>`<button class="opt" data-i="${i}">${o.label}<small>${o.desc}</small></button>`).join(''));
-  $('mbox').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{upCount(rest[+b.dataset.i]);rest[+b.dataset.i].apply();S._sh2=0;finishPending();});}
+function showShop2(rest){updateAll();openModal(shopHead('🗝️ お目が高い。もう1つどうぞ',0)+rest.map((o,i)=>`<button class="opt" data-i="${i}">${o.label}<small>${o.desc}</small></button>`).join(''),'m-shop');
+  $('mbox').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{if(S._picking)return;const fin=()=>{S._picking=0;upCount(rest[+b.dataset.i]);rest[+b.dataset.i].apply();S._sh2=0;finishPending();};if(window.BOTFAST){fin();return;}S._picking=1;gotAnim(b,'shop');setTimeout(fin,460);});}
 function finishPending(){S.pending.shift();closeModal();if(!TUT){achState();achSave();}saveGame();updateAll();showNextPending();if(TUT&&TSTEPS[TUT.i].wait==='level'&&!S.pending.length)tutDone();}
 function chooseReplace(k,kind,opts){
   const d=SKILLS[k];
@@ -890,7 +927,7 @@ function chooseReplace(k,kind,opts){
 }
 
 /* ---------- modal ---------- */
-function openModal(html){hideTip();const m=$('mbox');m.innerHTML=html;m.scrollTop=0;const h=m.querySelector('.phead[data-bl]');$('modal').classList.toggle('sheet',!!h);
+function openModal(html,cls){hideTip();const m=$('mbox');m.className='box'+(cls?' '+cls:'');m.innerHTML=html;m.scrollTop=0;const h=m.querySelector('.phead[data-bl]');$('modal').classList.toggle('sheet',!!h);
   if(h){const f=document.createElement('div'),bl=h.dataset.bl;f.className='pfoot';const x=[...m.querySelectorAll('.tofoot')],pre=x.filter(e=>!e.classList.contains('after'));
     pre.forEach(e=>f.appendChild(e));f.insertAdjacentHTML('beforeend',`<button class="pback" id="${h.dataset.id}">${bl[0]==='✕'?bl:'‹ '+bl}</button>`);x.filter(e=>e.classList.contains('after')).forEach(e=>f.appendChild(e));m.appendChild(f);}
   $('modal').classList.remove('hidden');modalOpen=true;}
@@ -1919,8 +1956,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.21';
+const VERSION='0.4.22';
 const CHANGELOG=[
+  {v:'0.4.22',d:'2026-11-21',items:['🎉レベルアップと💰ショップの見た目を、それぞれらしく変えました']},
   {v:'0.4.21',d:'2026-11-21',items:['📊 戦績の表示を整えました（最長チェーンは「連」、グラフの目盛りが欠けないように）']},
   {v:'0.4.20',d:'2026-11-21',items:['B100Fのあと、同じ内容の案内が重ねて出ないようにしました']},
   {v:'0.4.19',d:'2026-11-21',items:['📝 冒険の記録の送信は、内容を確認して同意したときだけ行うようにしました（目的はゲームバランスの調整・改善。冒険者名などの個人情報は送りません）']},
