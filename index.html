@@ -1919,8 +1919,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.20';
+const VERSION='0.4.21';
 const CHANGELOG=[
+  {v:'0.4.21',d:'2026-11-21',items:['📊 戦績の表示を整えました（最長チェーンは「連」、グラフの目盛りが欠けないように）']},
   {v:'0.4.20',d:'2026-11-21',items:['B100Fのあと、同じ内容の案内が重ねて出ないようにしました']},
   {v:'0.4.19',d:'2026-11-21',items:['📝 冒険の記録の送信は、内容を確認して同意したときだけ行うようにしました（目的はゲームバランスの調整・改善。冒険者名などの個人情報は送りません）']},
   {v:'0.4.18',d:'2026-11-20',items:['📲 ブラウザで開いたときは、最初にホーム画面への追加をご案内するようにしました（フルスクリーンで遊べます）']},
@@ -2276,7 +2277,7 @@ function barPath(x,y,w,h,r){if(h<=0)return '';r=Math.min(r,w/2,h);return `M${x},
 function hbarPath(x,y,w,h,r){if(w<=0)return '';r=Math.min(r,h/2,w);return `M${x},${y}H${x+w-r}Q${x+w},${y} ${x+w},${y+r}V${y+h-r}Q${x+w},${y+h} ${x+w-r},${y+h}H${x}Z`;}
 function chartFloors(){
   const R=RUNS.slice(-30);if(!R.length)return '<p class="vz-empty">冒険を終えると、ここに記録が並びます。</p>';
-  const W=340,H=180,L=34,Rt=8,T=16,B=20,iw=W-L-Rt,ih=H-T-B,maxF=Math.max(100,...R.map(r=>r.f)),top=Math.ceil(maxF/50)*50;
+  const W=340,H=180,L=44,Rt=8,T=16,B=20,iw=W-L-Rt,ih=H-T-B,maxF=Math.max(100,...R.map(r=>r.f)),top=Math.ceil(maxF/50)*50;
   const y=v=>T+ih-(v/top)*ih,bw=iw/R.length,gap=Math.min(2,bw*.25);
   let g='';for(let v=0;v<=top;v+=50)g+=`<line x1="${L}" x2="${W-Rt}" y1="${y(v)}" y2="${y(v)}" stroke="${VC.grid}" stroke-width="1"/><text x="${L-5}" y="${y(v)+3}" text-anchor="end" class="vz-ax">B${v}F</text>`;
   g+=`<line x1="${L}" x2="${W-Rt}" y1="${y(100)}" y2="${y(100)}" stroke="${VC.c4}" stroke-width="1.5" stroke-dasharray="4 3"/><text x="${L+4}" y="${y(100)-4}" class="vz-ax" fill="${VC.c4}">目標 B100F</text>`;
@@ -2314,7 +2315,7 @@ function showStats(back,bl){
   const deathRows=Object.entries(deathMap).map(([p,v])=>({label:p,v,col:VC.c2})).sort((a,b)=>b.v-a.v).slice(0,8);
   openModal(`${pgHead('📊 戦績',bl)}<p style="text-align:center;margin:0 0 4px;color:#d9cfc2;font-size:14.5px">👤 ${esc(getName())}</p>
     <div class="vz-tiles">${tile('冒険',games+'<span>回</span>')}${tile('👑 クリア',clears+'<span>回</span>')}${tile('最深',bf?`B${bf}F`:'-')}
-      ${tile('撃破',kills+'<span>体</span>')}${tile('🔗 最長',chainMax+'<span>つ</span>')}
+      ${tile('撃破',kills+'<span>体</span>')}${tile('🔗 最長',chainMax+'<span>連</span>')}
       ${tile('最近10回',last10.length?`B${Math.round(a1)}F`:'-',diff===null?'':diff>0?`<span class="up">▲ ${diff}F</span>`:diff<0?`<span class="dn">▼ ${-diff}F</span>`:'')}</div>
     <h3 class="vz-h">📈 到達階層</h3>${chartFloors()}
     <h3 class="vz-h">🧑‍🤝‍🧑 職業</h3>${chartRows(clsRows,'回',118)}
