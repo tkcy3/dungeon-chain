@@ -79,18 +79,18 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 .smithhd .hm{display:inline-block;transform-origin:85% 85%;animation:hammer 1.1s ease-in-out infinite}
 @keyframes hammer{0%,60%,100%{transform:rotate(0)}22%{transform:rotate(28deg)}36%{transform:rotate(-22deg)}46%{transform:rotate(-14deg)}}
 .smithhd small{font-size:15px;color:#9fb6d8;font-weight:700;margin-left:10px;align-self:flex-end}
-.m-smith .opt{background:linear-gradient(180deg,#4a515c,#363b44);border:1px solid #808a97;border-radius:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
-.m-smith .opt small{color:#cdd6e2}
-.m-smith .opt.got{animation:gotsm .45s ease-in forwards}
+.box.m-smith .opt{background:linear-gradient(180deg,#4a515c,#363b44);border:1px solid #808a97;border-radius:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+.box.m-smith .opt small{color:#cdd6e2}
+.box.m-smith .opt.got{animation:gotsm .45s ease-in forwards}
 @keyframes gotsm{25%{background:#c8723a;box-shadow:0 0 20px rgba(255,140,60,.9)}100%{transform:scale(.92);opacity:0}}
 .spark{position:fixed;z-index:40;width:5px;height:5px;border-radius:50%;background:#ffb347;box-shadow:0 0 6px #ff8a2a;pointer-events:none;transition:transform .45s cubic-bezier(.2,.7,.4,1),opacity .45s}
 .box.m-relic{position:relative;overflow-x:hidden;border:2px solid #8f6ad0;background:radial-gradient(90% 55% at 50% 0%,rgba(170,120,255,.32),rgba(170,120,255,0) 70%),#1d1828;box-shadow:0 0 28px rgba(150,100,255,.3)}
 .relichd{text-align:center;margin:0 0 8px}.relichd .ic{display:inline-block;font-size:52px;animation:relfloat 2.4s ease-in-out infinite;filter:drop-shadow(0 0 14px rgba(190,150,255,.8))}
 @keyframes relfloat{50%{transform:translateY(-6px)}}
 .relichd small{display:block;font-size:13px;color:#bba8dd;margin-top:2px}
-.m-relic .opt{background:linear-gradient(180deg,#3a2f52,#2a2340);border:1px solid #8f6ad0}
-.m-relic .opt small{color:#d4c6ef}
-.m-relic .opt.got{animation:gotrel .45s ease-in forwards}
+.box.m-relic .opt{background:linear-gradient(180deg,#3a2f52,#2a2340);border:1px solid #8f6ad0}
+.box.m-relic .opt small{color:#d4c6ef}
+.box.m-relic .opt.got{animation:gotrel .45s ease-in forwards}
 @keyframes gotrel{30%{box-shadow:0 0 26px rgba(200,160,255,.95);border-color:#e6d4ff}100%{transform:scale(1.06);opacity:0;filter:blur(2px)}}
 /* レベルアップ＝自分の成長（光・才能カード）／ショップ＝行商人から買う（木の棚・値札） */
 .box.m-lv{position:relative;overflow-x:hidden;border-color:#c9a24a;background:radial-gradient(120% 60% at 50% 0%,rgba(255,214,110,.30),rgba(255,214,110,0) 70%),#211a25;box-shadow:0 0 30px rgba(255,200,90,.25)}
@@ -99,17 +99,18 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 .lvnum{position:relative;display:flex;align-items:baseline;justify-content:center;gap:10px;margin:2px 0 10px;font-weight:800;color:#f6dc92;text-shadow:0 0 14px rgba(255,200,80,.6)}
 .lvnum small{font-size:15px;color:#cdb98a;font-weight:600}.lvnum .o{font-size:24px;color:#9d8a6a;text-shadow:none}.lvnum i{font-style:normal;color:#9d8a6a;font-size:20px}.lvnum b{font-size:44px;animation:lvpop .6s cubic-bezier(.2,1.6,.4,1)}
 @keyframes lvpop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
-.m-lv .opt{position:relative;background:linear-gradient(180deg,#3b2f26,#2a2130);border:1px solid #b8903e;box-shadow:inset 0 0 12px rgba(255,210,110,.12)}
-.m-lv .opt.got{animation:gotlv .45s ease-in forwards;border-color:#ffe08a;box-shadow:0 0 24px rgba(255,220,120,.8)}
+.box.m-lv .opt{position:relative;background:linear-gradient(180deg,#3b2f26,#2a2130);border:1px solid #b8903e;box-shadow:inset 0 0 12px rgba(255,210,110,.12)}
+.box.m-lv .opt.got{animation:gotlv .45s ease-in forwards;border-color:#ffe08a;box-shadow:0 0 24px rgba(255,220,120,.8)}
 @keyframes gotlv{40%{transform:scale(1.04)}100%{transform:translateY(-40px) scale(.9);opacity:0}}
 .box.m-shop{position:relative;overflow-x:hidden;border:2px solid #8a5a2b;background:radial-gradient(90% 40% at 50% 0%,rgba(255,170,70,.22),rgba(255,170,70,0) 70%),repeating-linear-gradient(180deg,#2e1f14 0 46px,#271a10 46px 48px)}
 .shophd{display:flex;align-items:center;gap:10px;margin:0 0 6px}.shophd .mc{font-size:46px;line-height:1;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5))}
 .shophd .bub{position:relative;flex:1;background:#f3e6cc;color:#3a2716;border-radius:12px;padding:8px 12px;font-size:15.5px;font-weight:600}
 .shophd .bub::before{content:'';position:absolute;left:-8px;top:50%;margin-top:-7px;border:7px solid transparent;border-right-color:#f3e6cc;border-left:0}
 .shophd .purse{font-size:15px;color:#ffd56a;font-weight:700;white-space:nowrap}
-.m-shop .opt{background:linear-gradient(180deg,#5a3d24,#4a3220);border:1px solid #8a5a2b;border-bottom:5px solid #2a1a0e;border-radius:8px}
-.m-shop .opt small{color:#e2cfae}
-.m-shop .opt.got{animation:gotshop .45s ease-in forwards}
+.ptag{display:inline-block;background:#c9a05a;color:#3a2716;font-size:14px;font-weight:700;padding:3px 10px 3px 14px;border-radius:4px 10px 10px 4px;position:relative;box-shadow:0 2px 0 #6b4a22}.ptag::before{content:'';position:absolute;left:5px;top:50%;width:5px;height:5px;margin-top:-2.5px;border-radius:50%;background:#3a2716}.ptag b{color:#5a2c00}
+.box.m-shop .opt{background:linear-gradient(180deg,#5a3d24,#4a3220);border:1px solid #8a5a2b;border-bottom:5px solid #2a1a0e;border-radius:8px}
+.box.m-shop .opt small{color:#e2cfae}
+.box.m-shop .opt.got{animation:gotshop .45s ease-in forwards}
 @keyframes gotshop{30%{transform:scale(1.04);background:#7a5a2a}100%{transform:scale(.9);opacity:0}}
 .coinfly{position:fixed;z-index:40;font-size:20px;pointer-events:none;transition:transform .42s cubic-bezier(.3,.6,.4,1),opacity .42s}
 
@@ -924,12 +925,12 @@ function showNextPending(){
 }
 /* 選んだ強化を数える（記録用）。ラベルから絵文字と「新スキル」の飾りを除く */
 function upCount(o){if(!S||!S.run||!o)return;const u=S.run.up||(S.run.up={});const k=String(o.label).replace(/（.*?）/g,'').replace(/^\S+\s/,'').replace(/新スキル「(.*)」/,'$1').trim().slice(0,12);u[k]=(u[k]||0)+1;}
-const SHOP_HI=['いい品、そろってるよ','見ていきな','掘り出し物だよ','お代はもう、いただいたよ','どれにする？'];
-function shopHead(line,pr){return `<div class="shophd"><span class="mc">🧔</span><span class="bub">${line}</span></div>${pr?`<p style="text-align:right;margin:-2px 2px 2px"><span class="purse">💰${pr}</span></p>`:''}`;}
+const SHOP_HI=['いい品、そろってるよ','見ていきな','掘り出し物だよ','どれにする？','ちょうどいいところに来たね'];
+function shopHead(line,pr){return `<div class="shophd"><span class="mc">🧔</span><span class="bub">${line}</span></div>${pr?`<p style="text-align:right;margin:-2px 2px 2px"><span class="ptag">どれでも <b>💰${pr}</b></span></p>`:''}`;}
 /* 選んだ瞬間の演出：レベルは光って昇る／ショップはコインが飛んで「毎度あり」 */
 function gotAnim(b,kind){b.classList.add('got');
   if(kind==='shop'){sfx('shop');const bub=$('mbox').querySelector('.bub');if(bub)bub.textContent='毎度あり！';
-    const src=($('mbox').querySelector('.purse')||bub||b).getBoundingClientRect(),dst=b.getBoundingClientRect();
+    const src=($('mbox').querySelector('.ptag')||bub||b).getBoundingClientRect(),dst=b.getBoundingClientRect();
     for(let i=0;i<6;i++){const c=document.createElement('span');c.className='coinfly';c.textContent='🪙';c.style.left=(src.left+src.width/2-10)+'px';c.style.top=(src.top+src.height/2-10)+'px';document.body.appendChild(c);
       requestAnimationFrame(()=>requestAnimationFrame(()=>{c.style.transitionDelay=(i*35)+'ms';c.style.transform=`translate(${dst.left+dst.width*(.3+.08*i)-src.left-src.width/2}px,${dst.top+dst.height/2-src.top-src.height/2}px) scale(.7)`;c.style.opacity='0.2';}));
       setTimeout(()=>c.remove(),700);}}
@@ -1981,8 +1982,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.23';
+const VERSION='0.4.24';
 const CHANGELOG=[
+  {v:'0.4.24',d:'2026-11-21',items:['💰行商人の品物に値札をつけました']},
   {v:'0.4.23',d:'2026-11-21',items:['🛡️防具の強化と🏺遺物の見た目も、それぞれらしく変えました']},
   {v:'0.4.22',d:'2026-11-21',items:['🎉レベルアップと💰ショップの見た目を、それぞれらしく変えました']},
   {v:'0.4.21',d:'2026-11-21',items:['📊 戦績の表示を整えました（最長チェーンは「連」、グラフの目盛りが欠けないように）']},
