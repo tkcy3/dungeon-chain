@@ -1655,8 +1655,9 @@ const ZONES=[
   {f:81,name:'深淵の神殿',desc:'水没した神殿。世界の元凶の気配がすぐそこにある。',tint:'#0e1724',tr:-4,bpm:84}
 ];
 const DEEP=['奈落の回廊','虚無の書庫','星喰いの洞','終わりなき螺旋','時の澱'];
+const DEEP_D=['どこまでも続く、光の届かない回廊。','誰も読まない書物が、音もなく朽ちていく。','星の光さえ呑みこむ、黒い洞窟。','降りても降りても、同じ景色が続く。','時が止まり、すべてがよどんだ場所。'];
 function zoneAt(F){
-  if(F>100){const i=Math.floor((F-101)/20);return {f:101+i*20,name:DEEP[i%DEEP.length],desc:'元凶の先に続いていた、さらに深い層。',tint:['#120f1e','#0f1a1a','#1e0f1a','#1a1a0f','#101010'][i%5],tr:[0,-5,2,-3,4][i%5],bpm:82+Math.min(16,i*2)};}
+  if(F>100){const i=Math.floor((F-101)/20);return {f:101+i*20,name:DEEP[i%DEEP.length],desc:DEEP_D[i%DEEP.length],tint:['#120f1e','#0f1a1a','#1e0f1a','#1a1a0f','#101010'][i%5],tr:[0,-5,2,-3,4][i%5],bpm:82+Math.min(16,i*2)};}
   let z=ZONES[0];for(const x of ZONES)if(F>=x.f)z=x;return z;
 }
 const BOSS_FLOOR={20:'オーガの玉座',40:'竜の寝床',60:'吸血鬼の城門',80:'海底神殿の奥',100:'世界の底'};
@@ -1703,7 +1704,7 @@ function showClear(){
     $('cl1').onclick=()=>{openModal(`<div class="big" style="text-align:center">🕳️</div><h2>まだ、底ではなかった</h2>
       <p style="text-align:center">元凶が消えたあとに、さらに下へと続く階段が口を開けていた。<br>地の底のさらに底から、より深い闇の気配が這い上がってくる——</p>
       <button class="opt" id="cl2" style="text-align:center">さらに深くへ（エンドレス）</button>`);
-      $('cl2').onclick=()=>{showBanner('B100F','終わりなき深層へ','ここから先は、果てのない冒険。','#c9a2ff');finishPending();};};
+      $('cl2').onclick=()=>{finishPending();};};
   }else{
     openModal(`<div class="big" style="text-align:center">👁️</div><h2>B${floorOf()}Fの元凶を倒した</h2><p style="text-align:center">${S.turn}ターン・撃破${S.kills}・Lv${S.level}<br>それでも、闇の底は見えない。</p>${TUT?'':rewardHtml(rk)}
       <button class="opt" id="cl2" style="text-align:center">さらに深くへ</button>`);
@@ -1918,8 +1919,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.19';
+const VERSION='0.4.20';
 const CHANGELOG=[
+  {v:'0.4.20',d:'2026-11-21',items:['B100Fのあと、同じ内容の案内が重ねて出ないようにしました']},
   {v:'0.4.19',d:'2026-11-21',items:['📝 冒険の記録の送信は、内容を確認して同意したときだけ行うようにしました（目的はゲームバランスの調整・改善。冒険者名などの個人情報は送りません）']},
   {v:'0.4.18',d:'2026-11-20',items:['📲 ブラウザで開いたときは、最初にホーム画面への追加をご案内するようにしました（フルスクリーンで遊べます）']},
   {v:'0.4.17',d:'2026-11-20',items:['🎵BGMの音量を 小・中・大 から選べるように（🎵を押すたびに切り替え）']},
