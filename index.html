@@ -213,6 +213,11 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 .instSub{margin:0 0 26px;font-size:14.5px;line-height:1.7;color:#a3978a}
 .instFx{list-style:none;margin:4px 0 26px;padding:14px 18px;width:100%;border-radius:14px;background:rgba(46,37,53,.55);border:1px solid #3d3245;text-align:left}.instFx li{display:flex;align-items:center;gap:12px;font-size:16px;line-height:1.5;padding:6px 0;color:#e6dccb}.instFx span{font-size:22px;width:28px;text-align:center;flex:none}
 #instSteps{width:100%;margin-top:6px}#instSteps p{text-align:center;font-size:13px;color:#8f8396;margin:0}
+.cs{font-size:15px;line-height:1.7;color:#e6dccb}.cs p{margin:0 0 6px}.cs h3{font-size:15.5px;margin:14px 0 4px;color:#e8b33a;font-weight:600}.cs ul{margin:0;padding-left:1.3em}.cs li{margin:2px 0}
+.csChk{display:flex;align-items:center;gap:12px;margin:18px 0 12px;padding:13px;border:1px solid #5d4a69;border-radius:12px;font-size:16.5px;color:#eee;background:#2a2230}
+.csChk input{width:24px;height:24px;accent-color:#e8b33a;flex:none;margin:0}
+#csYes:disabled{opacity:.35;box-shadow:none}
+#csNo{display:block;margin:10px auto 0;background:none;border:0;color:#8f8396;font-size:15px;text-decoration:underline;padding:10px}
 #instSkip{margin-top:26px;background:none;border:0;color:#8f8396;font-size:14.5px;text-decoration:underline;padding:10px}
 .a2g{display:flex;justify-content:center;gap:26px;margin:18px 0 6px;font-size:13px;color:#c9bfcf;text-align:center}.a2g span{display:block;font-size:30px}
 #cloud{font-size:12.5px;color:#8f8396;margin-top:14px}
@@ -1137,7 +1142,7 @@ function instShow(){if(!instOk()||isApp())return false;$('instOv').classList.rem
 $('instGo').onclick=()=>{try{localStorage.setItem('dchain_a2h_v1','1');}catch(e){}refreshHomeBtn();
   if(A2H){const e=A2H;A2H=null;e.prompt();e.userChoice.then(r=>{if(r&&r.outcome==='accepted')instDone();else $('instSteps').innerHTML=instHow();}).catch(()=>{});return;}
   $('instSteps').innerHTML=INST&&!instIos()?'<div class="a2h"><b>✅ もう入っています</b></div><p>ホーム画面かアプリ一覧の Dungeon Chain から開いてください</p>':instHow();};
-$('instSkip').onclick=()=>$('instOv').classList.add('hidden');
+$('instSkip').onclick=()=>{$('instOv').classList.add('hidden');consentBoot();};
 function showAddHome(back){try{localStorage.setItem('dchain_a2h_v1','1');}catch(e){}refreshHomeBtn();
   if(A2H){const e=A2H;A2H=null;e.prompt();e.userChoice.then(r=>{if(r&&r.outcome!=='accepted')A2H=null;refreshHomeBtn();}).catch(()=>{});return;}
   const ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
@@ -1913,8 +1918,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.18';
+const VERSION='0.4.19';
 const CHANGELOG=[
+  {v:'0.4.19',d:'2026-11-21',items:['📝 冒険の記録の送信は、内容を確認して同意したときだけ行うようにしました（目的はゲームバランスの調整・改善。冒険者名などの個人情報は送りません）']},
   {v:'0.4.18',d:'2026-11-20',items:['📲 ブラウザで開いたときは、最初にホーム画面への追加をご案内するようにしました（フルスクリーンで遊べます）']},
   {v:'0.4.17',d:'2026-11-20',items:['🎵BGMの音量を 小・中・大 から選べるように（🎵を押すたびに切り替え）']},
   {v:'0.4.16',d:'2026-11-20',items:['💪戦士と🏰重騎士も、防御0から出発するようにしました']},
@@ -1978,7 +1984,8 @@ function showSettings(back,msg){
   const tg=(id,ic,label,on)=>`<button class="tile big tg ${on?'':'off'}" id="${id}"><span class="ti">${ic}</span><small>${label}</small><em>${on?'ON':'OFF'}</em></button>`;
   openModal(`${pgHead('⚙️ 設定','戻る','stClose')}<div class="tgrid" style="--c:3">${tg('st1','🎵','BGM',AU.on.bgm).replace('>ON<','>'+BGM_LB[bgmLv()]+'<')}${tg('st2','🔊','効果音',AU.on.sfx)}${tg('st3',VIB_IC==='振動'?'📳':VIB_IC,'振動',AU.on.vib)}</div>
     <button class="prow" id="stVer" style="margin-top:14px"><span class="ri">📋</span><span class="rt">更新内容${verUnseen()?'<span class="newb">NEW</span>':''}</span><span class="rs">v${VERSION}</span></button>
-    <button class="prow" id="stShare"><span class="ri">📤</span><span class="rt">記録を作者に送る<br><small style="color:#b9adc0;font-size:12.5px">冒険者名・職業・到達階など</small></span><span class="rs" style="color:${shareOn()?'#8fe08f':'#f08a8a'}">${shareOn()?'ON':'OFF'}</span></button>
+    <button class="prow" id="stShare"><span class="ri">📤</span><span class="rt">記録を作者に送る<br><small style="color:#b9adc0;font-size:12.5px">職業・到達階など（冒険者名は送りません）</small></span><span class="rs" style="color:${shareOn()?'#8fe08f':'#f08a8a'}">${shareOn()?'ON':'OFF'}</span></button>
+    <button class="prow" id="stCs"><span class="ri">📝</span><span class="rt">データ送信について</span><span class="rs">›</span></button>
     <button class="prow" id="stStory"><span class="ri">📜</span><span class="rt">物語をもう一度</span><span class="rs">›</span></button>
     <button class="prow" id="stTheme"><span class="ri">🎨</span><span class="rt">盤面の色</span><span class="rs">›</span></button>
     ${isApp()?'':'<button class="prow" id="stA2h"><span class="ri">📲</span><span class="rt">ホーム画面に追加<br><small style="color:#b9adc0;font-size:12.5px">全画面ですぐ遊べる</small></span><span class="rs">›</span></button>'}
@@ -1987,7 +1994,8 @@ function showSettings(back,msg){
   const flip=k=>{AU.on[k]=!AU.on[k];saveAudio();refreshAudioBtns();if(k==='bgm'&&AU.on.bgm&&inGame)bgmStart();if(k==='vib'&&AU.on.vib)vib(30);showSettings();};
   $('stVer').onclick=()=>showChangelog(()=>showSettings());
   $('st1').onclick=()=>{cycleBgm();showSettings();};$('st2').onclick=()=>flip('sfx');$('st3').onclick=()=>flip('vib');
-  $('stShare').onclick=()=>{try{localStorage.setItem(LS_SHARE,shareOn()?'0':'1');}catch(e){}showSettings();};
+  $('stShare').onclick=()=>{if(!shareOn()&&consentVal()!=='1'){openConsent(()=>showSettings());return;}try{localStorage.setItem(LS_SHARE,shareOn()?'0':'1');}catch(e){}showSettings();};
+  if($('stCs'))$('stCs').onclick=()=>openConsent(()=>showSettings());
   $('stStory').onclick=()=>{closeModal();playStory(()=>{if(inGame)return;bgmStop();showSettings();});};
   $('stTheme').onclick=()=>showTailor(()=>showSettings());if($('stA2h'))$('stA2h').onclick=()=>showAddHome(()=>showSettings());if(!inGame)$('stData').onclick=showDataReset;
   $('stClose').onclick=()=>{const b=settingsBack;settingsBack=null;if(b)b();else closeModal();};
@@ -2221,11 +2229,29 @@ function runsLoad(){try{const r=JSON.parse(localStorage.getItem(LS_RUNS)||'[]');
 function runsSave(){try{localStorage.setItem(LS_RUNS,JSON.stringify(RUNS.slice(-300)));}catch(e){}}
 /* 冒険の記録を、作者のGoogleフォーム（→スプレッドシート）へ送る。設定でオフにできる */
 const SHARE_URL='https://docs.google.com/forms/d/e/1FAIpQLSfncydVDFEmGqlUP8mH0GAe7VuoDICT9k98s-NkCF9Cbj2CdQ/formResponse',SHARE_ENTRY='entry.1097035413',LS_SHARE='dchain_share_v1',LS_DEV='dchain_dev_v1';
-const shareOn=()=>{try{return localStorage.getItem(LS_SHARE)!=='0';}catch(e){return true;}};
+const LS_CONSENT='dchain_consent_v1';
+const consentVal=()=>{try{return localStorage.getItem(LS_CONSENT);}catch(e){return null;}};
+/* 送信は「内容を確認して同意した」ときだけ。同意前・不同意・設定オフのときは何も送らない */
+const shareOn=()=>{try{return consentVal()==='1'&&localStorage.getItem(LS_SHARE)!=='0';}catch(e){return false;}};
+function openConsent(after){
+  openModal(`<h2 style="margin:0 0 12px;font-size:20px;text-align:center">📝 プレイデータの送信について</h2>
+  <div class="cs"><p>より遊びやすいゲームにするため、冒険の記録を作者に送らせてください。集めた記録は<b>ゲームバランスの調整・改善のためだけ</b>に使います。</p>
+  <h3>送る内容</h3><ul><li>冒険の記録（職業・到達した階・ターン数・レベル・倒した数・最長チェーン・覚えたスキルや強化・倒された相手 など）</li><li>ゲームのバージョン</li><li>端末ごとにランダムに作られる番号（同じ端末の記録をまとめるためのもので、あなた個人とは結びつきません）</li></ul>
+  <h3>送らないもの</h3><ul><li>冒険者名、名前・メールアドレス・電話番号・位置情報など、個人を特定できる情報</li><li>写真・連絡先・ほかのアプリなど、端末の中の情報</li></ul>
+  <h3>そのほか</h3><ul><li>記録を第三者に渡すことはありません</li><li>送るかどうかは、設定からいつでも変えられます</li><li>送らない場合も、ゲームはすべて同じように遊べます</li></ul></div>
+  <label class="csChk"><input type="checkbox" id="csChk" ${consentVal()==='1'?'checked':''}><span>上記の内容を確認しました</span></label>
+  <button class="tbtn pri" id="csYes" ${consentVal()==='1'?'':'disabled'}>同意して送信する</button>
+  <button id="csNo">送信しない</button>`);
+  const done=ok=>{try{localStorage.setItem(LS_CONSENT,ok?'1':'0');localStorage.setItem(LS_SHARE,ok?'1':'0');}catch(e){}closeModal();if(after)after();};
+  $('csChk').onchange=e=>{$('csYes').disabled=!e.target.checked;};
+  $('csYes').onclick=()=>{if($('csChk').checked)done(true);};
+  $('csNo').onclick=()=>done(false);
+}
+function consentBoot(){if(consentVal()===null)openConsent();}
 function devId(){try{let v=localStorage.getItem(LS_DEV);if(!v){v=Math.random().toString(36).slice(2,10);localStorage.setItem(LS_DEV,v);}return v;}catch(e){return 'x';}}
 function shareRun(prog){if(TUT||!S||!shareOn())return;try{if(!S.rid)S.rid=Math.random().toString(36).slice(2,10);
   const R=S.run||{},nm=k=>(EK[k]&&EK[k].name)||k||'';
-  const d={v:VERSION,id:devId(),rid:S.rid,prog:prog?1:0,name:getName(),no:(ACH.st&&ACH.st.games)||0,cls:S.cls||'warrior',rnd:S.rndPick?1:0,floor:floorOf(),turn:S.turn,lv:S.level,kills:S.kills,chain:S.maxChain||0,clear:S.cleared||0,
+  const d={v:VERSION,id:devId(),rid:S.rid,prog:prog?1:0,no:(ACH.st&&ACH.st.games)||0,cls:S.cls||'warrior',rnd:S.rndPick?1:0,floor:floorOf(),turn:S.turn,lv:S.level,kills:S.kills,chain:S.maxChain||0,clear:S.cleared||0,
     boss:(S.bossUp&&bossAlive())?nm(S.bossKind):'',killer:GIVEUP||prog?'':nm(S._topK),quit:!prog&&GIVEUP?1:0,min:R.t0?Math.round((Date.now()-R.t0)/60000):null,shops:R.shops||0,
     up:R.up||{},skills:(S.skills||[]).map(x=>x.id),sku:R.sku||{},
     stat:{hp:S.maxHp,ar:S.maxArmor,base:S.baseDmg,wpn:S.weaponDmg,heal:S.healPer,arp:S.armorPer,gold:S.goldPer,mag:S.mag||0}};
@@ -2370,7 +2396,7 @@ baseMigrate();applyTheme();
 if(!UNL.retroH){UNL.retroH=1;for(let i=0;i<Math.min(ACH.st.clears||0,5);i++)clearReward(true);unlSave();}checkUnlocks();refreshTitle();setTimeout(titleAnim,100);setCloud('この端末のブラウザに保存');
 requestAnimationFrame(frame);
 setTimeout(initCloud,0);
-instShow();
+if(!instShow())consentBoot();
 </script>
 <script>if('serviceWorker' in navigator&&location.protocol==='https:'){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}</script>
 </body>
