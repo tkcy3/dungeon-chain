@@ -1982,8 +1982,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.25';
+const VERSION='0.4.26';
 const CHANGELOG=[
+  {v:'0.4.26',d:'2026-11-21',items:['🧭職業を選ぶとき、ボタンの位置がずれないようにしました']},
   {v:'0.4.25',d:'2026-11-21',items:['💰行商人の品物を、お金で買える物の名前に（修行→武術の書 など）']},
   {v:'0.4.24',d:'2026-11-21',items:['💰行商人の品物に値札をつけました']},
   {v:'0.4.23',d:'2026-11-21',items:['🛡️防具の強化と🏺遺物の見た目も、それぞれらしく変えました']},
@@ -2212,11 +2213,16 @@ function pickClass(then,cancel,peek){
   const rndSel=UNL.cls==='random',cur=partyCls(),me=p=>pickClass(then,cancel,p);
   const how=c=>c.hidden===2?'元凶を倒すと、現れるらしい':c.kill?`3回目の冒険から。B${c.floor}F以上で ${EK[c.kill[0]].name}を${c.kill[1]}体倒すと…`:'';
   const pk=peek&&!classOk(peek)?CLASSES[peek]:null,c=CLASSES[cur],bu=pk&&BASE_UNL.find(x=>x[0]===peek);
-  const card=bu?`<span class="ci" style="filter:grayscale(1);opacity:.6">${pk.ic}</span><div><b>🔒 ${pk.n}</b><p>冒険を終えるたびに 1人ずつ仲間になる</p></div>`:pk?`<span class="ci">❔</span><div><b>？？？</b><p>🗨️ ${how(pk)}</p></div>`
-    :rndSel?`<span class="ci">🎲</span><div><b>おまかせ</b><p>${okK.map(k=>CLASSES[k].ic).join(' ')} から1つ</p></div>`:`<span class="ci">${c.ic}</span><div><b>${c.n}</b><p>${c.fx}</p></div>`;
+  const lockC=x=>BASE_UNL.find(y=>y[0]===x)?`<span class="ci" style="filter:grayscale(1);opacity:.6">${CLASSES[x].ic}</span><div><b>🔒 ${CLASSES[x].n}</b><p>冒険を終えるたびに 1人ずつ仲間になる</p></div>`:`<span class="ci">❔</span><div><b>？？？</b><p>🗨️ ${how(CLASSES[x])}</p></div>`;
+  const okC=x=>`<span class="ci">${CLASSES[x].ic}</span><div><b>${CLASSES[x].n}</b><p>${CLASSES[x].fx}</p></div>`,rndC=`<span class="ci">🎲</span><div><b>おまかせ</b><p>${okK.map(k=>CLASSES[k].ic).join(' ')} から1つ</p></div>`;
+  const card=pk?lockC(peek):rndSel?rndC:okC(cur);
   openModal(`${pgHead('🧭 職業','戻る','pcCancel')}<div class="pcard">${card}</div>
     <div class="tgrid" style="--c:3"><button class="tile ${rndSel?'sel':''}" data-k="random"><span class="ti">🎲</span><small>おまかせ</small></button>${ks.map(k=>{const x=CLASSES[k],ok=classOk(k);return `<button class="tile ${ok?'':'lock'} ${ok&&!rndSel&&k===cur?'sel':''}" data-k="${k}"><span class="ti">${ok||!x.hidden?x.ic:'❔'}</span>${ok||!x.hidden?`<small style="${x.n.length>4?'font-size:11px':''}">${x.n}</small>`:''}</button>`;}).join('')}</div>
     <button class="gopri tofoot after" id="pcGo">▶ 出発<small>${rndSel?'🎲 おまかせ':`${c.ic} ${c.n}`}</small></button>`);
+  /* 説明カードの高さを、出しうる説明のうち一番長いものに固定する（選ぶたびにボタンの位置がずれないように） */
+  {const pc=$('mbox').querySelector('.pcard'),w=pc.offsetWidth;if(w){if(!pickClass.h||pickClass.w!==w||pickClass.n!==okK.length){const t=document.createElement('div');t.className='pcard';t.style.cssText=`position:absolute;visibility:hidden;width:${w}px;min-height:0;left:0;top:0`;
+    $('mbox').appendChild(t);let mx=0;[rndC,...ks.map(k=>classOk(k)?okC(k):lockC(k))].forEach(h=>{t.innerHTML=h;mx=Math.max(mx,t.offsetHeight);});t.remove();pickClass.h=mx;pickClass.w=w;pickClass.n=okK.length;}
+    pc.style.minHeight=pickClass.h+'px';}}
   bindTiles('.tile[data-k]',b=>{const k=b.dataset.k;if(k==='random'||classOk(k)){UNL.cls=k;unlSave();me();}else me(k);});
   $('pcGo').onclick=()=>{closeModal();if(!rndSel)return then(cur);const k=okK[rnd(okK.length)],x=CLASSES[k];
     achToast({ic:'🎲',n:`${x.ic} ${x.n}`,d:'今回の職業に決まった',secret:0,custom:'おまかせ'});then(k);if(S)S.rndPick=1;};
