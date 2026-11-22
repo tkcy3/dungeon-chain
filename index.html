@@ -354,7 +354,7 @@ const SKILLS={
   bless:{name:'祝福',icon:'🌟',cd:20,desc:'3ターンの間、チェーンが3つ長い扱いになる（効果の倍率アップ）'}
 };
 
-const MAG_UP=8,HOLY_N=3,BASH=.35;
+const MAG_UP=8,HOLY_N=3,BASH=.5,BASH_ADJ=true;
 const UNDEAD=k=>/^(skel|zombie|ghost|lich|vampire)/.test(k||'');
 const atkP=()=>S?S.baseDmg+3*S.weaponDmg:7;
 /* 魔術師はスキルで戦う：攻撃スキルの威力は剣ではなく「魔力」で決まる */
@@ -792,13 +792,14 @@ function commitChain(){
     cells.forEach(p=>remove.add(p[0]*N+p[1]));
     if(S.cls==='gambler'&&GAMB_ALL){const r=gRoll();mult*=r;S.nextRoll=ROLLS[rnd(ROLLS.length)];msgs.push(`🃏 ×${r}`);}
     /* 盤面の敵（条件に合うもの）にまとめてダメージ：僧侶の聖なる🧪・重騎士の盾で殴る */
-    const aoe=(d,f,label,col)=>{if(d<=0)return;let k=0,xp=0;const now=performance.now(),hits=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){const t=S.board[r][c];if(!isEnemy(t)||remove.has(r*N+c)||!f(t))continue;hits.push([r,c]);applyDmg(t,d);if(t.hp<=0){remove.add(r*N+c);k++;xp+=xpOf(t);}else t.hit=now;}
+    const aoe=(d,f,label,col)=>{if(d<=0)return;let k=0,xp=0;const now=performance.now(),hits=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){const t=S.board[r][c];if(!isEnemy(t)||remove.has(r*N+c)||!f(t,r,c))continue;hits.push([r,c]);applyDmg(t,d);if(t.hp<=0){remove.add(r*N+c);k++;xp+=xpOf(t);}else t.hit=now;}
       if(hits.length){burst(hits,col||'#ffd54a',k?1.5:.8);hits.forEach(p=>RINGS.push({p,t0:now,col:col||'#ffd54a'}));if(k>=3)FLASH=now;}
       S.kills+=k;if(xp)gainXp(xp);relicKills(k);msgs.push(`${label}${d}ダメージ${k?`、${k}体撃破`:''}`);};
     const eff=(g,n)=>{
     if(g==='shield'&&S.cls==='zombie'){const h=Math.min(Math.round(n*mult),S.maxHp-S.hp);S.hp+=h;msgs.push(`🧟傷をふさいだ HP+${h}`);flash('bHp');}
     else if(g==='shield'){const add=Math.round(n*S.armorPer*mult*(hasR('crest')?1.5:1)),used=Math.min(add,S.maxArmor-S.armor);S.armor+=used;const over=add-used;
-      if(S.cls==='heavy')aoe(Math.round(add*BASH),()=>true,'🏰 盾で殴る！全ての敵に','#8fc8ff');
+      /* 重騎士：つないだ🛡️のまわり（8方向）にいる敵だけを盾で殴る */
+      if(S.cls==='heavy'){const near=new Set();cells.forEach(([r,c])=>{if(S.board[r][c].t!=='shield')return;for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const rr=r+dr,cc=c+dc;if(rr>=0&&cc>=0&&rr<N&&cc<N)near.add(rr*N+cc);}});aoe(Math.round(add*BASH),(t,r,c)=>near.has(r*N+c),'🏰 盾で殴る！','#8fc8ff');}
       if(over>0){S.shieldPts+=over;while(S.shieldPts>=S.shieldNeed){S.shieldPts-=S.shieldNeed;S.shieldNeed=Math.round(S.shieldNeed*1.25)+10;S.pending.push('shield');}}
       msgs.push(`防御+${used}`+(over?`（超過${over}は盾ポイントへ）`:''));flash('bAr');}
     else if(g==='potion'&&S.cls==='vampire'){const a=Math.round(n*mult);addGold(a);msgs.push(`🧪は口に合わない → 💰+${a}`);flash('bGd');}
@@ -1982,8 +1983,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.26';
+const VERSION='0.4.27';
 const CHANGELOG=[
+  {v:'0.4.27',d:'2026-11-22',items:['🏰重騎士の「盾で殴る」は、つないだ🛡️のまわりの敵だけに届くように（そのぶん威力アップ）']},
   {v:'0.4.26',d:'2026-11-21',items:['🧭職業を選ぶとき、ボタンの位置がずれないようにしました']},
   {v:'0.4.25',d:'2026-11-21',items:['💰行商人の品物を、お金で買える物の名前に（修行→武術の書 など）']},
   {v:'0.4.24',d:'2026-11-21',items:['💰行商人の品物に値札をつけました']},
@@ -2171,7 +2173,7 @@ const CLASSES={
   thief:{ic:'🗝️',n:'盗賊',d:'金目のものに目がない、身軽な流れ者。',fx:'お金で強くなる。ショップで強化を2つ選べる（そのぶん必要額は高め）・💰の価値を最大6まで伸ばせる・初期HP40',stage:'s1'},
   mage:{ic:'🔮',n:'魔術師',d:'古い術を受け継ぐ、線の細い学者。',fx:'スキルで戦う。攻撃スキルの威力が3倍、さらに📖魔力が上乗せされ、レベルアップで伸ばせる（剣・腕力は伸びにくい）・スキルの再使用が早い・集中の効果が大きい（-5）・最初から🔥火球・初期HP40',stage:'s3'},
   cleric:{ic:'📿',n:'僧侶',d:'祈りで傷を癒やしてきた、穏やかな巡礼者。',fx:'🧪で戦う。🧪をつなぐと、盤面のアンデッド（💀🧟👻など）が1ターンひるんで攻撃してこない・🧪の回復量3（通常2）・回復の余りは経験値に',stage:'s2'},
-  heavy:{ic:'🏰',n:'重騎士',d:'城壁のような鎧をまとった、動かぬ守り手。',fx:'守りで戦う。🛡️をつなぐと、増えた防御の半分を全ての敵にダメージ（盾で殴る）・🛡️1枚の防御2・最大防御8・剣と腕力は伸びにくい・初期HP50',stage:'s0'},
+  heavy:{ic:'🏰',n:'重騎士',d:'城壁のような鎧をまとった、動かぬ守り手。',fx:'守りで戦う。🛡️をつなぐと、つないだ🛡️のまわりの敵に、増えた防御の半分のダメージ（盾で殴る）・🛡️1枚の防御2・最大防御8・剣と腕力は伸びにくい・初期HP50',stage:'s0'},
   vampire:{ic:'🧛',n:'ヴァンパイア',hidden:1,d:'血の渇きに導かれ、地の底へ還る夜の貴族。',fx:'🧪では回復できない（💰に変わる）・敵を倒すたびに血を吸ってHP回復（レベルで増加）・初期HP46',
     kill:['vampire',1],floor:50,cond:()=>false},
   zombie:{ic:'🧟',n:'ゾンビ',hidden:1,d:'何度倒れても、なぜか起き上がってくる者。',fx:'防具は使えない（🛡️は傷をふさいでHP回復）・🧪の回復量1・冒険中に二度まで、HP満タンで蘇る・初期HP52',
