@@ -69,6 +69,7 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 .sk{position:relative;background:#2a2230;border:1px solid #574663;border-radius:10px;color:#eee;padding:5px 2px;font-size:11px;min-height:50px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
 .sk .ic{font-size:20px;line-height:1.1}
 .sk:disabled{opacity:.45}
+.sk.aiming{border-color:#ff6a4a!important;box-shadow:0 0 12px rgba(255,90,60,.7);animation:aimbtn 1s ease-in-out infinite}@keyframes aimbtn{50%{box-shadow:0 0 4px rgba(255,90,60,.3)}}
 .sk.empty{border-style:dashed;color:#665}
 .sk .cd{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);border-radius:10px;font-size:13px;font-weight:700}
 .ov{position:fixed;inset:0;background:rgba(8,5,10,.82);display:flex;align-items:center;justify-content:center;padding:14px;z-index:10}
@@ -341,7 +342,7 @@ const SKILLS={
   thunder:{name:'雷撃',icon:'⚡',cd:12,desc:'ランダムな敵3体にダメージ',scale:1},
   magnet:{name:'磁力',icon:'🧲',cd:14,desc:'盤面の💰を全て回収する'},
   freeze:{name:'凍結',icon:'❄️',cd:16,desc:'全ての敵を2ターン 動けなくする'},
-  snipe:{name:'狙撃',icon:'🎯',cd:12,desc:'いちばん倒しにくい敵（残りHP＋装甲が最大）にダメージ',scale:1},
+  snipe:{name:'狙撃',icon:'🎯',cd:12,desc:'選んだ場所を中心に、菱形の範囲へダメージ（中心ほど大きい）',scale:1},
   crush:{name:'粉砕',icon:'🔨',cd:10,desc:'全ての敵の装甲を0にする'},
   bless:{name:'祝福',icon:'🌟',cd:20,desc:'3ターンの間、チェーンが3つ長い扱いになる（効果の倍率アップ）'}
 };
@@ -351,12 +352,15 @@ const UNDEAD=k=>/^(skel|zombie|ghost|lich|vampire)/.test(k||'');
 const atkP=()=>S?S.baseDmg+3*S.weaponDmg:7;
 /* 魔術師はスキルで戦う：攻撃スキルの威力は剣ではなく「魔力」で決まる */
 const pw=()=>S&&S.cls==='mage'?Math.round((atkP()+(S.mag||6))*3):atkP();
-const SKD={fire:()=>Math.round(.6*pw()+(S?S.turn:0)/9),thunder:()=>Math.round(pw()+(S?S.turn:0)/5),snipe:()=>Math.round(2*pw()+(S?S.turn:0)/3)};
+const SKD={fire:()=>Math.round(.6*pw()+(S?S.turn:0)/9),thunder:()=>Math.round(pw()+(S?S.turn:0)/5),snipe:()=>Math.round(.6*pw()+(S?S.turn:0)/9)};
+/* 狙撃の範囲：中心3・となり2・その外1（菱形） */
+const AIMK=[3,2,1];function aimCells(c){const o=[];for(let r=0;r<N;r++)for(let k=0;k<N;k++){const d=Math.abs(r-c[0])+Math.abs(k-c[1]);if(d<=2)o.push([r,k,AIMK[d]]);}return o;}
+let AIM=null;
 const execLine=e=>Math.max(SKD.fire(),Math.ceil(e.maxHp*.5));
 function skillDesc(k){
   if(k==='fire')return `全ての敵に${SKD.fire()}ダメージ`;
   if(k==='thunder')return `ランダムな敵3体に${SKD.thunder()}ダメージ`;
-  if(k==='snipe')return `いちばん倒しにくい敵に${SKD.snipe()}ダメージ`;
+  if(k==='snipe'){const u=SKD.snipe();return `選んだ場所を中心に、菱形の範囲へ ${3*u}・${2*u}・${u} ダメージ`;}
   if(k==='execute')return `残りHP${SKD.fire()}以下か半分以下の敵を全て倒す（装甲無視・ボス以外）。経験値1.5倍`;
   return SKILLS[k].desc;
 }
@@ -379,7 +383,7 @@ const isEnemy=t=>t&&t.t==='skull';
 
 /* ---------- state ---------- */
 function newState(cls){
-  GIVEUP=false;
+  GIVEUP=false;AIM=null;
   const s={v:1,ts:Date.now(),rid:Math.random().toString(36).slice(2,10),turn:0,kills:0,level:1,xp:0,xpNeed:16,
     hp:50,maxHp:50,armor:0,maxArmor:4,armorPer:1,
     baseDmg:1,weaponDmg:2,healPer:2,goldPer:2,
@@ -783,8 +787,10 @@ function commitChain(){
 }
 
 /* ---------- skills ---------- */
-function useSkill(i){
+function useSkill(i,at){
   const sk=S.skills[i];if(!sk||sk.cur>0||busy()||modalOpen||(TUT&&(TUT.lock||TSTEPS[TUT.i].wait!=='skill')))return;
+  /* 狙撃は照準モード：盤面をタップで狙いを決め、同じ場所をもう一度タップで発射。スキルをもう一度押すとやめる */
+  if(sk.id==='snipe'&&!at){if(AIM&&AIM.i===i)AIM=null;else{AIM={i,c:null};chain=[];sfx('link',1);}updateAll();return;}
   const now=performance.now();const remove=new Set();let msg='';const fx=[],kb=S.kills;
   const eachEnemy=f=>{for(let r=0;r<N;r++)for(let c=0;c<N;c++){const t=S.board[r][c];if(isEnemy(t))f(t,r,c);}};
   switch(sk.id){
@@ -798,8 +804,8 @@ function useSkill(i){
       hit.forEach(([t,r,c])=>{fx.push([r,c]);applyDmg(t,d);if(t.hp<=0){remove.add(r*N+c);k++;xp+=xpOf(t);}else t.hit=now;});S.kills+=k;if(xp)gainXp(xp);msg=`雷撃！${hit.length}体に${d}ダメージ${k?`、${k}体撃破`:''}`;break;}
     case 'magnet':{let k=0;for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(S.board[r][c].t==='coin'){remove.add(r*N+c);k++;fx.push([r,c]);}const a=k*S.goldPer;addGold(a);flash('bGd');msg=`磁力：💰${k}枚を回収（+${a}）`;break;}
     case 'freeze':{let k=0;eachEnemy((t,r,c)=>{t.frz=2;k++;fx.push([r,c]);});msg=`凍結：${k}体の敵が凍りついた`;break;}
-    case 'snipe':{const d=SKD.snipe();let tg=null,tr=0,tc=0;eachEnemy((t,r,c)=>{if(!tg||t.hp+t.armor>tg.hp+tg.armor){tg=t;tr=r;tc=c;}});
-      if(!tg)msg='狙撃：敵がいない';else{fx.push([tr,tc]);applyDmg(tg,d);if(tg.hp<=0){remove.add(tr*N+tc);S.kills++;gainXp(xpOf(tg));msg=`狙撃！${EK[kindOf(tg)].name}を撃破`;}else{tg.hit=now;msg=`狙撃！${EK[kindOf(tg)].name}に${d}ダメージ`;}}break;}
+    case 'snipe':{AIM=null;const u=SKD.snipe();let k=0,h=0,xp=0;aimCells(at).forEach(([r,c,m])=>{fx.push([r,c]);const t=S.board[r][c];if(!isEnemy(t))return;h++;applyDmg(t,dmgTo(t,u*m));if(t.hp<=0){remove.add(r*N+c);k++;xp+=xpOf(t);}else t.hit=now;});
+      S.kills+=k;if(xp)gainXp(xp);msg=h?`狙撃！${h}体に命中${k?`、${k}体撃破`:''}`:'狙撃：外れた';break;}
     case 'crush':{let k=0;eachEnemy((t,r,c)=>{if(t.armor>0){t.armor=0;k++;fx.push([r,c]);}});msg=`粉砕：${k}体の装甲を破壊`;break;}
     case 'bless':{S.bless=3;msg='祝福：3ターン チェーンが3つ長い扱いに';break;}
     case 'execute':{let k=0,xp=0;eachEnemy((t,r,c)=>{if(!t.boss&&t.hp<=execLine(t)){fx.push([r,c]);remove.add(r*N+c);k++;xp+=xpOf(t);}});S.kills+=k;xp=Math.round(xp*1.5);if(xp)gainXp(xp);msg=k?`処刑：${k}体撃破（経験値1.5倍）`:'処刑：対象なし';break;}
@@ -1185,6 +1191,7 @@ function updateAll(){
     if(s){const d=SKILLS[s.id];b.innerHTML=`<span class="ic">${d.icon}</span><span>${d.name}</span>`+(s.cur>0?`<span class="cd">あと${s.cur}</span>`:'');if(s.cur>0)b.classList.add('off');}
     else b.innerHTML='<span class="ic">・</span><span>空き</span>';
     if(s&&TUT&&!TUT.lock&&TSTEPS[TUT.i].wait==='skill'&&i===0)b.classList.add('pulse');
+    if(AIM&&AIM.i===i)b.classList.add('aiming');
     attachLP(b,()=>skillInfo(i),()=>useSkill(i));sk.appendChild(b);}
   updatePreview();
 }
@@ -1192,6 +1199,9 @@ function updatePreview(){
   const pv=$('preview');if(!S)return;
   pv.classList.toggle('tut',!!TUT&&!chain.length);
   if(TUT&&!chain.length){pv.innerHTML=`<div class="coach">${TUT.msg}</div>`;return;}
+  if(AIM){if(!AIM.c){pv.innerHTML=`<div>🎯 <b>狙う場所をタップ</b></div><div class="sub">もう一度🎯を押すとやめる</div>`;return;}
+    const u=SKD.snipe();let h=0,k=0;aimCells(AIM.c).forEach(([r,c,m])=>{const t=S.board[r][c];if(isEnemy(t)){h++;if(wouldDie(t,dmgTo(t,u*m)))k++;}});
+    pv.innerHTML=`<div>🎯 敵${h}体に命中（撃破${k}）</div><div class="sub"><b>同じ場所をもう一度タップで発射</b>／別の場所で狙い直し</div>`;return;}
   if(!chain.length){const t=enemyTotal();pv.innerHTML=`<div>次のターンの敵の攻撃：<b>${S.anom==='fog'?'？':t}</b>（防御${S.armor}で受け止め）${S.cls==='gambler'?`　🃏次 <b>×${gRoll()}</b>`:''}</div><span class="sub">${S.anom?`<span style="color:#c9a2ff">${ANOMS[S.anom].ic}${ANOMS[S.anom].n}：${ANOMS[S.anom].d}</span> ／ `:''}${S.bless>0?`<span style="color:#ffe08a">🌟祝福中：あと${S.bless}ターン チェーン+3扱い</span>`:'3つ以上なぞってつなごう ／ 長押しで説明'}</span>`;return;}
   const tiles=chain.map(tileAt);const g=groupOf(tiles[0].t);const n=chain.length;
   let main='',kills=new Set();
@@ -1223,6 +1233,7 @@ function busy(){if(!S||dying)return true;if(S.pending.length&&!modalOpen)return 
 let boardLP=null,boardTip=false;
 cv.addEventListener('pointerdown',e=>{
   if(!inGame||modalOpen||(TUT&&TUT.lock))return;const p=cellAt(e,false);if(!p)return;
+  if(AIM){if(busy())return;if(AIM.c&&same(AIM.c,p)){const i=AIM.i;useSkill(i,p);}else{AIM.c=p;sfx('link',3);updatePreview();}e.preventDefault();return;}
   if(busy()){clearTimeout(boardLP);const x1=e.clientX,y1=e.clientY;boardLP=setTimeout(()=>{boardTip=true;showTip(tileInfo(p),x1,y1);},LP_MS);return;}
   ensureAudio();dragging=true;chain=[p];sfx('link',1);try{cv.setPointerCapture(e.pointerId);}catch(_){}updatePreview();e.preventDefault();
   clearTimeout(boardLP);const x0=e.clientX,y0=e.clientY;boardLP=setTimeout(()=>{if(dragging&&chain.length===1&&same(chain[0],p)){dragging=false;chain=[];updatePreview();boardTip=true;showTip(tileInfo(p),x0,y0);if(TUT&&TSTEPS[TUT.i].wait==='tip'&&isEnemy(tileAt(p)))TUT.tipSeen=true;}},LP_MS);
@@ -1326,6 +1337,12 @@ function draw(now){
     ctx.globalAlpha=1;
   }
   drawAtmos(now,cs);
+  if(AIM&&AIM.c){const u=SKD.snipe(),pl=1+.06*Math.sin(now/120);ctx.save();
+    aimCells(AIM.c).forEach(([r,c,m])=>{const t=S.board[r][c],x=c*cs,y=t.ry*cs;ctx.fillStyle=`rgba(255,${m===3?70:m===2?120:170},60,${.12+.08*m})`;ctx.fillRect(x+2,y+2,cs-4,cs-4);
+      if(isEnemy(t)){const d=dmgTo(t,u*m),kil=wouldDie(t,d);ctx.font=`bold ${cs*.22}px sans-serif`;ctx.textAlign='center';ctx.lineWidth=cs*.06;ctx.strokeStyle='#000';ctx.fillStyle=kil?'#ff5050':'#ffd27a';ctx.strokeText('-'+d,x+cs/2,y+cs*.22);ctx.fillText('-'+d,x+cs/2,y+cs*.22);
+        if(kil){ctx.strokeStyle='rgba(255,60,60,.9)';ctx.lineWidth=cs*.06;ctx.beginPath();ctx.moveTo(x+cs*.25,y+cs*.3);ctx.lineTo(x+cs*.75,y+cs*.8);ctx.moveTo(x+cs*.75,y+cs*.3);ctx.lineTo(x+cs*.25,y+cs*.8);ctx.stroke();}}});
+    const t0=S.board[AIM.c[0]][AIM.c[1]],cx=AIM.c[1]*cs+cs/2,cy=t0.ry*cs+cs/2,R=cs*.42*pl;ctx.strokeStyle='rgba(255,80,60,.95)';ctx.lineWidth=cs*.05;ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.stroke();
+    ctx.beginPath();[[0,-1],[0,1],[-1,0],[1,0]].forEach(([dx,dy])=>{ctx.moveTo(cx+dx*R*.45,cy+dy*R*.45);ctx.lineTo(cx+dx*R*1.2,cy+dy*R*1.2);});ctx.stroke();ctx.restore();}
   drawGuide(now,cs);drawSkillFx(now,cs);drawFx(now,FDT,cs);drawBanner(now,cs);
   if(chain.length>1){ctx.beginPath();chain.forEach((p,i)=>{const X=p[1]*cs+cs/2,Y=p[0]*cs+cs/2;i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);});
     ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=cs*.1;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();}
@@ -1950,8 +1967,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.37';
+const VERSION='0.4.38';
 const CHANGELOG=[
+  {v:'0.4.38',d:'2026-11-22',items:['🎯狙撃は、狙う場所を自分で選んで撃つスキルになりました（同じ場所を2回タップで発射）']},
   {v:'0.4.37',d:'2026-11-22',items:['🏹狙い撃ちの的に照準を表示（倒せるときは赤）']},
   {v:'0.4.36',d:'2026-11-22',items:['盾ptのアイコンを🔨に']},
   {v:'0.4.35',d:'2026-11-22',items:['説明の言葉を一部分かりやすくしました']},
