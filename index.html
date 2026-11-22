@@ -73,7 +73,7 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 .sk .cd{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);border-radius:10px;font-size:13px;font-weight:700}
 .ov{position:fixed;inset:0;background:rgba(8,5,10,.82);display:flex;align-items:center;justify-content:center;padding:14px;z-index:10}
 #modal{z-index:15}
-/* 防具の強化＝鍛冶（鉄と火花）／遺物＝古代の宝（紫の光） */
+/* 防具の強化＝鍛冶（鉄と火花） */
 .box.m-smith{position:relative;overflow-x:hidden;border:2px solid #6d7682;background:radial-gradient(110% 55% at 50% 105%,rgba(255,110,40,.30),rgba(255,110,40,0) 70%),linear-gradient(180deg,#2b2f36,#1e2126)}
 .smithhd{display:flex;align-items:center;justify-content:center;gap:4px;margin:2px 0 8px;font-size:46px;line-height:1}
 .smithhd .hm{display:inline-block;transform-origin:85% 85%;animation:hammer 1.1s ease-in-out infinite}
@@ -84,14 +84,6 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 .box.m-smith .opt.got{animation:gotsm .45s ease-in forwards}
 @keyframes gotsm{25%{background:#c8723a;box-shadow:0 0 20px rgba(255,140,60,.9)}100%{transform:scale(.92);opacity:0}}
 .spark{position:fixed;z-index:40;width:5px;height:5px;border-radius:50%;background:#ffb347;box-shadow:0 0 6px #ff8a2a;pointer-events:none;transition:transform .45s cubic-bezier(.2,.7,.4,1),opacity .45s}
-.box.m-relic{position:relative;overflow-x:hidden;border:2px solid #8f6ad0;background:radial-gradient(90% 55% at 50% 0%,rgba(170,120,255,.32),rgba(170,120,255,0) 70%),#1d1828;box-shadow:0 0 28px rgba(150,100,255,.3)}
-.relichd{text-align:center;margin:0 0 8px}.relichd .ic{display:inline-block;font-size:52px;animation:relfloat 2.4s ease-in-out infinite;filter:drop-shadow(0 0 14px rgba(190,150,255,.8))}
-@keyframes relfloat{50%{transform:translateY(-6px)}}
-.relichd small{display:block;font-size:13px;color:#bba8dd;margin-top:2px}
-.box.m-relic .opt{background:linear-gradient(180deg,#3a2f52,#2a2340);border:1px solid #8f6ad0}
-.box.m-relic .opt small{color:#d4c6ef}
-.box.m-relic .opt.got{animation:gotrel .45s ease-in forwards}
-@keyframes gotrel{30%{box-shadow:0 0 26px rgba(200,160,255,.95);border-color:#e6d4ff}100%{transform:scale(1.06);opacity:0;filter:blur(2px)}}
 /* レベルアップ＝自分の成長（光・才能カード）／ショップ＝行商人から買う（木の棚・値札） */
 .box.m-lv{position:relative;overflow-x:hidden;border-color:#c9a24a;background:radial-gradient(120% 60% at 50% 0%,rgba(255,214,110,.30),rgba(255,214,110,0) 70%),#211a25;box-shadow:0 0 30px rgba(255,200,90,.25)}
 .m-lv .rays{position:absolute;left:50%;top:-160px;width:520px;height:520px;margin-left:-260px;pointer-events:none;opacity:.16;background:repeating-conic-gradient(from 0deg,#ffe08a 0 6deg,transparent 6deg 18deg);border-radius:50%;-webkit-mask:radial-gradient(circle,#000 20%,transparent 68%);mask:radial-gradient(circle,#000 20%,transparent 68%);animation:rays 18s linear infinite}
@@ -284,7 +276,7 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
     <div class="bar gd" id="bGd"><div class="fill"></div><span></span></div>
     <div class="bar sh" id="bSh"><div class="fill"></div><span></span></div>
   </div>
-  <div id="stats" onclick="if(event.target.closest('#relicBtn'))showRelics()"></div>
+  <div id="stats"></div>
   <div id="preview"></div>
   <div id="wrap"><canvas id="board"></canvas><button id="tutSkip" class="hidden">チュートリアルを飛ばす ›</button></div>
   <div id="log"></div>
@@ -393,7 +385,7 @@ function newState(cls){
     baseDmg:1,weaponDmg:2,healPer:2,goldPer:2,
     gold:0,goldNeed:70,shieldPts:0,shieldNeed:30,
     skills:[],pending:[],bossFlag:false,maxChain:0,bless:0,floor:1,fprog:0,bossUp:false,run:{hit:false,shops:0,mute:0,t0:Date.now(),up:{},sku:{}},board:[]};
-  if(!TUT){s.curse=0;s.relics=[];}
+  if(!TUT){s.curse=0;}
   for(let r=0;r<N;r++){s.board.push([]);for(let c=0;c<N;c++){const t=randTile(s);t.ry=r;s.board[r].push(t);}}
   applyClass(s,TUT?'warrior':(cls||(S&&S.cls)||'warrior'));
   if(!TUT)s.name=getName();S=s;ensureMove();if(!TUT){achStat('games');const td=new Date().toDateString();if(ACH.st.lastDay!==td){ACH.st.lastDay=td;achStat('days');}achSave();}
@@ -401,45 +393,11 @@ function newState(cls){
 }
 function randTile(s,noEnemy){
   const aw=t=>{const a=s.anom&&ANOMS[s.anom];return a&&a.w&&a.w[t]||1;};
-  const w=[['skull',noEnemy?0:(17+Math.min(8,s.turn/40))*aw('skull')*(!TUT&&playsN()>=3?.92:1)*(s.relics&&s.relics.includes('bell')?.82:1)*(s.bossKind==='vampire'&&s.board&&s.board.length&&s.board.flat().some(e=>e&&e.boss)?.6:1)],['sword',20*aw('sword')],['shield',19*aw('shield')],['potion',17*aw('potion')],['coin',20*aw('coin')]];
+  const w=[['skull',noEnemy?0:(17+Math.min(8,s.turn/40))*aw('skull')*(!TUT&&playsN()>=3?.92:1)*(s.bossKind==='vampire'&&s.board&&s.board.length&&s.board.flat().some(e=>e&&e.boss)?.6:1)],['sword',20*aw('sword')],['shield',19*aw('shield')],['potion',17*aw('potion')],['coin',20*aw('coin')]];
   let x=Math.random()*w.reduce((a,b)=>a+b[1],0);
   for(const [t,v] of w){if((x-=v)<0)return t==='skull'?makeEnemy(s):{t};}
   return {t:'coin'};
 }
-/* ---------- relics (run-only passives) ---------- */
-const RELICS={
-  trident:{ic:'🔱',n:'三叉の槍',d:'剣を3本以上含む攻撃が1.3倍'},
-  chalice:{ic:'🏆',n:'黄金の杯',d:'5つ以上のチェーンで💰+4'},
-  ring:{ic:'💍',n:'血の指輪',d:'敵を倒すたびにHP+1'},
-  amulet:{ic:'🧿',n:'魔除けの眼',d:'受けるダメージが毎ターン1減る'},
-  hourglass:{ic:'⏳',n:'砂時計',d:'スキルの再使用ターンが15%短い'},
-  clover:{ic:'🍀',n:'四つ葉',d:'5つ以上のチェーンで経験値+1'},
-  heart:{ic:'❤️‍🔥',n:'炎の心臓',d:'ボス・中ボスへのダメージ1.5倍'},
-  frost:{ic:'🧊',n:'霜の欠片',d:'7つ以上のチェーンのあと、残った敵が1ターン凍る'},
-  crest:{ic:'🎖️',n:'騎士の紋章',d:'🛡️チェーンの防御が1.5倍'},
-  urn:{ic:'⚱️',n:'錬金の壺',d:'🧪の余りが変わる量が2倍'},
-  greed:{ic:'💎',n:'欲深の宝石',d:'💰の価値+1。ただし受けるダメージ+1',on:()=>{S.goldPer++;}},
-  blade:{ic:'🗡️',n:'処刑人の刃',d:'HPが半分以下の敵へのダメージ1.5倍'},
-  dice:{ic:'🎲',n:'運命のサイコロ',d:'攻撃が15%の確率で2倍'},
-  clock:{ic:'🕰️',n:'古時計',d:'新しく出る💣の爆発までが2ターン長い'},
-  meat:{ic:'🍖',n:'骨付き肉',d:'最大HP+20',on:()=>{S.maxHp+=20;S.hp+=20;}},
-  ledger:{ic:'🧾',n:'値切りの帳面',d:'ショップの必要額が少し安くなる',on:()=>{S.goldNeed=Math.round(S.goldNeed*.85);}},
-  feather:{ic:'🪶',n:'不死鳥の羽',d:'一度だけ、倒れてもHP半分で蘇る'},
-  lantern:{ic:'🏮',n:'導きのランタン',d:'4つ以上のチェーンの倍率+0.1'},
-  /* added at stage s4 */
-  gauntlet:{ic:'🥊',n:'巨人の籠手',d:'基礎攻撃力+8',x:1,on:()=>{S.baseDmg+=8;}},
-  starfrag:{ic:'✨',n:'星のかけら',d:'長いチェーンの経験値ボーナスが2倍',x:1},
-  mirror:{ic:'🪞',n:'反射の鏡',d:'受けたダメージの半分を、敵1体に返す',x:1},
-  tome:{ic:'📖',n:'禁書',d:'スキルを使うたびに経験値+3',x:1},
-  bell:{ic:'🔔',n:'静寂の鈴',d:'新しく出る敵が少し減る',x:1},
-  purse:{ic:'👛',n:'底なしの財布',d:'敵を倒すたびに💰+1',x:1}
-};
-const hasR=id=>!!(typeof S!=='undefined'&&S&&S.relics&&S.relics.includes(id));
-function relicTgt(e,d){if(!S||!S.relics)return d;let m=1;if(hasR('heart')&&(e.boss||e.mini))m*=1.5;if(hasR('blade')&&e.hp<=e.maxHp/2)m*=1.5;return m===1?d:Math.round(d*m);}
-function relicOptions(){const pool=Object.keys(RELICS).filter(k=>!hasR(k)&&!RELICS[k].x);
-  return pick(pool.map(k=>({label:`${RELICS[k].ic} ${RELICS[k].n}`,desc:RELICS[k].d,apply:()=>{S.relics=S.relics||[];S.relics.push(k);UNL.relSeen=UNL.relSeen||{};UNL.relSeen[k]=1;unlSave();if(RELICS[k].on)RELICS[k].on();}})),3);}
-function showRelics(){if(modalOpen||!S.relics||!S.relics.length)return;openModal(`<h2>🏺 持っている遺物</h2><div class="alist">${S.relics.map(k=>`<div class="ach"><span class="ai">${RELICS[k].ic}</span><span><b>${RELICS[k].n}</b><small>${RELICS[k].d}</small></span></div>`).join('')}</div><p style="text-align:center;font-size:12px;color:#a99fae">遺物はこの冒険のあいだだけ有効</p><button class="opt" id="rlX" style="text-align:center">閉じる</button>`);$('rlX').onclick=closeModal;}
-function relicsHtml(){return (S.relics||[]).map(k=>RELICS[k].ic).join('');}
 
 /* ---------- floor anomalies ---------- */
 const ANOMS={
@@ -469,9 +427,9 @@ function flushDeath(msgs,depth=0){if(!S||!S._dq||!S._dq.length)return;const q=S.
   if(db&&depth<3){const rm=new Set(),dead=[];let xp=0;
     for(let r=0;r<N;r++)for(let c=0;c<N;c++){const e=S.board[r][c];if(!isEnemy(e))continue;applyDmg(e,db);e.hit=performance.now();if(e.hp<=0){rm.add(r*N+c);dead.push(e);xp+=xpOf(e);}}
     msgs.push(`🍄 胞子が弾けた！全ての敵に${db}ダメージ`+(dead.length?`、${dead.length}体撃破`:''));
-    if(dead.length){S.kills+=dead.length;if(xp)gainXp(xp);achKills(dead);relicKills(dead.length);{const pts=[...rm].map(i=>[(i/N)|0,i%N]),now=performance.now();burst(pts,'#c9ff8a',1.5);pts.forEach(p=>RINGS.push({p,t0:now,col:'#c9ff8a'}));sfx('kill',dead.length);}removeAndFill(rm);flushDeath(msgs,depth+1);}}
+    if(dead.length){S.kills+=dead.length;if(xp)gainXp(xp);achKills(dead);anomKills(dead.length);{const pts=[...rm].map(i=>[(i/N)|0,i%N]),now=performance.now();burst(pts,'#c9ff8a',1.5);pts.forEach(p=>RINGS.push({p,t0:now,col:'#c9ff8a'}));sfx('kill',dead.length);}removeAndFill(rm);flushDeath(msgs,depth+1);}}
 }
-function relicKills(k){if(k<=0)return;if(hasR('ring')){const h=Math.min(k,S.maxHp-S.hp);S.hp+=h;}if(hasR('purse'))addGold(k);if(S.anom==='blood')addGold(2*k);if(S.anom==='feast')gainXp(k);}
+function anomKills(k){if(k<=0)return;if(S.anom==='blood')addGold(2*k);if(S.anom==='feast')gainXp(k);}
 /* ---------- enemy kinds ---------- */
 const EK={
   skel:{icon:'💀',name:'スケルトン',desc:'ふつうの敵。'},
@@ -551,7 +509,7 @@ function iconHtml(k){const D=EK[k];if(!D)return '';if(TINT[k])return `<img src="
 const SHAPES=['🐸','🐙','🦔','🪼','🦩','🐌','🦥','🐡','🦖','🧸','🪆','🥸'];
 
 const xpOf=e=>e.boss?6:e.mini?4:(bhOf(e)==='golem'?2:1)+(e.elite?1:0);
-const dmgTo=(e,d)=>{d=relicTgt(e,d);if(bhOf(e)==='ghost')d=Math.ceil(d/2);if(!e.boss&&guarded(e))d=Math.ceil(d/2);return d;};
+const dmgTo=(e,d)=>{if(bhOf(e)==='ghost')d=Math.ceil(d/2);if(!e.boss&&guarded(e))d=Math.ceil(d/2);return d;};
 function makeKind(k,T){
   const e={t:'skull',kind:k,hp:Math.round(3+(T/7+T*T/5000)*1.5)+(Math.random()<.4?1:0),atk:1+Math.floor(T/40)+(T>60&&Math.random()<.2?1:0),armor:0,fresh:true};
   const D=EK[k]||{};const B=D.b||k,SS=MK_S||S;
@@ -561,7 +519,7 @@ function makeKind(k,T){
     case 'zombie':e.hp+=1;break;
     case 'spider':e.hp=Math.max(1,e.hp-1);break;
     case 'golem':e.hp=Math.round(e.hp*1.6);e.armor=2+Math.floor(T/40);e.atk=e.atk*2+1;e.rest=false;break;
-    case 'bomb':e.atk=0;e.cnt=4+(D.bm?1:0)+(SS&&SS.relics&&SS.relics.includes('clock')?2:0);e.boom=Math.round((6+Math.floor(T/8))*(D.bm||1));break;
+    case 'bomb':e.atk=0;e.cnt=4+(D.bm?1:0);e.boom=Math.round((6+Math.floor(T/8))*(D.bm||1));break;
     case 'shaman':e.atk=Math.max(1,e.atk-1);break;
   }
   if(D.hp)e.hp=Math.max(1,Math.round(e.hp*D.hp));if(D.at)e.atk+=D.at;if(D.ar)e.armor+=D.ar+Math.floor(T/80);if(D.z)e.atk=0;
@@ -684,8 +642,7 @@ function enemyPhase(msgs){
     if(k==='bomb'){e.cnt=(e.cnt||4)-1;if(e.cnt<=0){exploded.add(r*N+c);msgs.push('💣 爆発！');}}
   }
   const sum=total+pierce;
-  if(sum>0){const bl=Math.min(S.armor,total);S.armor-=bl;let d=total-bl+pierce;if(d>0&&hasR('greed'))d++;if(d>0&&hasR('amulet'))d--;S.hp-=d;
-    if(d>1&&hasR('mirror')){const es=all().map(x=>x[0]).filter(x=>!x.fresh);if(es.length){const t=es[rnd(es.length)],rd=Math.floor(d/2);applyDmg(t,rd);t.hit=performance.now();msgs.push(`🪞 ${rd}ダメージを返した`);}}
+  if(sum>0){const bl=Math.min(S.armor,total);S.armor-=bl;let d=total-bl+pierce;S.hp-=d;
     msgs.push(`敵の攻撃${sum}`+(bl?`（防御${bl}）`:'')+(pierce?`（すり抜け${pierce}）`:'')+(d?` → HP-${d}`:''));
     {const hd=hurtDelay()*1000,gd=bl&&d>0?90:0;HURT_AT=performance.now()+hd+gd;
      if(bl||d<=0)setTimeout(()=>{if(bl)flash('bAr');sfx('guard');},hd);
@@ -755,12 +712,12 @@ function shake(){const w=$('wrap');w.classList.remove('shake');void w.offsetWidt
 
 const CB=[1,1,2,3,4];
 function chainBonus(n){const t=bonusTier(n);return t<0?0:CB[t];}
-function chainMult(n){const k=Math.max(0,n-3)+(S&&S.bless>0&&n>=3?3:0);return 1+.15*k+.012*k*k+(n>=4&&hasR('lantern')?.1:0)+(n>=4&&S&&S.anom==='wind'?.15:0);}
+function chainMult(n){const k=Math.max(0,n-3)+(S&&S.bless>0&&n>=3?3:0);return 1+.15*k+.012*k*k+(n>=4&&S&&S.anom==='wind'?.15:0);}
 const fmtM=m=>(Math.round(m*10)/10).toFixed(1);
 function chainDmg(cells,roll=1){const n=cells.length;let m=chainMult(n);
   if(S.cls==='dragoon')m=n<5?m*.5:chainMult(n+4);
   if(S.cls==='knight'&&S.maxArmor>0&&S.armor>=S.maxArmor)m*=1.5;
-  if(hasR('trident')&&cells.filter(p=>tileAt(p).t==='sword').length>=3)m*=1.3;
+  
   return Math.max(1,Math.round((S.baseDmg+cells.filter(p=>tileAt(p).t==='sword').length*S.weaponDmg)*m*roll));}
 const MIXLOSS=.3;
 const ROLLS=[.5,1,1.25,1.5,2,3],GAMB_ALL=true;
@@ -778,7 +735,7 @@ function commitChain(){
   const remove=new Set();const msgs=[];const killsBefore=S.kills;const mixed=g==='mix'&&new Set(types).size>1;const bonus=mixed?Math.floor(chainBonus(cells.length)/2):chainBonus(cells.length);let mult=chainMult(cells.length);
   if(g==='atk'){
     const swords=cells.filter(p=>tileAt(p).t==='sword').length;
-    let roll=S.cls==='gambler'?gRoll():1;if(S.cls==='gambler')S.nextRoll=ROLLS[rnd(ROLLS.length)];if(hasR('dice')&&Math.random()<.15){roll*=2;msgs.push('🎲 会心！');}
+    let roll=S.cls==='gambler'?gRoll():1;if(S.cls==='gambler')S.nextRoll=ROLLS[rnd(ROLLS.length)];
     const dmg=chainDmg(cells,roll),lastE=S.cls==='hunter'?lastEnemyOf(cells):null;
     if(roll!==1)msgs.push(`🃏 ×${roll}`+(roll>=2?' 大当たり！':roll<1?' はずれ…':''));
     let killed=0,xp=0,hitN=0;const now=performance.now();
@@ -786,7 +743,7 @@ function commitChain(){
       if(t.t==='sword'){remove.add(p[0]*N+p[1]);continue;}
       hitN++;applyDmg(t,dmgTo(t,p===lastE?Math.round(dmg*HUNT):dmg));if(p===lastE)msgs.push(`🏹 狙い撃ち ${Math.round(dmg*HUNT)}`);
       if(t.hp<=0){remove.add(p[0]*N+p[1]);killed++;xp+=xpOf(t);}else t.hit=now;}
-    S.kills+=killed;if(xp)gainXp(xp);relicKills(killed);
+    S.kills+=killed;if(xp)gainXp(xp);anomKills(killed);
     msgs.push(hitN?`敵に${dmg}ダメージ${killed?`、${killed}体撃破`:''}`:`剣${swords}本を消費`);vampDrain(killed,msgs);
   }else{
     cells.forEach(p=>remove.add(p[0]*N+p[1]));
@@ -794,33 +751,30 @@ function commitChain(){
     /* 盤面の敵（条件に合うもの）にまとめてダメージ：僧侶の聖なる🧪・重騎士の盾で殴る */
     const aoe=(d,f,label,col)=>{if(d<=0)return;let k=0,xp=0;const now=performance.now(),hits=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){const t=S.board[r][c];if(!isEnemy(t)||remove.has(r*N+c)||!f(t,r,c))continue;hits.push([r,c]);applyDmg(t,d);if(t.hp<=0){remove.add(r*N+c);k++;xp+=xpOf(t);}else t.hit=now;}
       if(hits.length){burst(hits,col||'#ffd54a',k?1.5:.8);hits.forEach(p=>RINGS.push({p,t0:now,col:col||'#ffd54a'}));if(k>=3)FLASH=now;}
-      S.kills+=k;if(xp)gainXp(xp);relicKills(k);msgs.push(`${label}${d}ダメージ${k?`、${k}体撃破`:''}`);};
+      S.kills+=k;if(xp)gainXp(xp);anomKills(k);msgs.push(`${label}${d}ダメージ${k?`、${k}体撃破`:''}`);};
     const eff=(g,n)=>{
     if(g==='shield'&&S.cls==='zombie'){const h=Math.min(Math.round(n*mult),S.maxHp-S.hp);S.hp+=h;msgs.push(`🧟傷をふさいだ HP+${h}`);flash('bHp');}
-    else if(g==='shield'){const add=Math.round(n*S.armorPer*mult*(hasR('crest')?1.5:1)),used=Math.min(add,S.maxArmor-S.armor);S.armor+=used;const over=add-used;
+    else if(g==='shield'){const add=Math.round(n*S.armorPer*mult),used=Math.min(add,S.maxArmor-S.armor);S.armor+=used;const over=add-used;
       /* 重騎士：つないだ🛡️のまわり（8方向）にいる敵だけを盾で殴る */
       if(S.cls==='heavy'){const near=new Set();cells.forEach(([r,c])=>{if(S.board[r][c].t!=='shield')return;for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const rr=r+dr,cc=c+dc;if(rr>=0&&cc>=0&&rr<N&&cc<N)near.add(rr*N+cc);}});aoe(Math.round(add*BASH),(t,r,c)=>near.has(r*N+c),'🏰 盾で殴る！','#8fc8ff');}
       if(over>0){S.shieldPts+=over;while(S.shieldPts>=S.shieldNeed){S.shieldPts-=S.shieldNeed;S.shieldNeed=Math.round(S.shieldNeed*1.25)+10;S.pending.push('shield');}}
       msgs.push(`防御+${used}`+(over?`（超過${over}は盾ポイントへ）`:''));flash('bAr');}
     else if(g==='potion'&&S.cls==='vampire'){const a=Math.round(n*mult);addGold(a);msgs.push(`🧪は口に合わない → 💰+${a}`);flash('bGd');}
-    else if(g==='potion'){const heal=Math.round(n*S.healPer*mult),h=Math.min(heal,S.maxHp-S.hp),_hl=h>0&&S.run&&(S.run.heal=1),cl=S.cls==='cleric',sell=Math.floor((heal-h)/(cl?3:4))*(hasR('urn')?2:1);S.hp+=h;if(cl&&n>=HOLY_N){let k=0;const now=performance.now();S.board.forEach((row,r)=>row.forEach((t,c)=>{if(isEnemy(t)&&UNDEAD(kindOf(t))&&!t.boss){t.frz=Math.max(t.frz||0,1);k++;RINGS.push({p:[r,c],t0:now,col:'#fff3b0'});}}));if(k)msgs.push(`✨ 聖なる光！アンデッド${k}体がひるんだ`);}if(sell){if(cl){gainXp(sell);flash('bXp');}else{addGold(sell);flash('bGd');}}msgs.push(`HP+${h}`+(sell?`（余り→${cl?'✨経験値':'💰'}+${sell}）`:''));flash('bHp');}
+    else if(g==='potion'){const heal=Math.round(n*S.healPer*mult),h=Math.min(heal,S.maxHp-S.hp),_hl=h>0&&S.run&&(S.run.heal=1),cl=S.cls==='cleric',sell=Math.floor((heal-h)/(cl?3:4));S.hp+=h;if(cl&&n>=HOLY_N){let k=0;const now=performance.now();S.board.forEach((row,r)=>row.forEach((t,c)=>{if(isEnemy(t)&&UNDEAD(kindOf(t))&&!t.boss){t.frz=Math.max(t.frz||0,1);k++;RINGS.push({p:[r,c],t0:now,col:'#fff3b0'});}}));if(k)msgs.push(`✨ 聖なる光！アンデッド${k}体がひるんだ`);}if(sell){if(cl){gainXp(sell);flash('bXp');}else{addGold(sell);flash('bGd');}}msgs.push(`HP+${h}`+(sell?`（余り→${cl?'✨経験値':'💰'}+${sell}）`:''));flash('bHp');}
     else if(g==='coin'){const a=Math.round(n*S.goldPer*mult);addGold(a);msgs.push(`お金+${a}`);flash('bGd');}
     };
     if(g==='mix'){const cnt={};cells.forEach(p=>{const t=tileAt(p).t;cnt[t]=(cnt[t]||0)+1;});const ty=Object.keys(cnt).length;if(ty>1){mult*=MIXLOSS;msgs.push('⚗️ 調合');}for(const k of ['shield','potion','coin'])if(cnt[k])eff(k,cnt[k]);}else eff(g,cells.length);
   }
   {const kd=S.kills-killsBefore;if(g==='atk'&&kd)sfx('kill',kd);else{sfx('clear',g);if(kd){sfx('kill',kd);vib([25,30,25]);}}}
-  if(bonus){gainXp(hasR('starfrag')?bonus*2:bonus);flash('bXp');}
-  if(cells.length>=5){if(hasR('chalice')){addGold(4);msgs.push('🏆 💰+4');}if(hasR('clover'))gainXp(1);}
+  if(bonus){gainXp(bonus);flash('bXp');}
   if(mult>1)msgs.unshift('✨'+bonusTxtOf(cells.length));
   celebrate(cells,types,S.kills-killsBefore,bonus?'✨'+bonusTxtOf(cells.length):'');
   achChain(cells.length,g,[...remove].map(i=>S.board[(i/N)|0][i%N]).filter(isEnemy),hp0,full0);
   removeAndFill(remove);flushDeath(msgs);
-  if(cells.length>=7&&hasR('frost')){S.board.flat().filter(isEnemy).forEach(e=>e.frz=Math.max(e.frz||0,1));msgs.push('🧊 霜が敵を凍らせた');}
   enemyPhase(msgs);popAnnounce(msgs);
   S.turn++;S.skills.forEach(s=>{if(s.cur>0)s.cur--;});if(S.bless>0)S.bless--;
   checkBoss(msgs);advanceFloor(msgs);achAfterTurn(hp0,S._boom);S._boom=false;
   log(msgs.join(' ／ '));
-  if(S.hp<=0&&hasR('feather')&&!S.fUsed){S.fUsed=1;S.hp=Math.ceil(S.maxHp*.5);msgs.push('🪶 不死鳥の羽が燃え、よみがえった！');flash('bHp');}
   if(S.hp<=0&&S.revive){S.revive--;S.hp=S.maxHp;msgs.push('🧟 ……起き上がった');popAnnounce([S.revive?'🧟 ……起き上がった！（あと1回）':'🧟 ……起き上がった！（もう蘇れない）']);flash('bHp');}
   if(S.hp<=0){S.hp=0;updateAll();dying=true;setTimeout(()=>{dying=false;if(inGame)gameOver();},Math.max(popLeft()+150,HURT_AT-performance.now()+450));return;}
   ensureMove();saveGame();updateAll();showNextPending();tutAfterCommit();
@@ -849,10 +803,10 @@ function useSkill(i){
     case 'execute':{let k=0,xp=0;eachEnemy((t,r,c)=>{if(!t.boss&&t.hp<=execLine(t)){fx.push([r,c]);remove.add(r*N+c);k++;xp+=xpOf(t);}});S.kills+=k;xp=Math.round(xp*1.5);if(xp)gainXp(xp);msg=k?`処刑：${k}体撃破（経験値1.5倍）`:'処刑：対象なし';break;}
   }
   if(S.run){S.run.sk=(S.run.sk||0)+1;const su=S.run.sku||(S.run.sku={});su[sk.id]=(su[sk.id]||0)+1;}
-  sk.cur=hasR('hourglass')?Math.max(2,Math.round(sk.cd*.85)):sk.cd;{const dr=vampDrain(S.kills-kb);if(dr)msg+=' ／ '+dr;}sfx('skill');skillFx(sk.id,fx,S.kills-kb);
+  sk.cur=sk.cd;{const dr=vampDrain(S.kills-kb);if(dr)msg+=' ／ '+dr;}sfx('skill');skillFx(sk.id,fx,S.kills-kb);
   if(!TUT){achStat('skills');achKills([...remove].map(i=>S.board[(i/N)|0][i%N]).filter(isEnemy));
     if(sk.id==='thunder'&&S.kills-kb>=3)unlock('thunder3');if(sk.id==='freeze'&&S.board.flat().some(e=>isEnemy(e)&&kindOf(e)==='dragon'))unlock('s_frzdragon');}
-  relicKills(S.kills-kb);if(hasR('tome')&&!TUT)gainXp(3);
+  anomKills(S.kills-kb);
   if(remove.size)removeAndFill(remove);
   {const m=[msg];flushDeath(m);popAnnounce(m);checkBoss(m);msg=m.join(' ／ ');}
   if(!TUT){if(!S.board.flat().some(isEnemy))unlock('s_silence');achState();achSave();}
@@ -908,17 +862,15 @@ function showNextPending(){
   const kind=S.pending[0];
   const head={level:['🎉 レベルアップ！',TUT?`Lv${S.level}になった。1つ選んでください。`:`${NM()}はLv${S.level}になった。1つ選んでください。`],
     shop:['💰 ショップ','お金がたまった。強化を1つ選んでください。'],
-    shield:['🛡️ 防具の強化','盾ポイントがたまった。1つ選んでください。'],
-    relic:['🏺 遺物','中ボスが遺物を落とした。1つ選んでください（この冒険のあいだ有効）。']}[kind];
+    shield:['🛡️ 防具の強化','盾ポイントがたまった。1つ選んでください。']}[kind];
   sfx(kind==='level'?'level':'shop');
-  const opts=kind==='level'?levelOptions():kind==='shop'?shopOptions():kind==='relic'?relicOptions():shieldOptions();
+  const opts=kind==='level'?levelOptions():kind==='shop'?shopOptions():shieldOptions();
   if(!opts.length){S.pending.shift();showNextPending();return;}
   const optsHtml=opts.map((o,i)=>`<button class="opt" data-i="${i}">${o.label}<small>${o.desc}</small></button>`).join('');
   if(kind==='level'){const lv=S.level-S.pending.slice(1).filter(k=>k==='level').length;
     openModal(`<div class="rays"></div><div class="lvnum"><small>Lv</small><span class="o">${lv-1}</span><i>→</i><b>${lv}</b></div>`+optsHtml,'m-lv');}
   else if(kind==='shop'){const pr=S.prices&&S.prices.length?S.prices.shift():0;openModal(shopHead(SHOP_HI[rnd(SHOP_HI.length)],pr)+optsHtml,'m-shop');}
   else if(kind==='shield')openModal(`<div class="smithhd"><span>🛡️</span><span class="hm">🔨</span></div>`+optsHtml,'m-smith');
-  else if(kind==='relic')openModal(`<div class="relichd"><span class="ic">🏺</span><small>この冒険のあいだ有効</small></div>`+optsHtml,'m-relic');
   else openModal(`<h2>${head[0]}</h2><p style="text-align:center">${head[1]}</p>`+optsHtml);
   $('mbox').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{if(S._picking)return;const o=opts[+b.dataset.i];if(o.replaceId){chooseReplace(o.replaceId,kind,opts);return;}
     const go=()=>{S._picking=0;if(kind==='shop'&&S.run)S.run.shops=(S.run.shops||0)+1;upCount(o);o.apply();if(kind==='shop'&&S.cls==='thief'&&!S._sh2&&opts.length>1){S._sh2=1;showShop2(opts.filter(x=>x!==o));return;}S._sh2=0;finishPending();};
@@ -938,7 +890,6 @@ function gotAnim(b,kind){b.classList.add('got');
   else if(kind==='shield'){sfx('guard');const r=b.getBoundingClientRect();
     for(let i=0;i<14;i++){const c=document.createElement('span');c.className='spark';c.style.left=(r.left+r.width/2)+'px';c.style.top=(r.top+r.height/2)+'px';document.body.appendChild(c);
       const an=Math.random()*Math.PI*2,d=40+Math.random()*90;requestAnimationFrame(()=>requestAnimationFrame(()=>{c.style.transform=`translate(${Math.cos(an)*d}px,${Math.sin(an)*d-20}px)`;c.style.opacity='0';}));setTimeout(()=>c.remove(),600);}}
-  else if(kind==='relic')sfx('ach');
   else sfx('level');vib(30);}
 /* 盗賊はショップでもう1つ選べる */
 function showShop2(rest){updateAll();openModal(shopHead('🗝️ お目が高い。もう1つどうぞ',0)+rest.map((o,i)=>`<button class="opt" data-i="${i}">${o.label}<small>${o.desc}</small></button>`).join(''),'m-shop');
@@ -1134,7 +1085,7 @@ function gameOver(){
 }
 function showGameOver(isNew){
   openModal(`<div class="big" style="text-align:center">💀</div><h2>力尽きた…</h2>
-  <p style="text-align:center;font-size:15px"><span style="color:#a99fae;font-size:13px">${NM()}（${(CLASSES[S.cls]||CLASSES.warrior).n}）${S.curse?`・呪いLv${S.curse}`:''}${S.relics&&S.relics.length?`・${relicsHtml()}`:''}</span><br>B${floorOf()}F「${floorOf()%20===0?bossFloorName(floorOf()):zoneAt(floorOf()).name}」で倒れた<br>${S.turn}ターン ／ 撃破${S.kills} ／ Lv${S.level} ／ 最長${S.maxChain||0}チェーン</p>
+  <p style="text-align:center;font-size:15px"><span style="color:#a99fae;font-size:13px">${NM()}（${(CLASSES[S.cls]||CLASSES.warrior).n}）${S.curse?`・呪いLv${S.curse}`:''}</span><br>B${floorOf()}F「${floorOf()%20===0?bossFloorName(floorOf()):zoneAt(floorOf()).name}」で倒れた<br>${S.turn}ターン ／ 撃破${S.kills} ／ Lv${S.level} ／ 最長${S.maxChain||0}チェーン</p>
   <p style="text-align:center">${isNew?'🏆 最深記録を更新！':`最深記録：B${best.floor||1}F`}</p>${S._newCls?`<div class="rwd">🆕 ${S._newCls.map(k=>CLASSES[k].ic).join(' ')}<br><small>${S._newCls.map(k=>CLASSES[k].n).join('・')}が 仲間になった</small></div>`:''}${heldAchHtml()}
   <button class="opt" id="g1" style="text-align:center">もう一度</button><button class="opt" id="g2" style="text-align:center">🏠 タイトルへ</button>
   <button class="opt" id="g3" style="text-align:center;font-size:13px">📝 この結果をメモ用にコピー</button>`);copyBtn('g3',runReportText);
@@ -1229,7 +1180,7 @@ function updateAll(){
   setBar('bXp',S.xp,S.xpNeed,`✨ 経験 ${S.xp}/${S.xpNeed}`);
   setBar('bGd',S.gold,S.goldNeed,`💰 ${S.gold}/${S.goldNeed}`);
   setBar('bSh',S.shieldPts,S.shieldNeed,`🔰 盾pt ${S.shieldPts}/${S.shieldNeed}`);
-  $('stats').innerHTML=`<span class="clsChip">${(CLASSES[S.cls]||CLASSES.warrior).ic} ${(CLASSES[S.cls]||CLASSES.warrior).n}${S.curse?`<small style="color:#ff8a8a">呪${S.curse}</small>`:''}${S.relics&&S.relics.length?`<small id="relicBtn" style="margin-left:3px">${relicsHtml()}</small>`:''}</span><span>⚔️ 基礎${S.baseDmg}＋剣×${S.weaponDmg}</span><span>🧪×${S.healPer}</span><span>🛡️×${S.armorPer}</span><span>💰×${S.goldPer}</span>`;
+  $('stats').innerHTML=`<span class="clsChip">${(CLASSES[S.cls]||CLASSES.warrior).ic} ${(CLASSES[S.cls]||CLASSES.warrior).n}${S.curse?`<small style="color:#ff8a8a">呪${S.curse}</small>`:''}</span><span>⚔️ 基礎${S.baseDmg}＋剣×${S.weaponDmg}</span><span>🧪×${S.healPer}</span><span>🛡️×${S.armorPer}</span><span>💰×${S.goldPer}</span>`;
   const sk=$('skills');sk.innerHTML='';
   for(let i=0;i<4;i++){const s=S.skills[i];const b=document.createElement('button');b.className='sk'+(s?'':' empty');
     if(s){const d=SKILLS[s.id];b.innerHTML=`<span class="ic">${d.icon}</span><span>${d.name}</span>`+(s.cur>0?`<span class="cd">あと${s.cur}</span>`:'');if(s.cur>0)b.classList.add('off');}
@@ -1983,8 +1934,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.29';
+const VERSION='0.4.30';
 const CHANGELOG=[
+  {v:'0.4.30',d:'2026-11-22',items:['使われなくなった仕組みを整理しました']},
   {v:'0.4.29',d:'2026-11-22',items:['🧭職業を選ぶ画面を、スクロールなしで全部見えるようにしました']},
   {v:'0.4.28',d:'2026-11-22',items:['職業の名前を一部見直しました']},
   {v:'0.4.27',d:'2026-11-22',items:['🏰重騎士の「盾で殴る」は、つないだ🛡️のまわりの敵だけに届くように（そのぶん威力アップ）']},
