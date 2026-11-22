@@ -202,6 +202,7 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 .box textarea{width:100%;height:110px;background:#151017;color:#ddd;border:1px solid #4d3f57;border-radius:8px;font-size:12px;padding:6px;margin-top:8px;user-select:text;-webkit-user-select:text}
 .box ul{font-size:13px;color:#cbb;padding-left:18px;line-height:1.6}
 #title h1{font-size:28px;letter-spacing:.1em;white-space:nowrap;margin:2px 0 6px;font-family:var(--mincho);font-weight:600;color:#e6dccb;text-shadow:0 0 18px rgba(255,170,90,.25)}
+#tPortal{position:absolute;z-index:3;top:calc(env(safe-area-inset-top) + 12px);left:12px;padding:9px 14px;border:1px solid #5d4a69;border-radius:12px;background:rgba(46,37,53,.85);color:#e6dccb;font-size:15px;text-decoration:none;letter-spacing:.05em}
 #title .tag{color:#a3978a;font-size:13px;margin-bottom:10px;font-family:var(--mincho);letter-spacing:.05em}
 #title{background:#0b0a0c radial-gradient(ellipse 120% 70% at 50% 0%,#1b1916 0%,#0f0e10 55%,#08080a 100%);overflow:hidden;z-index:10;padding:0;align-items:stretch}
 #title .tin{position:relative;z-index:2;width:100%;max-width:420px;margin:0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:min(9vh,72px);padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 16px)}
@@ -301,6 +302,7 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
   </div>
 </div>
 <div class="ov" id="title">
+  <a id="tPortal" href="/" style="display:none">‹ 一覧</a>
   <div class="tbg"><div class="tboard" id="tBoard"></div><svg id="tTrace" class="ttrace"></svg></div>
   <div class="tshade"></div>
   <div class="tin">
@@ -1160,7 +1162,7 @@ const instHow=()=>instIos()?'<div class="a2h"><b>⋯</b><i>›</i><b>⬆️ 共�
   :'<div class="a2h"><b>⋮</b><i>›</i><b>📲 ホーム画面に追加</b></div><p>Chromeの右上 ⋮ から</p>';
 function instDone(){if($('instOv').classList.contains('hidden'))return;$('instGo').classList.add('hidden');
   $('instSteps').innerHTML='<div class="a2h"><b>✅ 追加しました</b></div><p>ホーム画面の Dungeon Chain から開いてください</p>';$('instSkip').textContent='このままブラウザで遊ぶ';}
-function instShow(){if(!instOk()||isApp())return false;$('instOv').classList.remove('hidden');return true;}
+function instShow(){if(!instOk()||isApp())return false;try{if(sessionStorage.getItem('tkcy3_portal'))return false;}catch(e){}$('instOv').classList.remove('hidden');return true;}
 $('instGo').onclick=()=>{try{localStorage.setItem('dchain_a2h_v1','1');}catch(e){}refreshHomeBtn();
   if(A2H){const e=A2H;A2H=null;e.prompt();e.userChoice.then(r=>{if(r&&r.outcome==='accepted')instDone();else $('instSteps').innerHTML=instHow();}).catch(()=>{});return;}
   $('instSteps').innerHTML=INST&&!instIos()?'<div class="a2h"><b>✅ もう入っています</b></div><p>ホーム画面かアプリ一覧の Dungeon Chain から開いてください</p>':instHow();};
@@ -1975,8 +1977,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.40';
+const VERSION='0.4.41';
 const CHANGELOG=[
+  {v:'0.4.41',d:'2026-11-22',items:['🎮 ゲーム一覧「あそびば」ができました。タイトル画面の「‹ 一覧」から戻れます','📝 データ送信の同意は、あそびば・ほかのゲームと共通になりました（どこかで答えれば聞き直しません）']},
   {v:'0.4.40',d:'2026-11-22',items:['🔨粉砕を強化：装甲が二度と戻らず、そのターンは敵全員が受けるダメージ1.5倍']},
   {v:'0.4.39',d:'2026-11-22',items:['⚡雷撃は攻撃力の高い敵3体を狙い、倒しきれなくてもしびれさせます','スキルや職業の能力で与えたダメージを、色つきの数字で表示']},
   {v:'0.4.38',d:'2026-11-22',items:['🎯狙撃は、狙う場所を自分で選んで撃つスキルになりました（同じ場所を2回タップで発射）']},
@@ -2072,7 +2075,7 @@ function showSettings(back,msg){
   const flip=k=>{AU.on[k]=!AU.on[k];saveAudio();refreshAudioBtns();if(k==='bgm'&&AU.on.bgm&&inGame)bgmStart();if(k==='vib'&&AU.on.vib)vib(30);showSettings();};
   $('stVer').onclick=()=>showChangelog(()=>showSettings());
   $('st1').onclick=()=>{cycleBgm();showSettings();};$('st2').onclick=()=>flip('sfx');$('st3').onclick=()=>flip('vib');
-  $('stShare').onclick=()=>{if(!shareOn()&&consentVal()!=='1'){openConsent(()=>showSettings());return;}try{localStorage.setItem(LS_SHARE,shareOn()?'0':'1');}catch(e){}showSettings();};
+  $('stShare').onclick=()=>{if(!shareOn()&&consentVal()!=='1'){openConsent(()=>showSettings());return;}try{const nv=shareOn()?'0':'1';localStorage.setItem(LS_SHARE,nv);localStorage.setItem('tkcy3_share',nv);}catch(e){}showSettings();};
   if($('stCs'))$('stCs').onclick=()=>openConsent(()=>showSettings());
   $('stStory').onclick=()=>{closeModal();playStory(()=>{if(inGame)return;bgmStop();showSettings();});};
   $('stTheme').onclick=()=>showTailor(()=>showSettings());if($('stA2h'))$('stA2h').onclick=()=>showAddHome(()=>showSettings());if(!inGame)$('stData').onclick=showDataReset;
@@ -2313,6 +2316,11 @@ function runsSave(){try{localStorage.setItem(LS_RUNS,JSON.stringify(RUNS.slice(-
 /* 冒険の記録を、作者のGoogleフォーム（→スプレッドシート）へ送る。設定でオフにできる */
 const SHARE_URL='https://docs.google.com/forms/d/e/1FAIpQLSfncydVDFEmGqlUP8mH0GAe7VuoDICT9k98s-NkCF9Cbj2CdQ/formResponse',SHARE_ENTRY='entry.1097035413',LS_SHARE='dchain_share_v1',LS_DEV='dchain_dev_v1';
 const LS_CONSENT='dchain_consent_v1';
+/* あそびば(ゲーム一覧)・ほかのゲームと同意を共有：どこかで答えていれば聞き直さない */
+const csShared=()=>{try{return JSON.parse(localStorage.getItem('tkcy3_consent_v1')||'null');}catch(e){return null;}};
+const csShare=ok=>{try{localStorage.setItem('tkcy3_consent_v1',JSON.stringify({v:1,ok:ok?1:0,at:Date.now()}));localStorage.setItem('tkcy3_share',ok?'1':'0');}catch(e){}};
+(()=>{const c=csShared();if(!c)return;try{const mine=localStorage.getItem('dchain_consent_v1');if(mine===null||(c.ok&&mine!=='1'))localStorage.setItem('dchain_consent_v1',c.ok?'1':'0');
+  const sh=localStorage.getItem('tkcy3_share');if(sh!==null)localStorage.setItem('dchain_share_v1',sh);}catch(e){}})();
 const consentVal=()=>{try{return localStorage.getItem(LS_CONSENT);}catch(e){return null;}};
 /* 送信は「内容を確認して同意した」ときだけ。同意前・不同意・設定オフのときは何も送らない */
 const shareOn=()=>{try{return consentVal()==='1'&&localStorage.getItem(LS_SHARE)!=='0';}catch(e){return false;}};
@@ -2325,7 +2333,7 @@ function openConsent(after){
   <label class="csChk"><input type="checkbox" id="csChk" ${consentVal()==='1'?'checked':''}><span>上記の内容を確認しました</span></label>
   <button class="tbtn pri" id="csYes" ${consentVal()==='1'?'':'disabled'}>同意して送信する</button>
   <button id="csNo">送信しない</button>`);
-  const done=ok=>{try{localStorage.setItem(LS_CONSENT,ok?'1':'0');localStorage.setItem(LS_SHARE,ok?'1':'0');}catch(e){}closeModal();if(after)after();};
+  const done=ok=>{try{localStorage.setItem(LS_CONSENT,ok?'1':'0');localStorage.setItem(LS_SHARE,ok?'1':'0');}catch(e){}csShare(ok);closeModal();if(after)after();};
   $('csChk').onchange=e=>{$('csYes').disabled=!e.target.checked;};
   $('csYes').onclick=()=>{if($('csChk').checked)done(true);};
   $('csNo').onclick=()=>done(false);
@@ -2479,6 +2487,7 @@ baseMigrate();applyTheme();
 if(!UNL.retroH){UNL.retroH=1;for(let i=0;i<Math.min(ACH.st.clears||0,5);i++)clearReward(true);unlSave();}checkUnlocks();refreshTitle();setTimeout(titleAnim,100);setCloud('この端末のブラウザに保存');
 requestAnimationFrame(frame);
 setTimeout(initCloud,0);
+if(/github\.io$/.test(location.hostname))$('tPortal').style.display='block';
 if(!instShow())consentBoot();
 </script>
 <script>if('serviceWorker' in navigator&&location.protocol==='https:'){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}</script>
