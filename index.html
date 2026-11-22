@@ -646,7 +646,7 @@ function enemyPhase(msgs){
     msgs.push(`敵の攻撃${sum}`+(bl?`（防御${bl}）`:'')+(pierce?`（すり抜け${pierce}）`:'')+(d?` → HP-${d}`:''));
     {const hd=hurtDelay()*1000,gd=bl&&d>0?90:0;HURT_AT=performance.now()+hd+gd;
      if(bl||d<=0)setTimeout(()=>{if(bl)flash('bAr');sfx('guard');},hd);
-     if(d>0){const hr=d/Math.max(1,S.maxHp),hl=hr>=.25?2:hr>=.1?1:0;setTimeout(()=>{shake();flash('bHp');sfx('hurt',hl);},hd+gd);}}}
+     if(d>0){const hr=d/Math.max(1,S.maxHp),hl=hr>=.25?2:hr>=.05?1:0;setTimeout(()=>{if(hl)shake();flash('bHp');sfx('hurt',hl);},hd+gd);}}}
   if(exploded.size){sfx('boom');S._boom=true;removeAndFill(exploded);}
   const live=all();
   for(const [e,r,c] of live){
@@ -1418,7 +1418,13 @@ const SFX={
     else if(g==='potion'){tone(380,t,.28,{type:'sine',gain:.16,slideTo:950});tone(600,t+.08,.2,{type:'sine',gain:.08,slideTo:1300});}
     else{tone(988,t,.08,{gain:.06});tone(1319,t+.07,.22,{gain:.06});}},
   kill(n=1){const t=T0(),lv=n>=4?2:n>=2?1:0,v=[1,1.25,1.5][lv],L=[1,1.2,1.5][lv],R=[1,1.2,1.45][lv];busyTo(t+.1+.12*L);withVar(()=>{air3(t,.15,.1*v,400,{type:'bandpass',q:1.5,to:6000,toAt:.11,peak:.1});air3(t+.1,.87*L,.2*v,7000,{to:300,toAt:.73*L,peak:.006,rv:R});if(lv>=1)air3(t+.1,.6*L,.1*v,9000,{type:'highpass',to:3000,toAt:.5*L,peak:.01,rv:R});if(lv>=2)air3(t+.11,1.1,.22,1200,{to:120,toAt:1,peak:.02,rv:1.2});});},
-  hurt(lv=1){const t=T0(),v=[.55,1,1.4][lv]||1,L=[.8,1,1.3][lv]||1;withVar(()=>{gruff(t,55,26,.42*L,520,v);tone(44,t,.46*L,{type:'sine',gain:.42*v,slideTo:26,attack:.002});noise(t,.1*L,.26*v,350,{type:'lowpass'});if(lv>=2)air3(t+.02,.7,.14,260,{to:50,peak:.01,rv:.8});});},
+  /* ダメージ音：かすり傷は小さく短く、普通は軽く、大ダメージだけ重く */
+  hurt(lv=1){const t=T0();withVar(()=>{
+    if(lv<=0){tone(150,t,.07,{type:'sine',gain:.13,slideTo:95,attack:.002});noise(t,.035,.05,700,{type:'lowpass'});return;}
+    if(lv===1){gruff(t,60,34,.16,480,.5);tone(62,t,.15,{type:'sine',gain:.2,slideTo:38,attack:.002});noise(t,.045,.09,380,{type:'lowpass'});return;}
+    gruff(t,55,26,.55,520,1.4);tone(44,t,.6,{type:'sine',gain:.59,slideTo:26,attack:.002});noise(t,.13,.36,350,{type:'lowpass'});air3(t+.02,.7,.14,260,{to:50,peak:.01,rv:.8});});},
+  /* HPが3割を切ったときの鼓動（ドクン、ドクン） */
+  beat(){const t=T0();tone(56,t,.1,{type:'sine',gain:.2,slideTo:40,attack:.005});tone(50,t+.18,.12,{type:'sine',gain:.14,slideTo:36,attack:.005});},
   guard(){const t=T0();withVar(()=>{noise(t,.022,.12,6300,{type:'bandpass',q:1.2});[[5100,.09,.055],[7500,.07,.045],[10500,.05,.04]].forEach(([f,g,d])=>noise(t,d,g,f,{type:'bandpass',q:5}));
     for(let i=0;i<6;i++){const dt=.026+i*.015+Math.random()*.006;noise(t+dt,.02,.065*(1-i*.13),6800+Math.random()*6500,{type:'bandpass',q:2});}noise(t+.026,.11,.04,9000,{type:'bandpass',q:1,sweepTo:5700,attack:.004});});},
   block(){const t=T0()+.22;tone(1400,t,.09,{type:'triangle',gain:.1});tone(1000,t+.04,.12,{type:'triangle',gain:.07});},
@@ -1437,6 +1443,8 @@ const SFX={
   over(){const t=T0();[64,60,57,52].forEach((m,i)=>tone(mf(m),t+i*.28,.4,{type:'triangle',gain:.14}));}
 };
 function sfx(name,...a){if(!AU.on.sfx)return;ensureAudio();if(!AU.ctx)return;try{SFX[name](...a);}catch(e){}}
+/* 鼓動：冒険中HPが3割を切ると鳴り続ける（1.5割未満で速くなる）。画面を開いているあいだは止める */
+(function heartLoop(){let gap=1200;try{if(typeof inGame!=='undefined'&&inGame&&S&&!TUT&&S.hp>0&&!modalOpen&&!dying&&!document.hidden){const r=S.hp/Math.max(1,S.maxHp);if(r<.3){sfx('beat');gap=r<.15?800:1200;}}}catch(e){}setTimeout(heartLoop,gap);})();
 function saveAudio(){try{localStorage.setItem(LS_AUDIO,JSON.stringify(AU.on));}catch(e){}}
 const VIB_IC=(()=>{try{const c=document.createElement('canvas');c.width=c.height=28;const x=c.getContext('2d');
   x.font='22px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';x.textBaseline='top';x.fillText('🫨',0,0);
@@ -1931,8 +1939,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.32';
+const VERSION='0.4.33';
 const CHANGELOG=[
+  {v:'0.4.33',d:'2026-11-22',items:['🔊ダメージ音を、傷の大きさに合わせて控えめに','💓HPが少なくなると、鼓動の音で知らせます']},
   {v:'0.4.32',d:'2026-11-22',items:['💰行商人の品ぞろえを見直しました']},
   {v:'0.4.31',d:'2026-11-22',items:['🎉レベルアップ・💰ショップ・🛡️防具の強化で、強くなれる中身が重ならないように整理しました','🪨鉄の皮膚は、受けるダメージを減らす効果になりました']},
   {v:'0.4.30',d:'2026-11-22',items:['使われなくなった仕組みを整理しました']},
