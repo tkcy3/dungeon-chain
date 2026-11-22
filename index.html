@@ -1179,7 +1179,7 @@ function updateAll(){
   setBar('bXp',S.xp,S.xpNeed,`✨ 経験 ${S.xp}/${S.xpNeed}`);
   setBar('bGd',S.gold,S.goldNeed,`💰 ${S.gold}/${S.goldNeed}`);
   setBar('bSh',S.shieldPts,S.shieldNeed,`🔰 盾pt ${S.shieldPts}/${S.shieldNeed}`);
-  $('stats').innerHTML=`<span class="clsChip">${(CLASSES[S.cls]||CLASSES.warrior).ic} ${(CLASSES[S.cls]||CLASSES.warrior).n}${S.curse?`<small style="color:#ff8a8a">呪${S.curse}</small>`:''}</span><span>⚔️ 基礎${S.baseDmg}＋剣×${S.weaponDmg}</span><span>🧪×${S.healPer}</span><span>🛡️×${S.armorPer}</span><span>💰×${S.goldPer}</span>${S.cls==='zombie'?`<span class="rvv" style="color:#9be37a">🪦${'●'.repeat(S.revive||0)}<i style="font-style:normal;opacity:.35">${'●'.repeat(Math.max(0,2-(S.revive||0)))}</i></span>`:''}`;
+  $('stats').innerHTML=`<span class="clsChip">${(CLASSES[S.cls]||CLASSES.warrior).ic} ${(CLASSES[S.cls]||CLASSES.warrior).n}${S.curse?`<small style="color:#ff8a8a">呪${S.curse}</small>`:''}</span><span>⚔️ 基礎${S.baseDmg}＋剣×${S.weaponDmg}</span><span>🧪×${S.healPer}</span><span>🛡️×${S.armorPer}</span><span>💰×${S.goldPer}</span>${S.cls==='zombie'?`<span class="rvv" style="letter-spacing:-1px">${'💚'.repeat(S.revive||0)}${'🖤'.repeat(Math.max(0,2-(S.revive||0)))}</span>`:''}`;
   const sk=$('skills');sk.innerHTML='';
   for(let i=0;i<4;i++){const s=S.skills[i];const b=document.createElement('button');b.className='sk'+(s?'':' empty');
     if(s){const d=SKILLS[s.id];b.innerHTML=`<span class="ic">${d.icon}</span><span>${d.name}</span>`+(s.cur>0?`<span class="cd">あと${s.cur}</span>`:'');if(s.cur>0)b.classList.add('off');}
