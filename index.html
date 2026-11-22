@@ -339,7 +339,7 @@ const SKILLS={
   arm:{name:'武装',icon:'🗡️',cd:12,desc:'盤面の🧪を全て⚔️に変える'},
   quake:{name:'地殻変動',icon:'🌀',cd:10,desc:'敵以外のタイルを全て入れ替える'},
   execute:{name:'処刑',icon:'☠️',cd:14,desc:'弱った敵を全て倒す（装甲無視・ボス以外）。経験値1.5倍',scale:1},
-  thunder:{name:'雷撃',icon:'⚡',cd:12,desc:'ランダムな敵3体にダメージ',scale:1},
+  thunder:{name:'雷撃',icon:'⚡',cd:12,desc:'攻撃力の高い敵3体にダメージ。倒しきれなくても1ターンしびれて動けない',scale:1},
   magnet:{name:'磁力',icon:'🧲',cd:14,desc:'盤面の💰を全て回収する'},
   freeze:{name:'凍結',icon:'❄️',cd:16,desc:'全ての敵を2ターン 動けなくする'},
   snipe:{name:'狙撃',icon:'🎯',cd:12,desc:'選んだ場所を中心に、菱形の範囲へダメージ（中心ほど大きい）',scale:1},
@@ -359,7 +359,7 @@ let AIM=null;
 const execLine=e=>Math.max(SKD.fire(),Math.ceil(e.maxHp*.5));
 function skillDesc(k){
   if(k==='fire')return `全ての敵に${SKD.fire()}ダメージ`;
-  if(k==='thunder')return `ランダムな敵3体に${SKD.thunder()}ダメージ`;
+  if(k==='thunder')return `攻撃力の高い敵3体に${SKD.thunder()}ダメージ。倒しきれなくても1ターンしびれて動けない`;
   if(k==='snipe'){const u=SKD.snipe();return `選んだ場所を中心に、菱形の範囲へ ${3*u}・${2*u}・${u} ダメージ`;}
   if(k==='execute')return `残りHP${SKD.fire()}以下か半分以下の敵を全て倒す（装甲無視・ボス以外）。経験値1.5倍`;
   return SKILLS[k].desc;
@@ -677,7 +677,7 @@ function enemyPhase(msgs){
     const opts=neighbors(pos[0],pos[1]).filter(q=>!isEnemy(tileAt(q)));if(!opts.length)continue;
     const q=opts[rnd(opts.length)],o=tileAt(q);S.board[q[0]][q[1]]=e;S.board[pos[0]][pos[1]]=o;e.ry=q[0];o.ry=pos[0];
   }
-  for(const [e] of live)if(e.frz>0)e.frz--;
+  for(const [e] of live)if(e.frz>0){e.frz--;if(!e.frz)delete e.zap;}
   for(const row of S.board)for(const t of row)if(t.fresh)delete t.fresh;
 }
 
@@ -745,7 +745,7 @@ function commitChain(){
     let killed=0,xp=0,hitN=0;const now=performance.now();
     for(const p of cells){const t=tileAt(p);
       if(t.t==='sword'){remove.add(p[0]*N+p[1]);continue;}
-      hitN++;applyDmg(t,dmgTo(t,p===lastE?Math.round(dmg*HUNT):dmg));if(p===lastE)msgs.push(`🏹 狙い撃ち ${Math.round(dmg*HUNT)}`);
+      hitN++;if(p===lastE){const hd=dmgTo(t,Math.round(dmg*HUNT));hitNum(p[0],p[1],hd,'#ff5a5a',hd/t.maxHp+.2);RETS.push({p,t0:performance.now()});}applyDmg(t,dmgTo(t,p===lastE?Math.round(dmg*HUNT):dmg));if(p===lastE)msgs.push(`🏹 狙い撃ち ${Math.round(dmg*HUNT)}`);
       if(t.hp<=0){remove.add(p[0]*N+p[1]);killed++;xp+=xpOf(t);}else t.hit=now;}
     S.kills+=killed;if(xp)gainXp(xp);anomKills(killed);
     msgs.push(hitN?`敵に${dmg}ダメージ${killed?`、${killed}体撃破`:''}`:`剣${swords}本を消費`);vampDrain(killed,msgs);
@@ -753,7 +753,7 @@ function commitChain(){
     cells.forEach(p=>remove.add(p[0]*N+p[1]));
     if(S.cls==='gambler'&&GAMB_ALL){const r=gRoll();mult*=r;S.nextRoll=ROLLS[rnd(ROLLS.length)];msgs.push(`🃏 ×${r}`);}
     /* 盤面の敵（条件に合うもの）にまとめてダメージ：僧侶の聖なる🧪・重騎士の盾で殴る */
-    const aoe=(d,f,label,col)=>{if(d<=0)return;let k=0,xp=0;const now=performance.now(),hits=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){const t=S.board[r][c];if(!isEnemy(t)||remove.has(r*N+c)||!f(t,r,c))continue;hits.push([r,c]);applyDmg(t,d);if(t.hp<=0){remove.add(r*N+c);k++;xp+=xpOf(t);}else t.hit=now;}
+    const aoe=(d,f,label,col)=>{if(d<=0)return;let k=0,xp=0;const now=performance.now(),hits=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){const t=S.board[r][c];if(!isEnemy(t)||remove.has(r*N+c)||!f(t,r,c))continue;hits.push([r,c]);hitNum(r,c,d,col||'#ffd54a',d/t.maxHp);applyDmg(t,d);if(t.hp<=0){remove.add(r*N+c);k++;xp+=xpOf(t);}else t.hit=now;}
       if(hits.length){burst(hits,col||'#ffd54a',k?1.5:.8);hits.forEach(p=>RINGS.push({p,t0:now,col:col||'#ffd54a'}));if(k>=3)FLASH=now;}
       S.kills+=k;if(xp)gainXp(xp);anomKills(k);msgs.push(`${label}${d}ダメージ${k?`、${k}体撃破`:''}`);};
     const eff=(g,n)=>{
@@ -794,19 +794,20 @@ function useSkill(i,at){
   const now=performance.now();const remove=new Set();let msg='';const fx=[],kb=S.kills;
   const eachEnemy=f=>{for(let r=0;r<N;r++)for(let c=0;c<N;c++){const t=S.board[r][c];if(isEnemy(t))f(t,r,c);}};
   switch(sk.id){
-    case 'fire':{const d=SKD.fire();let k=0,xp=0;eachEnemy((t,r,c)=>{fx.push([r,c]);applyDmg(t,d);if(t.hp<=0){remove.add(r*N+c);k++;xp+=xpOf(t);}else t.hit=now;});S.kills+=k;if(xp)gainXp(xp);msg=`火球！全ての敵に${d}ダメージ${k?`、${k}体撃破`:''}`;break;}
+    case 'fire':{const d=SKD.fire();let k=0,xp=0;eachEnemy((t,r,c)=>{fx.push([r,c]);hitNum(r,c,dmgTo(t,d),SKCOL.fire,d/t.maxHp);embers(r,c);applyDmg(t,d);if(t.hp<=0){remove.add(r*N+c);k++;xp+=xpOf(t);}else t.hit=now;});S.kills+=k;if(xp)gainXp(xp);msg=`火球！全ての敵に${d}ダメージ${k?`、${k}体撃破`:''}`;break;}
     case 'heal':{const h=Math.min(Math.ceil(S.maxHp*0.4),S.maxHp-S.hp);S.hp+=h;msg=`治癒：HP+${h}`;flash('bHp');break;}
     case 'wall':{msg=`鉄壁：防御+${S.maxArmor-S.armor}`;S.armor=S.maxArmor;flash('bAr');break;}
     case 'alchemy':{let k=0;for(const row of S.board)row.forEach((t,c)=>{if(t.t==='shield'){row[c]={t:'coin',ry:t.ry};k++;fx.push([S.board.indexOf(row),c]);}});msg=`錬金：${k}枚を💰に`;break;}
     case 'arm':{let k=0;for(const row of S.board)row.forEach((t,c)=>{if(t.t==='potion'){row[c]={t:'sword',ry:t.ry};k++;fx.push([S.board.indexOf(row),c]);}});msg=`武装：${k}個を⚔️に`;break;}
     case 'quake':{rerollNonEnemies();msg='地殻変動：盤面が入れ替わった';break;}
-    case 'thunder':{const d=SKD.thunder(),es=[];eachEnemy((t,r,c)=>es.push([t,r,c]));shuffle(es);let k=0,xp=0;const hit=es.slice(0,3);
-      hit.forEach(([t,r,c])=>{fx.push([r,c]);applyDmg(t,d);if(t.hp<=0){remove.add(r*N+c);k++;xp+=xpOf(t);}else t.hit=now;});S.kills+=k;if(xp)gainXp(xp);msg=`雷撃！${hit.length}体に${d}ダメージ${k?`、${k}体撃破`:''}`;break;}
+    /* 雷撃：攻撃力の高い順に3体。倒しきれなくても1ターンしびれて攻撃してこない（ボスはしびれない） */
+    case 'thunder':{const d=SKD.thunder(),es=[];eachEnemy((t,r,c)=>es.push([t,r,c]));es.sort((a,b)=>(b[0].atk-a[0].atk)||(b[0].hp-a[0].hp));let k=0,xp=0,z=0;const hit=es.slice(0,3);
+      hit.forEach(([t,r,c])=>{fx.push([r,c]);const dd=dmgTo(t,d);hitNum(r,c,dd,SKCOL.thunder,dd/t.maxHp);applyDmg(t,dd);if(t.hp<=0){remove.add(r*N+c);k++;xp+=xpOf(t);}else{t.hit=now;if(!t.boss){t.frz=Math.max(t.frz||0,1);t.zap=1;z++;}}});S.kills+=k;if(xp)gainXp(xp);msg=`雷撃！${hit.length}体に${d}ダメージ${k?`、${k}体撃破`:''}${z?`、${z}体しびれた`:''}`;break;}
     case 'magnet':{let k=0;for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(S.board[r][c].t==='coin'){remove.add(r*N+c);k++;fx.push([r,c]);}const a=k*S.goldPer;addGold(a);flash('bGd');msg=`磁力：💰${k}枚を回収（+${a}）`;break;}
     case 'freeze':{let k=0;eachEnemy((t,r,c)=>{t.frz=2;k++;fx.push([r,c]);});msg=`凍結：${k}体の敵が凍りついた`;break;}
-    case 'snipe':{AIM=null;const u=SKD.snipe();let k=0,h=0,xp=0;aimCells(at).forEach(([r,c,m])=>{fx.push([r,c]);const t=S.board[r][c];if(!isEnemy(t))return;h++;applyDmg(t,dmgTo(t,u*m));if(t.hp<=0){remove.add(r*N+c);k++;xp+=xpOf(t);}else t.hit=now;});
+    case 'snipe':{AIM=null;const u=SKD.snipe();let k=0,h=0,xp=0;RINGS.push({p:at,t0:now,col:SKCOL.snipe});aimCells(at).forEach(([r,c,m])=>{const t=S.board[r][c];if(!isEnemy(t))return;fx.push([r,c]);h++;const dd=dmgTo(t,u*m);hitNum(r,c,dd,SKCOL.snipe,dd/t.maxHp+(m===3?.3:0));applyDmg(t,dd);if(t.hp<=0){remove.add(r*N+c);k++;xp+=xpOf(t);}else t.hit=now;});
       S.kills+=k;if(xp)gainXp(xp);msg=h?`狙撃！${h}体に命中${k?`、${k}体撃破`:''}`:'狙撃：外れた';break;}
-    case 'crush':{let k=0;eachEnemy((t,r,c)=>{if(t.armor>0){t.armor=0;k++;fx.push([r,c]);}});msg=`粉砕：${k}体の装甲を破壊`;break;}
+    case 'crush':{let k=0;eachEnemy((t,r,c)=>{if(t.armor>0){hitNum(r,c,'🛡️'+t.armor+'→0',SKCOL.crush,.2);shards(r,c);t.armor=0;k++;fx.push([r,c]);}});msg=`粉砕：${k}体の装甲を破壊`;break;}
     case 'bless':{S.bless=3;msg='祝福：3ターン チェーンが3つ長い扱いに';break;}
     case 'execute':{let k=0,xp=0;eachEnemy((t,r,c)=>{if(!t.boss&&t.hp<=execLine(t)){fx.push([r,c]);remove.add(r*N+c);k++;xp+=xpOf(t);}});S.kills+=k;xp=Math.round(xp*1.5);if(xp)gainXp(xp);msg=k?`処刑：${k}体撃破（経験値1.5倍）`:'処刑：対象なし';break;}
   }
@@ -1321,7 +1322,7 @@ function draw(now){
       if(t.elite)label('⭐',x+cs/2,y+pad*2+fs*.55,'#fff',fs*.6,'center');
       const bx=x+pad*2.2,by=y+pad*2+fs*.7;
       if(t.fresh)label('new',bx,by-fs*.1,'#ccc',fs*.6,'left');
-      else if(t.frz>0)label('❄'+t.frz,bx,by,'#bfe3ff',fs*.75,'left');
+      else if(t.frz>0)label(t.zap?'⚡':'❄'+t.frz,bx,by,t.zap?'#ffe94a':'#bfe3ff',fs*.75,'left');
       else if(k==='golem'&&t.rest)label('💤',bx,by,'#fff',fs*.75,'left');
       else if(k==='dragon')label('🔥'+(3-(t.ch||0)),bx,by,'#ffb36b',fs*.75,'left');
       else if(k==='abyss')label('🌀'+(3-(t.ch||0)),bx,by,'#c9a2ff',fs*.75,'left');
@@ -1592,7 +1593,11 @@ function drawGuide(now,cs){
 const TIERS=[[10,'ナイス！','#7fe08a'],[12,'グレート！','#5ec8ff'],[14,'エクセレント！','#ffb84d'],[17,'ファンタスティック！！','#ff6bd6'],[20,'レジェンド！！！','rainbow']];
 const BT=[5,7,9,11,14];
 const bonusTier=n=>{let t=-1;BT.forEach((x,i)=>{if(n>=x)t=i;});return t;};
-let FLOATS=[];
+let FLOATS=[],RETS=[];
+/* スキルや能力のダメージ数字：色は出どころ、大きさは「その敵のHPをどれだけ削ったか」 */
+function hitNum(r,c,d,col,ratio){const cs=cv.width/N;FLOATS.push({text:String(d),x:c*cs+cs/2,y:r*cs+cs*.3,t0:performance.now(),col,sz:.22+.16*Math.min(1,Math.max(0,ratio||0)),dur:800});}
+function embers(r,c){const cs=cv.width/N;for(let k=0;k<5;k++)PARTS.push({x:c*cs+cs*(.3+.4*Math.random()),y:r*cs+cs*.6,vx:(Math.random()-.5)*cs*.6,vy:-cs*(1.2+Math.random()),life:0,max:.45+Math.random()*.2,c:Math.random()<.5?'#ff8a3a':'#ffd06a',s:cs*.035});}
+function shards(r,c){const cs=cv.width/N;for(let k=0;k<7;k++){const a=Math.random()*Math.PI*2;PARTS.push({x:c*cs+cs*.75,y:r*cs+cs*.25,vx:Math.cos(a)*cs*1.6,vy:Math.sin(a)*cs*1.6-cs*.8,life:0,max:.4,c:'#9fb4d8',s:cs*.03});}}
 const PCOL={coin:'#ffd54a',sword:'#d6defa',skull:'#ff6b6b',shield:'#6fb6ff',potion:'#e07bff'};
 let PARTS=[],POP=null,FLASH=0,liveTier=-1;
 const tierOf=n=>{let t=-1;TIERS.forEach((x,i)=>{if(n>=x[0])t=i;});return t;};
@@ -1634,10 +1639,12 @@ function drawFx(now,dt,cs){
   ctx.globalAlpha=1;
   // flash
   if(FLASH){const e=(now-FLASH)/1000;if(e<.25){ctx.fillStyle=`rgba(255,255,255,${.35*(1-e/.25)})`;ctx.fillRect(0,0,W,W);}else FLASH=0;}
-  FLOATS=FLOATS.filter(f=>now-f.t0<1100);
-  for(const f of FLOATS){const e=(now-f.t0)/1100;let fs=cs*.28;ctx.save();ctx.globalAlpha=e>.7?1-(e-.7)/.3:1;ctx.font=`800 ${fs}px system-ui,sans-serif`;
+  FLOATS=FLOATS.filter(f=>now-f.t0<(f.dur||1100));
+  for(const f of FLOATS){const e=(now-f.t0)/(f.dur||1100);let fs=cs*(f.sz||.28);ctx.save();ctx.globalAlpha=e>.7?1-(e-.7)/.3:1;ctx.font=`800 ${fs}px system-ui,sans-serif`;
     const w=ctx.measureText(f.text).width;const x=Math.min(W-w/2-4,Math.max(w/2+4,f.x)),y=Math.max(fs,f.y-e*cs*.9);
-    ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineWidth=fs*.25;ctx.strokeStyle='rgba(0,0,0,.9)';ctx.strokeText(f.text,x,y);ctx.fillStyle='#ffe08a';ctx.fillText(f.text,x,y);ctx.restore();}
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineWidth=fs*.25;ctx.strokeStyle='rgba(0,0,0,.9)';ctx.strokeText(f.text,x,y);ctx.fillStyle=f.col||'#ffe08a';ctx.fillText(f.text,x,y);ctx.restore();}
+  /* 狙い撃ち：照準がキュッと縮んで当たる */
+  RETS=RETS.filter(r=>now-r.t0<350);for(const r of RETS){const e=(now-r.t0)/350,x=r.p[1]*cs+cs/2,y=r.p[0]*cs+cs/2,R=cs*(.7-.4*e);ctx.save();ctx.globalAlpha=1-e*.6;ctx.strokeStyle='#ff5a5a';ctx.lineWidth=cs*.05;ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.stroke();ctx.beginPath();[[0,-1],[0,1],[-1,0],[1,0]].forEach(([dx,dy])=>{ctx.moveTo(x+dx*R*.5,y+dy*R*.5);ctx.lineTo(x+dx*R*1.2,y+dy*R*1.2);});ctx.stroke();ctx.restore();}
   // praise text
   if(POP){const e=(now-POP.t0)/1000;if(e>1.45)POP=null;else{
     const s=e<.16?.3+e/.16*.95:e<.28?1.25-(e-.16)/.12*.25:1,al=e>1.1?Math.max(0,1-(e-1.1)/.35):1;
@@ -1967,8 +1974,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.38';
+const VERSION='0.4.39';
 const CHANGELOG=[
+  {v:'0.4.39',d:'2026-11-22',items:['⚡雷撃は攻撃力の高い敵3体を狙い、倒しきれなくてもしびれさせます','スキルや職業の能力で与えたダメージを、色つきの数字で表示']},
   {v:'0.4.38',d:'2026-11-22',items:['🎯狙撃は、狙う場所を自分で選んで撃つスキルになりました（同じ場所を2回タップで発射）']},
   {v:'0.4.37',d:'2026-11-22',items:['🏹狙い撃ちの的に照準を表示（倒せるときは赤）']},
   {v:'0.4.36',d:'2026-11-22',items:['盾ptのアイコンを🔨に']},
