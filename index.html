@@ -1451,9 +1451,9 @@ const SFX={
   kill(n=1){const t=T0(),lv=n>=4?2:n>=2?1:0,v=[1,1.25,1.5][lv],L=[1,1.2,1.5][lv],R=[1,1.2,1.45][lv];busyTo(t+.1+.12*L);withVar(()=>{air3(t,.15,.1*v,400,{type:'bandpass',q:1.5,to:6000,toAt:.11,peak:.1});air3(t+.1,.87*L,.2*v,7000,{to:300,toAt:.73*L,peak:.006,rv:R});if(lv>=1)air3(t+.1,.6*L,.1*v,9000,{type:'highpass',to:3000,toAt:.5*L,peak:.01,rv:R});if(lv>=2)air3(t+.11,1.1,.22,1200,{to:120,toAt:1,peak:.02,rv:1.2});});},
   /* ダメージ音：かすり傷は小さく短く、普通は軽く、大ダメージだけ重く */
   hurt(lv=1){const t=T0();withVar(()=>{
-    if(lv<=0){tone(150,t,.07,{type:'sine',gain:.13,slideTo:95,attack:.002});noise(t,.035,.05,700,{type:'lowpass'});return;}
-    if(lv===1){gruff(t,60,34,.16,480,.5);tone(62,t,.15,{type:'sine',gain:.2,slideTo:38,attack:.002});noise(t,.045,.09,380,{type:'lowpass'});return;}
-    gruff(t,55,26,.55,520,1.4);tone(44,t,.6,{type:'sine',gain:.59,slideTo:26,attack:.002});noise(t,.13,.36,350,{type:'lowpass'});air3(t+.02,.7,.14,260,{to:50,peak:.01,rv:.8});});},
+    if(lv<=0)return; /* かすり傷は音なし（HPバーが光るだけ） */
+    if(lv===1){tone(70,t,.12,{type:'sine',gain:.22,slideTo:48,attack:.004});return;}
+    tone(62,t,.3,{type:'sine',gain:.42,slideTo:36,attack:.004});noise(t,.08,.1,260,{type:'lowpass'});});},
   /* HPが3割を切ったときの鼓動（ドクン、ドクン） */
   revive(){const t=T0();withVar(()=>{tone(90,t,.9,{type:'sawtooth',gain:.08,slideTo:330,attack:.05});tone(135,t+.05,.85,{type:'triangle',gain:.1,slideTo:495,attack:.05});noise(t,.6,.06,900,{type:'lowpass'});tone(660,t+.8,.5,{type:'sine',gain:.08,attack:.02});});},
   beat(){const t=T0();tone(56,t,.1,{type:'sine',gain:.2,slideTo:40,attack:.005});tone(50,t+.18,.12,{type:'sine',gain:.14,slideTo:36,attack:.005});},
@@ -1977,8 +1977,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.41';
+const VERSION='0.4.42';
 const CHANGELOG=[
+  {v:'0.4.42',d:'2026-11-22',items:['🔊ダメージ音を、歪みのない丸い音に変えました']},
   {v:'0.4.41',d:'2026-11-22',items:['🎮 ゲーム一覧「あそびば」ができました。タイトル画面の「‹ 一覧」から戻れます','📝 データ送信の同意は、あそびば・ほかのゲームと共通になりました（どこかで答えれば聞き直しません）']},
   {v:'0.4.40',d:'2026-11-22',items:['🔨粉砕を強化：装甲が二度と戻らず、そのターンは敵全員が受けるダメージ1.5倍']},
   {v:'0.4.39',d:'2026-11-22',items:['⚡雷撃は攻撃力の高い敵3体を狙い、倒しきれなくてもしびれさせます','スキルや職業の能力で与えたダメージを、色つきの数字で表示']},
