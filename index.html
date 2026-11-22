@@ -836,7 +836,8 @@ function shopOptions(){
     {label:'🛡️ 鎧を新調',desc:'最大防御+5、防御+5',apply:()=>{S.maxArmor+=5;S.armor+=5;}},
     {label:'❤️ 生命の護符',desc:'最大HP+25、HP+25',apply:()=>{S.maxHp+=25;S.hp+=25;}}];
   if(S.cls==='zombie')p.splice(1,1);
-  if(S.healPer<8&&S.cls!=='cleric'&&S.cls!=='vampire')p.push({label:'📜 調合の秘伝書',desc:`🧪1個の回復量+2（現在${S.healPer}）`,apply:()=>{S.healPer+=2;}});
+  /* 秘伝書は誰でも🧪8まで。その先は僧侶の祈りだけ。ヴァンパイアは🧪を使えないので並ばない */
+  if(S.healPer<8&&S.cls!=='vampire')p.push({label:'📜 調合の秘伝書',desc:`🧪1個の回復量+2（現在${S.healPer}）`,apply:()=>{S.healPer+=2;}});
   if(S.goldPer<(S.cls==='thief'?6:4))p.push({label:'🧤 盗賊の手袋',desc:`💰1枚の価値+1（現在${S.goldPer}）`,apply:()=>S.goldPer++});
   return pick(p,3);
 }
@@ -1930,8 +1931,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.31';
+const VERSION='0.4.32';
 const CHANGELOG=[
+  {v:'0.4.32',d:'2026-11-22',items:['💰行商人の品ぞろえを見直しました']},
   {v:'0.4.31',d:'2026-11-22',items:['🎉レベルアップ・💰ショップ・🛡️防具の強化で、強くなれる中身が重ならないように整理しました','🪨鉄の皮膚は、受けるダメージを減らす効果になりました']},
   {v:'0.4.30',d:'2026-11-22',items:['使われなくなった仕組みを整理しました']},
   {v:'0.4.29',d:'2026-11-22',items:['🧭職業を選ぶ画面を、スクロールなしで全部見えるようにしました']},
