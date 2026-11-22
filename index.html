@@ -775,7 +775,9 @@ function commitChain(){
   S.turn++;S.skills.forEach(s=>{if(s.cur>0)s.cur--;});if(S.bless>0)S.bless--;
   checkBoss(msgs);advanceFloor(msgs);achAfterTurn(hp0,S._boom);S._boom=false;
   log(msgs.join(' ／ '));
-  if(S.hp<=0&&S.revive){S.revive--;S.hp=S.maxHp;msgs.push('🧟 ……起き上がった');popAnnounce([S.revive?'🧟 ……起き上がった！（あと1回）':'🧟 ……起き上がった！（もう蘇れない）']);flash('bHp');}
+  if(S.hp<=0&&S.revive){S.revive--;S.hp=S.maxHp;msgs.push('🧟 ……起き上がった');
+    /* 蘇りは画面中央に大きく出し、残り回数も見せる */
+    showBanner('🧟 力尽きた……','よみがえった！',S.revive?`あと${S.revive}回 蘇れる`:'もう蘇れない','#9be37a');sfx('revive');vib([80,60,160]);flash('bHp');}
   if(S.hp<=0){S.hp=0;updateAll();dying=true;setTimeout(()=>{dying=false;if(inGame)gameOver();},Math.max(popLeft()+150,HURT_AT-performance.now()+450));return;}
   ensureMove();saveGame();updateAll();showNextPending();tutAfterCommit();
 }
@@ -1177,7 +1179,7 @@ function updateAll(){
   setBar('bXp',S.xp,S.xpNeed,`✨ 経験 ${S.xp}/${S.xpNeed}`);
   setBar('bGd',S.gold,S.goldNeed,`💰 ${S.gold}/${S.goldNeed}`);
   setBar('bSh',S.shieldPts,S.shieldNeed,`🔰 盾pt ${S.shieldPts}/${S.shieldNeed}`);
-  $('stats').innerHTML=`<span class="clsChip">${(CLASSES[S.cls]||CLASSES.warrior).ic} ${(CLASSES[S.cls]||CLASSES.warrior).n}${S.curse?`<small style="color:#ff8a8a">呪${S.curse}</small>`:''}</span><span>⚔️ 基礎${S.baseDmg}＋剣×${S.weaponDmg}</span><span>🧪×${S.healPer}</span><span>🛡️×${S.armorPer}</span><span>💰×${S.goldPer}</span>`;
+  $('stats').innerHTML=`<span class="clsChip">${(CLASSES[S.cls]||CLASSES.warrior).ic} ${(CLASSES[S.cls]||CLASSES.warrior).n}${S.curse?`<small style="color:#ff8a8a">呪${S.curse}</small>`:''}</span><span>⚔️ 基礎${S.baseDmg}＋剣×${S.weaponDmg}</span><span>🧪×${S.healPer}</span><span>🛡️×${S.armorPer}</span><span>💰×${S.goldPer}</span>${S.cls==='zombie'?`<span class="rvv" style="color:#9be37a">🪦${'●'.repeat(S.revive||0)}<i style="font-style:normal;opacity:.35">${'●'.repeat(Math.max(0,2-(S.revive||0)))}</i></span>`:''}`;
   const sk=$('skills');sk.innerHTML='';
   for(let i=0;i<4;i++){const s=S.skills[i];const b=document.createElement('button');b.className='sk'+(s?'':' empty');
     if(s){const d=SKILLS[s.id];b.innerHTML=`<span class="ic">${d.icon}</span><span>${d.name}</span>`+(s.cur>0?`<span class="cd">あと${s.cur}</span>`:'');if(s.cur>0)b.classList.add('off');}
@@ -1424,6 +1426,7 @@ const SFX={
     if(lv===1){gruff(t,60,34,.16,480,.5);tone(62,t,.15,{type:'sine',gain:.2,slideTo:38,attack:.002});noise(t,.045,.09,380,{type:'lowpass'});return;}
     gruff(t,55,26,.55,520,1.4);tone(44,t,.6,{type:'sine',gain:.59,slideTo:26,attack:.002});noise(t,.13,.36,350,{type:'lowpass'});air3(t+.02,.7,.14,260,{to:50,peak:.01,rv:.8});});},
   /* HPが3割を切ったときの鼓動（ドクン、ドクン） */
+  revive(){const t=T0();withVar(()=>{tone(90,t,.9,{type:'sawtooth',gain:.08,slideTo:330,attack:.05});tone(135,t+.05,.85,{type:'triangle',gain:.1,slideTo:495,attack:.05});noise(t,.6,.06,900,{type:'lowpass'});tone(660,t+.8,.5,{type:'sine',gain:.08,attack:.02});});},
   beat(){const t=T0();tone(56,t,.1,{type:'sine',gain:.2,slideTo:40,attack:.005});tone(50,t+.18,.12,{type:'sine',gain:.14,slideTo:36,attack:.005});},
   guard(){const t=T0();withVar(()=>{noise(t,.022,.12,6300,{type:'bandpass',q:1.2});[[5100,.09,.055],[7500,.07,.045],[10500,.05,.04]].forEach(([f,g,d])=>noise(t,d,g,f,{type:'bandpass',q:5}));
     for(let i=0;i<6;i++){const dt=.026+i*.015+Math.random()*.006;noise(t+dt,.02,.065*(1-i*.13),6800+Math.random()*6500,{type:'bandpass',q:2});}noise(t+.026,.11,.04,9000,{type:'bandpass',q:1,sweepTo:5700,attack:.004});});},
@@ -1939,8 +1942,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.33';
+const VERSION='0.4.34';
 const CHANGELOG=[
+  {v:'0.4.34',d:'2026-11-22',items:['🧟蘇ったときに大きく知らせ、残りの回数がいつでも見えるようにしました']},
   {v:'0.4.33',d:'2026-11-22',items:['🔊ダメージ音を、傷の大きさに合わせて控えめに','💓HPが少なくなると、鼓動の音で知らせます']},
   {v:'0.4.32',d:'2026-11-22',items:['💰行商人の品ぞろえを見直しました']},
   {v:'0.4.31',d:'2026-11-22',items:['🎉レベルアップ・💰ショップ・🛡️防具の強化で、強くなれる中身が重ならないように整理しました','🪨鉄の皮膚は、受けるダメージを減らす効果になりました']},
