@@ -1178,7 +1178,7 @@ function updateAll(){
   setBar('bAr',S.armor,S.maxArmor,`🛡️ 防御 ${S.armor}/${S.maxArmor}`);
   setBar('bXp',S.xp,S.xpNeed,`✨ 経験 ${S.xp}/${S.xpNeed}`);
   setBar('bGd',S.gold,S.goldNeed,`💰 ${S.gold}/${S.goldNeed}`);
-  setBar('bSh',S.shieldPts,S.shieldNeed,`🔰 盾pt ${S.shieldPts}/${S.shieldNeed}`);
+  setBar('bSh',S.shieldPts,S.shieldNeed,`🔨 盾pt ${S.shieldPts}/${S.shieldNeed}`);
   $('stats').innerHTML=`<span class="clsChip">${(CLASSES[S.cls]||CLASSES.warrior).ic} ${(CLASSES[S.cls]||CLASSES.warrior).n}${S.curse?`<small style="color:#ff8a8a">呪${S.curse}</small>`:''}</span><span>⚔️ 基礎${S.baseDmg}＋剣×${S.weaponDmg}</span><span>🧪×${S.healPer}</span><span>🛡️×${S.armorPer}</span><span>💰×${S.goldPer}</span>${S.cls==='zombie'?`<span class="rvv" style="letter-spacing:-1px">${'💚'.repeat(S.revive||0)}${'🖤'.repeat(Math.max(0,2-(S.revive||0)))}</span>`:''}`;
   const sk=$('skills');sk.innerHTML='';
   for(let i=0;i<4;i++){const s=S.skills[i];const b=document.createElement('button');b.className='sk'+(s?'':' empty');
@@ -1942,8 +1942,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.35';
+const VERSION='0.4.36';
 const CHANGELOG=[
+  {v:'0.4.36',d:'2026-11-22',items:['盾ptのアイコンを🔨に']},
   {v:'0.4.35',d:'2026-11-22',items:['説明の言葉を一部分かりやすくしました']},
   {v:'0.4.34',d:'2026-11-22',items:['🧟蘇ったときに大きく知らせ、残りの回数がいつでも見えるようにしました']},
   {v:'0.4.33',d:'2026-11-22',items:['🔊ダメージ音を、傷の大きさに合わせて控えめに','💓HPが少なくなると、鼓動の音で知らせます']},
@@ -2423,7 +2424,7 @@ const BAR_TIPS={
   bAr:()=>tipHead('🛡️','防御')+`敵の攻撃は、まず防御が1につき1ダメージ受け止めます。🛡️1枚で+${S.armorPer}。`,
   bXp:()=>tipHead('✨','経験値')+'敵を倒すとたまります（ボスは6）。満タンでレベルアップし、スキルか能力強化を選べます。',
   bGd:()=>tipHead('💰','お金')+'満タンになるとショップで強化を1つ選べます。必要額は買うたびに増えます。',
-  bSh:()=>tipHead('🔰','盾ポイント')+'防御が満タンのときに消した🛡️の分がたまります。満タンで防具の強化を選べます。'
+  bSh:()=>tipHead('🔨','盾ポイント')+'防御が満タンのときに消した🛡️の分がたまります。満タンで防具を鍛えられます。'
 };
 Object.keys(BAR_TIPS).forEach(id=>attachLP($(id),BAR_TIPS[id]));
 attachLP($('itFloor'),()=>S?floorTip():'');
