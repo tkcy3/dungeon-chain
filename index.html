@@ -843,7 +843,7 @@ function shopOptions(){
 function shieldOptions(){
   const p=[
     {label:'🛡️ 盾の補強',desc:'最大防御+3、防御全回復',apply:()=>{S.maxArmor+=3;S.armor=S.maxArmor;}},
-    {label:'🪨 鉄の皮膚',desc:`受けるダメージ-${IRON}（今は-${S.dr||0}）`,apply:()=>{S.dr=(S.dr||0)+IRON;}}];
+    {label:'🪨 鉄の皮膚',desc:`毎ターン受けるダメージ-${IRON}`+(S.dr?`（今は-${S.dr}）`:''),apply:()=>{S.dr=(S.dr||0)+IRON;}}];
   if(S.armorPer<(S.cls==='heavy'?8:3))p.push({label:'📘 盾の心得',desc:`🛡️1枚あたりの防御+1（現在${S.armorPer}）`,apply:()=>S.armorPer++});
   return pick(p,3);
 }
