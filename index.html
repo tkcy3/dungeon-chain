@@ -1279,6 +1279,8 @@ function draw(now){
   const W=cv.width,cs=W/N,pad=cs*.05;ctx.fillStyle=(floorOf()%20===0&&(S.bossFlag||bossAlive()))?'#2a0e12':zoneAt(floorOf()).tint;ctx.fillRect(0,0,W,W);
   const inChain=new Set(chain.map(p=>p[0]*N+p[1]));
   let dmg=0,g=null;if(chain.length){g=groupOf(tileAt(chain[0]).t);if(g==='atk')dmg=chainDmg(chain);}
+  /* 狙撃手：狙い撃ちの的になる敵（照準を出す） */
+  const snp=(S.cls==='hunter'&&g==='atk'&&chain.length)?lastEnemyOf(chain):null,snpK=snp?snp[0]*N+snp[1]:-1;
   const emojiFont=`${cs*.46}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
   for(let r=0;r<N;r++)for(let c=0;c<N;c++){
     const t=S.board[r][c];const x=c*cs,y=t.ry*cs;const sel=inChain.has(r*N+c);
@@ -1312,7 +1314,13 @@ function draw(now){
       else if(k==='golem'&&t.rest)label('💤',bx,by,'#fff',fs*.75,'left');
       else if(k==='dragon')label('🔥'+(3-(t.ch||0)),bx,by,'#ffb36b',fs*.75,'left');
       else if(k==='abyss')label('🌀'+(3-(t.ch||0)),bx,by,'#c9a2ff',fs*.75,'left');
-      if(sel&&wouldDie(t,dmgTo(t,dmg))){ctx.strokeStyle='rgba(255,60,60,.9)';ctx.lineWidth=cs*.07;ctx.beginPath();ctx.moveTo(x+cs*.22,y+cs*.22);ctx.lineTo(x+cs*.78,y+cs*.78);ctx.moveTo(x+cs*.78,y+cs*.22);ctx.lineTo(x+cs*.22,y+cs*.78);ctx.stroke();}
+      const isSnp=r*N+c===snpK,ed=isSnp?Math.round(dmg*HUNT):dmg,kil=sel&&wouldDie(t,dmgTo(t,ed));
+      if(isSnp){/* 照準：外の輪と十字。倒せるときは赤、届かないときは金 */
+        const cx=x+cs/2,cy=y+cs/2,R=cs*.36,col=kil?'rgba(255,60,60,.95)':'rgba(255,200,80,.95)',pulse=1+.06*Math.sin(performance.now()/120);
+        ctx.save();ctx.strokeStyle=col;ctx.lineWidth=cs*.045;ctx.beginPath();ctx.arc(cx,cy,R*pulse,0,Math.PI*2);ctx.stroke();
+        ctx.lineWidth=cs*.035;ctx.beginPath();[[0,-1],[0,1],[-1,0],[1,0]].forEach(([dx,dy])=>{ctx.moveTo(cx+dx*R*.45,cy+dy*R*.45);ctx.lineTo(cx+dx*R*1.25,cy+dy*R*1.25);});ctx.stroke();
+        ctx.fillStyle=col;ctx.beginPath();ctx.arc(cx,cy,cs*.035,0,Math.PI*2);ctx.fill();ctx.restore();}
+      else if(kil){ctx.strokeStyle='rgba(255,60,60,.9)';ctx.lineWidth=cs*.07;ctx.beginPath();ctx.moveTo(x+cs*.22,y+cs*.22);ctx.lineTo(x+cs*.78,y+cs*.78);ctx.moveTo(x+cs*.78,y+cs*.22);ctx.lineTo(x+cs*.22,y+cs*.78);ctx.stroke();}
       ctx.textBaseline='middle';
     }
     ctx.globalAlpha=1;
@@ -1942,8 +1950,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.36';
+const VERSION='0.4.37';
 const CHANGELOG=[
+  {v:'0.4.37',d:'2026-11-22',items:['🏹狙い撃ちの的に照準を表示（倒せるときは赤）']},
   {v:'0.4.36',d:'2026-11-22',items:['盾ptのアイコンを🔨に']},
   {v:'0.4.35',d:'2026-11-22',items:['説明の言葉を一部分かりやすくしました']},
   {v:'0.4.34',d:'2026-11-22',items:['🧟蘇ったときに大きく知らせ、残りの回数がいつでも見えるようにしました']},
