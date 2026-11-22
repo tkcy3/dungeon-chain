@@ -332,7 +332,7 @@ const ICON={skull:'💀',sword:'⚔️',shield:'🛡️',potion:'🧪',coin:'�
 const BG={skull:'#3d1a1f',sword:'#2e3443',shield:'#1a3148',potion:'#3a1f41',coin:'#4a3b14'};
 const LS_SAVE='dchain_save_v1',LS_BEST='dchain_best_v1';
 const SKILLS={
-  fire:{name:'火球',icon:'🔥',cd:14,desc:'全ての敵にダメージ',scale:1},
+  fire:{name:'火球',icon:'🔥',cd:14,desc:'盤面の敵全員にダメージ',scale:1},
   heal:{name:'治癒',icon:'💚',cd:18,desc:'HPを最大値の40%回復'},
   wall:{name:'鉄壁',icon:'🧱',cd:14,desc:'防御を最大まで回復'},
   alchemy:{name:'錬金',icon:'⚗️',cd:12,desc:'盤面の🛡️を全て💰に変える'},
@@ -341,7 +341,7 @@ const SKILLS={
   execute:{name:'処刑',icon:'☠️',cd:14,desc:'弱った敵を全て倒す（装甲無視・ボス以外）。経験値1.5倍',scale:1},
   thunder:{name:'雷撃',icon:'⚡',cd:12,desc:'攻撃力の高い敵3体にダメージ。倒しきれなくても1ターンしびれて動けない',scale:1},
   magnet:{name:'磁力',icon:'🧲',cd:14,desc:'盤面の💰を全て回収する'},
-  freeze:{name:'凍結',icon:'❄️',cd:16,desc:'全ての敵を2ターン 動けなくする'},
+  freeze:{name:'凍結',icon:'❄️',cd:16,desc:'盤面の敵全員を2ターン 動けなくする'},
   snipe:{name:'狙撃',icon:'🎯',cd:12,desc:'選んだ場所を中心に、菱形の範囲へダメージ（中心ほど大きい）',scale:1},
   crush:{name:'粉砕',icon:'🔨',cd:10,desc:'盤面の敵全員の装甲を0にし、二度と戻らなくする。このターン、敵全員が受けるダメージ1.5倍'},
   bless:{name:'祝福',icon:'🌟',cd:20,desc:'3ターンの間、チェーンが3つ長い扱いになる（効果の倍率アップ）'}
@@ -358,7 +358,7 @@ const AIMK=[3,2,1];function aimCells(c){const o=[];for(let r=0;r<N;r++)for(let k
 let AIM=null;
 const execLine=e=>Math.max(SKD.fire(),Math.ceil(e.maxHp*.5));
 function skillDesc(k){
-  if(k==='fire')return `全ての敵に${SKD.fire()}ダメージ`;
+  if(k==='fire')return `盤面の敵全員に${SKD.fire()}ダメージ`;
   if(k==='thunder')return `攻撃力の高い敵3体に${SKD.thunder()}ダメージ。倒しきれなくても1ターンしびれて動けない`;
   if(k==='snipe'){const u=SKD.snipe();return `選んだ場所を中心に、菱形の範囲へ ${3*u}・${2*u}・${u} ダメージ`;}
   if(k==='execute')return `残りHP${SKD.fire()}以下か半分以下の敵を全て倒す（装甲無視・ボス以外）。経験値1.5倍`;
