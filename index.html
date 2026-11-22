@@ -356,7 +356,7 @@ const execLine=e=>Math.max(SKD.fire(),Math.ceil(e.maxHp*.5));
 function skillDesc(k){
   if(k==='fire')return `全ての敵に${SKD.fire()}ダメージ`;
   if(k==='thunder')return `ランダムな敵3体に${SKD.thunder()}ダメージ`;
-  if(k==='snipe')return `いちばん硬い敵に${SKD.snipe()}ダメージ`;
+  if(k==='snipe')return `いちばん倒しにくい敵に${SKD.snipe()}ダメージ`;
   if(k==='execute')return `残りHP${SKD.fire()}以下か半分以下の敵を全て倒す（装甲無視・ボス以外）。経験値1.5倍`;
   return SKILLS[k].desc;
 }
