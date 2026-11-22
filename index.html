@@ -343,7 +343,7 @@ const SKILLS={
   magnet:{name:'磁力',icon:'🧲',cd:14,desc:'盤面の💰を全て回収する'},
   freeze:{name:'凍結',icon:'❄️',cd:16,desc:'全ての敵を2ターン 動けなくする'},
   snipe:{name:'狙撃',icon:'🎯',cd:12,desc:'選んだ場所を中心に、菱形の範囲へダメージ（中心ほど大きい）',scale:1},
-  crush:{name:'粉砕',icon:'🔨',cd:10,desc:'全ての敵の装甲を0にする'},
+  crush:{name:'粉砕',icon:'🔨',cd:10,desc:'盤面の敵全員の装甲を0にし、二度と戻らなくする。このターン、敵全員が受けるダメージ1.5倍'},
   bless:{name:'祝福',icon:'🌟',cd:20,desc:'3ターンの間、チェーンが3つ長い扱いになる（効果の倍率アップ）'}
 };
 
@@ -513,7 +513,7 @@ function iconHtml(k){const D=EK[k];if(!D)return '';if(TINT[k])return `<img src="
 const SHAPES=['🐸','🐙','🦔','🪼','🦩','🐌','🦥','🐡','🦖','🧸','🪆','🥸'];
 
 const xpOf=e=>e.boss?6:e.mini?4:(bhOf(e)==='golem'?2:1)+(e.elite?1:0);
-const dmgTo=(e,d)=>{if(bhOf(e)==='ghost')d=Math.ceil(d/2);if(!e.boss&&guarded(e))d=Math.ceil(d/2);return d;};
+const dmgTo=(e,d)=>{if(bhOf(e)==='ghost')d=Math.ceil(d/2);if(!e.boss&&guarded(e))d=Math.ceil(d/2);if(S&&S.crack)d=Math.round(d*1.5);return d;};
 function makeKind(k,T){
   const e={t:'skull',kind:k,hp:Math.round(3+(T/7+T*T/5000)*1.5)+(Math.random()<.4?1:0),atk:1+Math.floor(T/40)+(T>60&&Math.random()<.2?1:0),armor:0,fresh:true};
   const D=EK[k]||{};const B=D.b||k,SS=MK_S||S;
@@ -655,15 +655,15 @@ function enemyPhase(msgs){
   const live=all();
   for(const [e,r,c] of live){
     if(e.fresh||e.frz>0)continue;const k=bhOf(e);
-    if(k==='kraken')e.armor=Math.min(10,e.armor+1);
-    if(k==='abyss'){e.armor=Math.min(10,e.armor+1);e.sm=(e.sm||0)+1;if(e.sm>=2){e.sm=0;const pool=['skel','zombie','spider','ghost','golem','shaman'];summon(pool[rnd(pool.length)]);msgs.push('👁️ 手下を呼び出した！');}}
+    if(k==='kraken'&&!e.brk)e.armor=Math.min(10,e.armor+1);
+    if(k==='abyss'){if(!e.brk)e.armor=Math.min(10,e.armor+1);e.sm=(e.sm||0)+1;if(e.sm>=2){e.sm=0;const pool=['skel','zombie','spider','ghost','golem','shaman'];summon(pool[rnd(pool.length)]);msgs.push('👁️ 手下を呼び出した！');}}
     if(k==='vampire'){e.hp=Math.min(e.maxHp,e.hp+2);e.sm=(e.sm||0)+1;if(e.sm>=3){e.sm=0;summon('bat');msgs.push('🧛 コウモリを呼んだ！');}}
   }
   for(const [e,r,c] of live){
     if(e.fresh||e.frz>0||S.board[r][c]!==e)continue;const D=EK[kindOf(e)]||{};e.age=(e.age||0)+1;
     if(D.rg)e.hp=Math.min(e.maxHp,e.hp+D.rg);
     if(D.hl)for(const q of neighbors(r,c)){const t=tileAt(q);if(isEnemy(t))t.hp=Math.min(t.maxHp,t.hp+D.hl);}
-    if(D.au)e.armor=Math.min(D.au+(e.mini?4:0),e.armor+1);
+    if(D.au&&!e.brk)e.armor=Math.min(D.au+(e.mini?4:0),e.armor+1);
     if(D.gr&&e.age%D.gr===0){e.atk++;}
     if(D.sh)e.ic=SHAPES[rnd(SHAPES.length)];
     if(D.sm&&e.age%D.sm[1]===0){let kk=D.sm[0];if(kk==='?'){const pool=Object.keys(rosterAt(floorOf()));kk=pool[rnd(pool.length)]||'skel';}summon(kk);msgs.push(`${D.icon} ${EK[kk].icon}${EK[kk].name}を呼んだ！`);}
@@ -776,7 +776,7 @@ function commitChain(){
   achChain(cells.length,g,[...remove].map(i=>S.board[(i/N)|0][i%N]).filter(isEnemy),hp0,full0);
   removeAndFill(remove);flushDeath(msgs);
   enemyPhase(msgs);popAnnounce(msgs);
-  S.turn++;S.skills.forEach(s=>{if(s.cur>0)s.cur--;});if(S.bless>0)S.bless--;
+  S.turn++;S.skills.forEach(s=>{if(s.cur>0)s.cur--;});if(S.bless>0)S.bless--;S.crack=0;
   checkBoss(msgs);advanceFloor(msgs);achAfterTurn(hp0,S._boom);S._boom=false;
   log(msgs.join(' ／ '));
   if(S.hp<=0&&S.revive){S.revive--;S.hp=S.maxHp;msgs.push('🧟 ……起き上がった');
@@ -807,7 +807,8 @@ function useSkill(i,at){
     case 'freeze':{let k=0;eachEnemy((t,r,c)=>{t.frz=2;k++;fx.push([r,c]);});msg=`凍結：${k}体の敵が凍りついた`;break;}
     case 'snipe':{AIM=null;const u=SKD.snipe();let k=0,h=0,xp=0;RINGS.push({p:at,t0:now,col:SKCOL.snipe});aimCells(at).forEach(([r,c,m])=>{const t=S.board[r][c];if(!isEnemy(t))return;fx.push([r,c]);h++;const dd=dmgTo(t,u*m);hitNum(r,c,dd,SKCOL.snipe,dd/t.maxHp+(m===3?.3:0));applyDmg(t,dd);if(t.hp<=0){remove.add(r*N+c);k++;xp+=xpOf(t);}else t.hit=now;});
       S.kills+=k;if(xp)gainXp(xp);msg=h?`狙撃！${h}体に命中${k?`、${k}体撃破`:''}`:'狙撃：外れた';break;}
-    case 'crush':{let k=0;eachEnemy((t,r,c)=>{if(t.armor>0){hitNum(r,c,'🛡️'+t.armor+'→0',SKCOL.crush,.2);shards(r,c);t.armor=0;k++;fx.push([r,c]);}});msg=`粉砕：${k}体の装甲を破壊`;break;}
+    /* 粉砕：盤面の敵全員の装甲を0にして二度と戻らなくし、このターンは全員にひび（受けるダメージ1.5倍） */
+    case 'crush':{let k=0;S.crack=1;eachEnemy((t,r,c)=>{t.brk=1;fx.push([r,c]);if(t.armor>0){hitNum(r,c,'🛡️'+t.armor+'→0',SKCOL.crush,.2);shards(r,c);t.armor=0;k++;}});msg=`粉砕！敵全員にひび（このターン1.5倍）${k?`、${k}体の装甲を破壊`:''}`;break;}
     case 'bless':{S.bless=3;msg='祝福：3ターン チェーンが3つ長い扱いに';break;}
     case 'execute':{let k=0,xp=0;eachEnemy((t,r,c)=>{if(!t.boss&&t.hp<=execLine(t)){fx.push([r,c]);remove.add(r*N+c);k++;xp+=xpOf(t);}});S.kills+=k;xp=Math.round(xp*1.5);if(xp)gainXp(xp);msg=k?`処刑：${k}体撃破（経験値1.5倍）`:'処刑：対象なし';break;}
   }
@@ -1974,8 +1975,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.39';
+const VERSION='0.4.40';
 const CHANGELOG=[
+  {v:'0.4.40',d:'2026-11-22',items:['🔨粉砕を強化：装甲が二度と戻らず、そのターンは敵全員が受けるダメージ1.5倍']},
   {v:'0.4.39',d:'2026-11-22',items:['⚡雷撃は攻撃力の高い敵3体を狙い、倒しきれなくてもしびれさせます','スキルや職業の能力で与えたダメージを、色つきの数字で表示']},
   {v:'0.4.38',d:'2026-11-22',items:['🎯狙撃は、狙う場所を自分で選んで撃つスキルになりました（同じ場所を2回タップで発射）']},
   {v:'0.4.37',d:'2026-11-22',items:['🏹狙い撃ちの的に照準を表示（倒せるときは赤）']},
