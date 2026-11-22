@@ -346,7 +346,7 @@ const SKILLS={
   bless:{name:'祝福',icon:'🌟',cd:20,desc:'3ターンの間、チェーンが3つ長い扱いになる（効果の倍率アップ）'}
 };
 
-const MAG_UP=8,HOLY_N=3,BASH=.5,BASH_ADJ=true;
+const IRON=2,MAG_UP=8,HOLY_N=3,BASH=.5,BASH_ADJ=true;
 const UNDEAD=k=>/^(skel|zombie|ghost|lich|vampire)/.test(k||'');
 const atkP=()=>S?S.baseDmg+3*S.weaponDmg:7;
 /* 魔術師はスキルで戦う：攻撃スキルの威力は剣ではなく「魔力」で決まる */
@@ -642,7 +642,7 @@ function enemyPhase(msgs){
     if(k==='bomb'){e.cnt=(e.cnt||4)-1;if(e.cnt<=0){exploded.add(r*N+c);msgs.push('💣 爆発！');}}
   }
   const sum=total+pierce;
-  if(sum>0){const bl=Math.min(S.armor,total);S.armor-=bl;let d=total-bl+pierce;S.hp-=d;
+  if(sum>0){const bl=Math.min(S.armor,total);S.armor-=bl;let d=total-bl+pierce;if(d>0&&S.dr)d=Math.max(0,d-S.dr);S.hp-=d;
     msgs.push(`敵の攻撃${sum}`+(bl?`（防御${bl}）`:'')+(pierce?`（すり抜け${pierce}）`:'')+(d?` → HP-${d}`:''));
     {const hd=hurtDelay()*1000,gd=bl&&d>0?90:0;HURT_AT=performance.now()+hd+gd;
      if(bl||d<=0)setTimeout(()=>{if(bl)flash('bAr');sfx('guard');},hd);
@@ -826,7 +826,6 @@ function levelOptions(){
     {label:'💪 腕力強化',desc:`基礎攻撃力+${S.baseUp||5}（現在${S.baseDmg}）`,apply:()=>{S.baseDmg+=S.baseUp||5;}}];
   if(S.skills.length){const fo=S.cls==='mage'?5:3,mn=S.cls==='mage'?3:4;stat.push({label:'🧘 集中',desc:`スキルの再使用ターン-${fo}　${S.skills.map(x=>`${SKILLS[x.id].icon}${x.cd}→${Math.max(mn,x.cd-fo)}`).join(' ')}`,apply:()=>S.skills.forEach(s=>s.cd=Math.max(mn,s.cd-fo))});}
   if(S.cls==='cleric'&&S.healPer<14)stat.push({label:'🧪 祈り',desc:`🧪1個の回復量+2（現在${S.healPer}）`,apply:()=>{S.healPer+=2;}});
-  if(S.cls==='heavy'&&S.armorPer<8)stat.push({label:'📘 盾の心得',desc:`🛡️1枚あたりの防御+1（現在${S.armorPer}）`,apply:()=>S.armorPer++});
   if(S.cls==='mage')opts.push({label:'📖 魔力',desc:`攻撃スキルの威力アップ（魔力${S.mag||6}→${(S.mag||6)+MAG_UP}）`,apply:()=>{S.mag=(S.mag||6)+MAG_UP;}});
   shuffle(stat);while(opts.length<3&&stat.length)opts.push(stat.pop());
   return opts;
@@ -835,19 +834,16 @@ function shopOptions(){
   const p=[
     {label:'⚔️ 武器を鍛える',desc:`剣1本あたりの攻撃力+${S.wpnUp||2}（現在${S.weaponDmg}）`,apply:()=>{S.weaponDmg+=S.wpnUp||2;}},
     {label:'🛡️ 鎧を新調',desc:'最大防御+5、防御+5',apply:()=>{S.maxArmor+=5;S.armor+=5;}},
-    {label:'❤️ 生命の護符',desc:'最大HP+25、HP+25',apply:()=>{S.maxHp+=25;S.hp+=25;}},
-    {label:'📕 武術の書',desc:`基礎攻撃力+${S.baseUp||5}（現在${S.baseDmg}）`,apply:()=>{S.baseDmg+=S.baseUp||5;}}];
+    {label:'❤️ 生命の護符',desc:'最大HP+25、HP+25',apply:()=>{S.maxHp+=25;S.hp+=25;}}];
   if(S.cls==='zombie')p.splice(1,1);
-  if(S.healPer<(S.cls==='cleric'?14:8)&&S.cls!=='vampire')p.push({label:'📜 調合の秘伝書',desc:`🧪1個の回復量+2（現在${S.healPer}）`,apply:()=>{S.healPer+=2;}});
-  if(S.cls==='heavy'&&S.armorPer<8)p.push({label:'📘 盾術の書',desc:`🛡️1枚あたりの防御+1（現在${S.armorPer}）`,apply:()=>S.armorPer++});
+  if(S.healPer<8&&S.cls!=='cleric'&&S.cls!=='vampire')p.push({label:'📜 調合の秘伝書',desc:`🧪1個の回復量+2（現在${S.healPer}）`,apply:()=>{S.healPer+=2;}});
   if(S.goldPer<(S.cls==='thief'?6:4))p.push({label:'🧤 盗賊の手袋',desc:`💰1枚の価値+1（現在${S.goldPer}）`,apply:()=>S.goldPer++});
   return pick(p,3);
 }
 function shieldOptions(){
   const p=[
     {label:'🛡️ 盾の補強',desc:'最大防御+3、防御全回復',apply:()=>{S.maxArmor+=3;S.armor=S.maxArmor;}},
-    {label:'🩹 応急手当',desc:'HP+40',apply:()=>{S.hp=Math.min(S.maxHp,S.hp+40);}},
-    {label:'🪨 鉄の皮膚',desc:'最大HP+20、HP+20',apply:()=>{S.maxHp+=20;S.hp+=20;}}];
+    {label:'🪨 鉄の皮膚',desc:`受けるダメージ-${IRON}（今は-${S.dr||0}）`,apply:()=>{S.dr=(S.dr||0)+IRON;}}];
   if(S.armorPer<(S.cls==='heavy'?8:3))p.push({label:'📘 盾の心得',desc:`🛡️1枚あたりの防御+1（現在${S.armorPer}）`,apply:()=>S.armorPer++});
   return pick(p,3);
 }
@@ -1934,8 +1930,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.30';
+const VERSION='0.4.31';
 const CHANGELOG=[
+  {v:'0.4.31',d:'2026-11-22',items:['🎉レベルアップ・💰ショップ・🛡️防具の強化で、強くなれる中身が重ならないように整理しました','🪨鉄の皮膚は、受けるダメージを減らす効果になりました']},
   {v:'0.4.30',d:'2026-11-22',items:['使われなくなった仕組みを整理しました']},
   {v:'0.4.29',d:'2026-11-22',items:['🧭職業を選ぶ画面を、スクロールなしで全部見えるようにしました']},
   {v:'0.4.28',d:'2026-11-22',items:['職業の名前を一部見直しました']},
