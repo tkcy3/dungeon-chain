@@ -2072,21 +2072,21 @@ function showSettings(back,msg){
   /* 並びはKROPKI・LAPISと同じ: 音 → このゲームの設定 → 記録の送信 → 更新内容 → ホーム画面に追加 → 消去 */
   openModal(`${pgHead('⚙️ 設定','戻る','stClose')}
     <div class="srow"><span class="ri">🎵</span><span class="rt">BGM</span>${seg('stB',BGM_LB,bgmLv())}</div>
-    <div class="srow"><span class="ri">🔊</span><span class="rt">効果音</span>${seg('stS',['OFF','ON'],AU.on.sfx?1:0)}</div>
-    <div class="srow"><span class="ri">${VIB_IC==='振動'?'📳':VIB_IC}</span><span class="rt">振動</span>${seg('stV',['OFF','ON'],AU.on.vib?1:0)}</div>
+    <div class="srow"><span class="ri">🔊</span><span class="rt">効果音</span>${seg('stS',['ON','OFF'],AU.on.sfx?0:1)}</div>
+    <div class="srow"><span class="ri">${VIB_IC==='振動'?'📳':VIB_IC}</span><span class="rt">振動</span>${seg('stV',['ON','OFF'],AU.on.vib?0:1)}</div>
     <button class="prow" id="stStory" style="margin-top:14px"><span class="ri">📜</span><span class="rt">物語をもう一度</span><span class="rs">›</span></button>
     <button class="prow" id="stTheme"><span class="ri">🎨</span><span class="rt">盤面の色</span><span class="rs">›</span></button>
-    <div class="srow" style="margin-top:14px"><span class="ri">📤</span><span class="rt">プレイ記録を送る<button class="lk" id="stCs">送信内容について ›</button></span>${seg('stR',['OFF','ON'],shareOn()?1:0)}</div>
+    <div class="srow" style="margin-top:14px"><span class="ri">📤</span><span class="rt">プレイ記録を送る<button class="lk" id="stCs">送信内容について ›</button></span>${seg('stR',['ON','OFF'],shareOn()?0:1)}</div>
     <button class="prow" id="stVer"><span class="ri">📋</span><span class="rt">更新内容${verUnseen()?'<span class="newb">NEW</span>':''}</span><span class="rs">v${VERSION} ›</span></button>
     ${isApp()?'':'<button class="prow" id="stA2h"><span class="ri">📲</span><span class="rt">ホーム画面に追加<br><small style="color:#b9adc0;font-size:12.5px">全画面ですぐ遊べる</small></span><span class="rs">›</span></button>'}
     ${inGame?'':'<button class="prow" id="stData" style="margin-top:14px"><span class="ri">🗑️</span><span class="rt">記録のリセット</span><span class="rs">›</span></button><button class="prow danger" id="stWipe"><span class="ri">⚠️</span><span class="rt">すべて初期化</span><span class="rs">›</span></button>'}
     ${msg?`<p id="stMsg" style="text-align:center;color:#8fe08f;font-size:14.5px">${msg}</p>`:''}`);
   const segOn=(id,fn)=>document.querySelectorAll('#'+id+' button').forEach(b=>b.onclick=()=>{fn(+b.dataset.v);showSettings();});
   segOn('stB',n=>{AU.on.bgm=n>0;if(n)AU.on.bv=n;saveAudio();setBgmVol();refreshAudioBtns();if(AU.on.bgm&&inGame)bgmStart();if(!AU.on.bgm)bgmStop();});
-  segOn('stS',n=>{AU.on.sfx=n===1;saveAudio();refreshAudioBtns();});
-  segOn('stV',n=>{AU.on.vib=n===1;saveAudio();refreshAudioBtns();if(AU.on.vib)vib(30);});
+  segOn('stS',n=>{AU.on.sfx=n===0;saveAudio();refreshAudioBtns();});
+  segOn('stV',n=>{AU.on.vib=n===0;saveAudio();refreshAudioBtns();if(AU.on.vib)vib(30);});
   document.querySelectorAll('#stR button').forEach(b=>b.onclick=()=>{
-    const want=b.dataset.v==='1';if(want===shareOn())return;
+    const want=b.dataset.v==='0';if(want===shareOn())return;
     if(want&&consentVal()!=='1'){openConsent(()=>showSettings());return;}
     try{const nv=want?'1':'0';localStorage.setItem(LS_SHARE,nv);localStorage.setItem('tkcy3_share',nv);}catch(e){}showSettings();});
   $('stCs').onclick=()=>openConsent(()=>showSettings());
