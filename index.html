@@ -145,6 +145,9 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 /* bottom bar & other pages */.tg.off{opacity:.45}.tg em{color:#8fe08f}.tg.off em{color:#f08a8a}
 .prow{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#2a2230;border:1px solid #4a3d52;border-radius:12px;padding:12px;margin:0 0 8px;color:#ece4d8;font-size:16px;min-height:52px}
 .prow .ri{font-size:24px;width:30px;text-align:center}.prow .rt{flex:1}.prow .rs{font-size:13px;color:#b9adc0}.prow.danger{border-color:#8a3a3a;color:#ffc4c4}.prow:active{background:#3a2f42}
+.srow{display:flex;align-items:center;gap:10px;width:100%;background:#2a2230;border:1px solid #4a3d52;border-radius:12px;padding:8px 10px 8px 12px;margin:0 0 8px;color:#ece4d8;font-size:16px;min-height:56px}
+.srow .ri{font-size:24px;width:30px;text-align:center}.srow .rt{flex:1;line-height:1.3}.srow .lk{display:block;background:none;border:0;padding:4px 0 0;color:#b9adc0;font-size:13px;text-decoration:underline;text-align:left}
+.seg{display:flex;background:#1b1520;border-radius:10px;padding:3px;gap:3px;flex:none}.seg button{min-width:44px;min-height:40px;border:0;border-radius:8px;background:transparent;color:#b9adc0;font-size:15px;font-weight:700}.seg button.on{background:#e8b33a;color:#211a25}
 .newb{background:#e8b33a;color:#211a25;font-size:11px;font-weight:700;border-radius:999px;padding:2px 7px;margin-left:6px;vertical-align:middle}
 .chg details{margin:0 0 6px}.chg summary{font-size:15px;color:#c9bfcf;padding:8px 0;cursor:pointer}.chg ul{font-size:14px!important;line-height:1.7!important}
 .hlp{display:flex;flex-direction:column;gap:12px}.hcard{background:#2a2230;border:1px solid #4a3d52;border-radius:12px;padding:12px;text-align:center}
@@ -1977,8 +1980,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.43';
+const VERSION='0.4.44';
 const CHANGELOG=[
+  {v:'0.4.44',d:'2026-11-23',items:['⚙️ 設定の見た目をKROPKI・LAPISとそろえました（BGM・効果音・振動・記録の送信は、その場で切り替えるボタンに）','🗑️「データを消す」を「記録のリセット」と「すべて初期化」に分けました']},
   {v:'0.4.43',d:'2026-11-23',items:['📱ゲームコレクションの全画面表示に対応しました']},
   {v:'0.4.42',d:'2026-11-22',items:['🔊ダメージ音を、歪みのない丸い音に変えました']},
   {v:'0.4.41',d:'2026-11-22',items:['🎮 ゲーム一覧「あそびば」ができました。タイトル画面の「‹ 一覧」から戻れます','📝 データ送信の同意は、あそびば・ほかのゲームと共通になりました（どこかで答えれば聞き直しません）']},
@@ -2064,45 +2068,55 @@ function showChangelog(back){try{localStorage.setItem(LS_VER,VERSION);}catch(e){
   $('chgB').onclick=()=>{if(back)back();else closeModal();};}
 function showSettings(back,msg){
   if(back!==undefined)settingsBack=back;
-  const tg=(id,ic,label,on)=>`<button class="tile big tg ${on?'':'off'}" id="${id}"><span class="ti">${ic}</span><small>${label}</small><em>${on?'ON':'OFF'}</em></button>`;
-  openModal(`${pgHead('⚙️ 設定','戻る','stClose')}<div class="tgrid" style="--c:3">${tg('st1','🎵','BGM',AU.on.bgm).replace('>ON<','>'+BGM_LB[bgmLv()]+'<')}${tg('st2','🔊','効果音',AU.on.sfx)}${tg('st3',VIB_IC==='振動'?'📳':VIB_IC,'振動',AU.on.vib)}</div>
-    <button class="prow" id="stVer" style="margin-top:14px"><span class="ri">📋</span><span class="rt">更新内容${verUnseen()?'<span class="newb">NEW</span>':''}</span><span class="rs">v${VERSION}</span></button>
-    <button class="prow" id="stShare"><span class="ri">📤</span><span class="rt">記録を作者に送る<br><small style="color:#b9adc0;font-size:12.5px">職業・到達階など（冒険者名は送りません）</small></span><span class="rs" style="color:${shareOn()?'#8fe08f':'#f08a8a'}">${shareOn()?'ON':'OFF'}</span></button>
-    <button class="prow" id="stCs"><span class="ri">📝</span><span class="rt">データ送信について</span><span class="rs">›</span></button>
-    <button class="prow" id="stStory"><span class="ri">📜</span><span class="rt">物語をもう一度</span><span class="rs">›</span></button>
+  const seg=(id,opts,cur)=>`<div class="seg" id="${id}">${opts.map((t,i)=>`<button data-v="${i}" class="${cur===i?'on':''}">${t}</button>`).join('')}</div>`;
+  /* 並びはKROPKI・LAPISと同じ: 音 → このゲームの設定 → 記録の送信 → 更新内容 → ホーム画面に追加 → 消去 */
+  openModal(`${pgHead('⚙️ 設定','戻る','stClose')}
+    <div class="srow"><span class="ri">🎵</span><span class="rt">BGM</span>${seg('stB',BGM_LB,bgmLv())}</div>
+    <div class="srow"><span class="ri">🔊</span><span class="rt">効果音</span>${seg('stS',['OFF','ON'],AU.on.sfx?1:0)}</div>
+    <div class="srow"><span class="ri">${VIB_IC==='振動'?'📳':VIB_IC}</span><span class="rt">振動</span>${seg('stV',['OFF','ON'],AU.on.vib?1:0)}</div>
+    <button class="prow" id="stStory" style="margin-top:14px"><span class="ri">📜</span><span class="rt">物語をもう一度</span><span class="rs">›</span></button>
     <button class="prow" id="stTheme"><span class="ri">🎨</span><span class="rt">盤面の色</span><span class="rs">›</span></button>
+    <div class="srow" style="margin-top:14px"><span class="ri">📤</span><span class="rt">プレイ記録を送る<button class="lk" id="stCs">送信内容について ›</button></span>${seg('stR',['OFF','ON'],shareOn()?1:0)}</div>
+    <button class="prow" id="stVer"><span class="ri">📋</span><span class="rt">更新内容${verUnseen()?'<span class="newb">NEW</span>':''}</span><span class="rs">v${VERSION} ›</span></button>
     ${isApp()?'':'<button class="prow" id="stA2h"><span class="ri">📲</span><span class="rt">ホーム画面に追加<br><small style="color:#b9adc0;font-size:12.5px">全画面ですぐ遊べる</small></span><span class="rs">›</span></button>'}
-    ${inGame?'':'<button class="prow" id="stData"><span class="ri">🗑️</span><span class="rt">データを消す</span><span class="rs">›</span></button>'}
+    ${inGame?'':'<button class="prow" id="stData" style="margin-top:14px"><span class="ri">🗑️</span><span class="rt">記録のリセット</span><span class="rs">›</span></button><button class="prow danger" id="stWipe"><span class="ri">⚠️</span><span class="rt">すべて初期化</span><span class="rs">›</span></button>'}
     ${msg?`<p id="stMsg" style="text-align:center;color:#8fe08f;font-size:14.5px">${msg}</p>`:''}`);
-  const flip=k=>{AU.on[k]=!AU.on[k];saveAudio();refreshAudioBtns();if(k==='bgm'&&AU.on.bgm&&inGame)bgmStart();if(k==='vib'&&AU.on.vib)vib(30);showSettings();};
+  const segOn=(id,fn)=>document.querySelectorAll('#'+id+' button').forEach(b=>b.onclick=()=>{fn(+b.dataset.v);showSettings();});
+  segOn('stB',n=>{AU.on.bgm=n>0;if(n)AU.on.bv=n;saveAudio();setBgmVol();refreshAudioBtns();if(AU.on.bgm&&inGame)bgmStart();if(!AU.on.bgm)bgmStop();});
+  segOn('stS',n=>{AU.on.sfx=n===1;saveAudio();refreshAudioBtns();});
+  segOn('stV',n=>{AU.on.vib=n===1;saveAudio();refreshAudioBtns();if(AU.on.vib)vib(30);});
+  document.querySelectorAll('#stR button').forEach(b=>b.onclick=()=>{
+    const want=b.dataset.v==='1';if(want===shareOn())return;
+    if(want&&consentVal()!=='1'){openConsent(()=>showSettings());return;}
+    try{const nv=want?'1':'0';localStorage.setItem(LS_SHARE,nv);localStorage.setItem('tkcy3_share',nv);}catch(e){}showSettings();});
+  $('stCs').onclick=()=>openConsent(()=>showSettings());
   $('stVer').onclick=()=>showChangelog(()=>showSettings());
-  $('st1').onclick=()=>{cycleBgm();showSettings();};$('st2').onclick=()=>flip('sfx');$('st3').onclick=()=>flip('vib');
-  $('stShare').onclick=()=>{if(!shareOn()&&consentVal()!=='1'){openConsent(()=>showSettings());return;}try{const nv=shareOn()?'0':'1';localStorage.setItem(LS_SHARE,nv);localStorage.setItem('tkcy3_share',nv);}catch(e){}showSettings();};
-  if($('stCs'))$('stCs').onclick=()=>openConsent(()=>showSettings());
   $('stStory').onclick=()=>{closeModal();playStory(()=>{if(inGame)return;bgmStop();showSettings();});};
-  $('stTheme').onclick=()=>showTailor(()=>showSettings());if($('stA2h'))$('stA2h').onclick=()=>showAddHome(()=>showSettings());if(!inGame)$('stData').onclick=showDataReset;
+  $('stTheme').onclick=()=>showTailor(()=>showSettings());if($('stA2h'))$('stA2h').onclick=()=>showAddHome(()=>showSettings());
+  if(!inGame){$('stData').onclick=showDataReset;
+    $('stWipe').onclick=()=>confirmReset('すべて初期化','実績・最高記録・セーブデータ・図鑑・解放状況・設定がすべて消え、初めて遊ぶときと同じ状態になります。',resetEverything,true,()=>showSettings());}
   $('stClose').onclick=()=>{const b=settingsBack;settingsBack=null;if(b)b();else closeModal();};
 }
-/* データを消す：危ない操作はここにまとめる（説明は確認画面で出す） */
+/* 記録のリセット：消すものを選ぶ（説明は確認画面で出す）。すべて消すのは設定の「すべて初期化」から */
 function showDataReset(){
   const row=(id,ic,t,dis)=>`<button class="prow ${id==='rs6'?'danger':''}" id="${id}" ${dis?'disabled style="opacity:.35"':''}><span class="ri">${ic}</span><span class="rt">${t}</span></button>`;
-  openModal(`${pgHead('🗑️ データを消す','設定','rsB')}${row('rs1','🏆','実績')}${row('rs2','🥇','最高記録と戦績',!best)}${row('rs3','💾','セーブデータ',!anySave())}${row('rs5','🎓','はじめての状態に')}<div style="height:18px"></div>${row('rs6','⚠️','すべて消す')}`);
+  openModal(`${pgHead('🗑️ 記録のリセット','設定','rsB')}${row('rs1','🏆','実績')}${row('rs2','🥇','最高記録と戦績',!best)}${row('rs3','💾','セーブデータ',!anySave())}${row('rs5','🎓','はじめての状態に')}`);
   $('rsB').onclick=()=>showSettings();
   $('rs1').onclick=()=>confirmReset('実績をリセット','解除した実績と、累計撃破数・スキル使用回数などの記録がすべて未解除に戻ります。',resetAch);
   if(best)$('rs2').onclick=()=>confirmReset('最高記録と戦績をリセット','最深記録・最長チェーン・元凶討伐の記録と、戦績の冒険履歴が消えます。',resetBest);
   if(anySave())$('rs3').onclick=()=>confirmReset('セーブデータを削除','「続きから」で遊べる冒険（3スロットすべて）が消えます。',resetSaveData);
   $('rs5').onclick=()=>confirmReset('はじめての状態に戻す','チュートリアルを終えた記録が消え、次の「はじめから」で初めての人向けの案内が出ます。',resetTutFlag);
-  $('rs6').onclick=()=>confirmReset('すべて初期状態に戻す','実績・最高記録・セーブデータ・図鑑・解放状況・設定がすべて消え、初めて遊ぶときと同じ状態になります。',resetEverything,true);
 }
-function confirmReset(name,detail,fn,twice){
+function confirmReset(name,detail,fn,twice,back){
+  back=back||showDataReset;
   const done=()=>{fn();refreshTitle();sfx('block');showSettings(undefined,`✓ ${name}：完了しました`);};
   openModal(`<h2>${name}</h2><p style="text-align:center">${detail}<br><b style="color:#f5a0a0">この操作は取り消せません。</b>${cloudOn?'<br><small>クラウドに保存された分も消えます。</small>':''}</p>
     <button class="opt" id="cfN" style="text-align:center">やめる</button><button class="opt" id="cfY" style="text-align:center;border-color:#8a3a3a;color:#ffc4c4">リセットする</button>`);
-  $('cfN').onclick=showDataReset;
+  $('cfN').onclick=back;
   $('cfY').onclick=()=>{if(!twice){done();return;}
     openModal(`<h2>⚠️ 最終確認</h2><p style="text-align:center">本当に、すべてのデータを消して<br>初期状態に戻しますか？</p>
       <button class="opt" id="cfN2" style="text-align:center">やめる</button><button class="opt" id="cfY2" style="text-align:center;border-color:#8a3a3a;color:#ffc4c4">すべて消す</button>`);
-    $('cfY2').onclick=done;$('cfN2').onclick=showDataReset;};
+    $('cfY2').onclick=done;$('cfN2').onclick=back;};
 }
 
 let GIVEUP=false;
