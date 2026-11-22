@@ -1148,7 +1148,7 @@ $('btnImport').onclick=showImport;
 var A2H=null,INST=false;
 /* すでにアプリとして入っているか（Chrome）。入っているとインストール案内が出ないため */
 try{navigator.getInstalledRelatedApps&&navigator.getInstalledRelatedApps().then(a=>{INST=a.length>0;}).catch(()=>{});}catch(e){}
-function isApp(){return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;}
+function isApp(){return matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches||navigator.standalone===true;}
 /* タイトルには1回冒険を終えてから一度だけ出す。✕か一度開いたら以後は設定から */
 function refreshHomeBtn(){const c=$('a2hChip');if(!c)return;let done=0;try{done=localStorage.getItem('dchain_a2h_v1');}catch(e){}
   c.classList.toggle('hidden',isApp()||!!done||!((ACH&&ACH.st&&ACH.st.games)>=1));}
@@ -1977,8 +1977,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.42';
+const VERSION='0.4.43';
 const CHANGELOG=[
+  {v:'0.4.43',d:'2026-11-23',items:['📱ゲームコレクションの全画面表示に対応しました']},
   {v:'0.4.42',d:'2026-11-22',items:['🔊ダメージ音を、歪みのない丸い音に変えました']},
   {v:'0.4.41',d:'2026-11-22',items:['🎮 ゲーム一覧「あそびば」ができました。タイトル画面の「‹ 一覧」から戻れます','📝 データ送信の同意は、あそびば・ほかのゲームと共通になりました（どこかで答えれば聞き直しません）']},
   {v:'0.4.40',d:'2026-11-22',items:['🔨粉砕を強化：装甲が二度と戻らず、そのターンは敵全員が受けるダメージ1.5倍']},
