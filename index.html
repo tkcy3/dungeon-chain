@@ -331,6 +331,16 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 </div>
 
 <script>
+/* AI実況収録モード（URLに ?rec を付けたときだけ）：保存先を「hiyori:」付きのキーに切り替える。
+   普段のプレイのセーブ・実績・設定とは混ざらず、作者へのプレイデータ送信も行わない */
+(function(){if(!/[?&]rec(=|&|$)/.test(location.search))return;window.REC_MODE=true;
+  const P='hiyori:',SP=Storage.prototype,g=SP.getItem,s=SP.setItem,r=SP.removeItem,k=(st,key)=>st===window.localStorage?P+key:key;
+  window.REC_RAW={get:key=>g.call(localStorage,key),set:(key,v)=>s.call(localStorage,key,v),del:key=>r.call(localStorage,key)};
+  SP.getItem=function(key){return g.call(this,k(this,key));};SP.setItem=function(key,v){return s.call(this,k(this,key),v);};SP.removeItem=function(key){return r.call(this,k(this,key));};
+  try{if(localStorage.getItem('dchain_consent_v1')===null){localStorage.setItem('dchain_consent_v1','0');localStorage.setItem('dchain_share_v1','0');}
+    if(!localStorage.getItem('dchain_name_v1'))localStorage.setItem('dchain_name_v1','ヒヨリ');}catch(e){}})();
+</script>
+<script>
 'use strict';
 const N=6;
 const ICON={skull:'💀',sword:'⚔️',shield:'🛡️',potion:'🧪',coin:'💰'};
@@ -2505,8 +2515,9 @@ if(!UNL.retroH){UNL.retroH=1;for(let i=0;i<Math.min(ACH.st.clears||0,5);i++)clea
 requestAnimationFrame(frame);
 setTimeout(initCloud,0);
 if(/github\.io$/.test(location.hostname))$('tPortal').style.display='block';
-if(!instShow())consentBoot();
+if(window.REC_MODE)$('instOv').classList.add('hidden');else if(!instShow())consentBoot();
 </script>
+<script>if(window.REC_MODE)document.write('<script src="rec.js?v=1"><\/script>');</script>
 <script>if('serviceWorker' in navigator&&location.protocol==='https:'){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}</script>
 </body>
 </html>
