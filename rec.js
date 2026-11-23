@@ -124,12 +124,14 @@ function playSE(k){if(!k||k==='none'||!SE[k]||!AX)return;try{SE[k](AU.ctx.curren
 const RC={canvas:null,x:null,stream:null,main:null,chunks:[],pinch:null,pchunks:[],pinchMs:0,state:'idle',recMs:0,last:0,mime:''};
 function pickMime(){for(const m of ['video/mp4;codecs=avc1.4D4028,mp4a.40.2','video/mp4;codecs=avc1,mp4a.40.2','video/mp4;codecs=avc1.4D4028,opus','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'])try{if(MediaRecorder.isTypeSupported(m))return m;}catch(e){}return '';}
 function newRec(chunks){const o={videoBitsPerSecond:4500000,audioBitsPerSecond:128000};if(RC.mime)o.mimeType=RC.mime;const rec=new MediaRecorder(RC.stream,o);rec.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data);};return rec;}
-function recStart(){RC.stream=new MediaStream([...RC.canvas.captureStream(30).getVideoTracks(),...AX.dest.stream.getAudioTracks()]);RC.mime=pickMime();
+function recStart(){try{if(AU.ctx&&AU.ctx.state!=='running')AU.ctx.resume();}catch(e){}RC.stream=new MediaStream([...RC.canvas.captureStream(30).getVideoTracks(),...AX.dest.stream.getAudioTracks()]);RC.mime=pickMime();
   RC.chunks=[];RC.main=newRec(RC.chunks);RC.main.start(1000);try{RC.main.pause();}catch(e){}RC.state='paused';RC.recMs=0;RC.pinch=null;RC.pinchMs=0;badge();}
 function tick(){if(RC.state==='rec'){const n=performance.now(),d=n-RC.last;RC.recMs+=d;if(RC.pinch)RC.pinchMs+=d;RC.last=n;}}
 function recResume(){if(RC.state!=='paused')return;try{RC.main.resume();}catch(e){}if(RC.pinch&&RC.pinch.state==='paused')try{RC.pinch.resume();}catch(e){}RC.state='rec';RC.last=performance.now();think(false);badge();}
 function recPause(thinking=true){if(RC.state!=='rec'){if(thinking)think(true);return;}tick();try{RC.main.pause();}catch(e){}if(RC.pinch&&RC.pinch.state==='recording')try{RC.pinch.pause();}catch(e){}RC.state='paused';think(thinking);badge();}
-function stopRec(rec,chunks){return new Promise(res=>{const mk=()=>chunks.length?new Blob(chunks,{type:(rec&&rec.mimeType)||RC.mime||'video/webm'}):null;
+/* 止めたら、MP4は fixMp4（mp4fix.js）で「長さ」と「音声トラック」を直してから渡す */
+function stopRec(rec,chunks){return new Promise(res=>{const mk=async()=>{if(!chunks.length)return null;let b=new Blob(chunks,{type:(rec&&rec.mimeType)||RC.mime||'video/webm'});
+    if(/mp4/.test(b.type)&&window.fixMp4)b=await window.fixMp4(b,{codec:RC.mime,sampleRate:AU.ctx&&AU.ctx.sampleRate,bitrate:128000});return b;};
   if(!rec||rec.state==='inactive'){res(mk());return;}rec.onstop=()=>res(mk());try{if(rec.state==='paused')rec.resume();}catch(e){}try{rec.stop();}catch(e){res(mk());}});}
 /* ピンチ（HPが半分を切った・ボス戦）になったら、ショート用の録画をもう1本回す。持ち直したら捨て、死んだら保存する */
 async function pinchCheck(){if(!RC.main||RC.state==='idle'||!S)return;const ratio=S.hp/Math.max(1,S.maxHp),boss=bossAlive()||S.bossFlag,low=inGame&&!TUT&&S.hp>0&&(ratio<.5||boss);
@@ -619,12 +621,18 @@ function renderPanel(){const p=el('recPanel');const hasKey=!!KEY;const d=RUN&&RU
     <button id="rpEx">💾 書き出す</button><button id="rpIm">📥 読み込む</button><input id="rpFile" type="file" accept=".json,application/json" class="hidden">
     <button id="rpRedo">↩️ 直前の話を撮り直す</button>
     ${DC.notes.length?`<details><summary class="rn">気づきメモ（ヒヨリが自分で学んだこと）</summary><p class="rn">${DC.notes.map(esc2).join('<br>')}</p></details>`:''}</div>
+  <div class="card"><div class="big">🛠 前に撮った動画を直す</div><p class="rn">音が入っていない・長さがおかしい動画を選ぶと、直したファイルを作ります（これから撮る動画は自動で直ります）。</p>
+    <button id="rpFix">🎞️ 動画を選ぶ</button><input id="rpFixF" type="file" accept="video/mp4,video/*" class="hidden"><div id="rpFixM" class="rn"></div></div>
   <p class="rn"><a href="./" style="color:#9fc7ff">← 普段のゲームに戻る</a></p>`;
   el('rpGo').onclick=runEpisode;
   el('rpKeyS').onclick=()=>{KEY=el('rpKey').value.trim();try{localStorage.setItem(K.key,KEY);}catch(e){}renderPanel();el('rpKeyM').textContent=KEY?' 保存しました':'';};
   el('rpVoice').onchange=e=>{CFG.voice=e.target.value;saveCfg();};el('rpMin').onchange=e=>{CFG.minutes=+e.target.value;saveCfg();};el('rpHeta').onchange=e=>{CFG.heta=+e.target.value;saveCfg();};
   el('rpTM').onchange=e=>{CFG.textModel=e.target.value.trim()||'gemini-3.5-flash-lite';saveCfg();};el('rpSM').onchange=e=>{CFG.ttsModel=e.target.value.trim()||'gemini-3.8-flash-lite-tts';saveCfg();};
   el('rpTest').onclick=voiceTest;el('rpEx').onclick=exportData;el('rpIm').onclick=()=>el('rpFile').click();el('rpFile').onchange=e=>{if(e.target.files[0])importData(e.target.files[0]);};el('rpRedo').onclick=redo;
+  el('rpFix').onclick=()=>el('rpFixF').click();el('rpFixF').onchange=async e=>{const f=e.target.files[0];if(!f)return;const m=el('rpFixM');m.textContent='直しています…';
+    const b=window.fixMp4?await window.fixMp4(f,{codec:'mp4a',sampleRate:48000}):f;e.target.value='';
+    if(b===f){m.innerHTML='<span class="ng">直す必要がないか、直せない形式のファイルでした。</span>';return;}
+    const name=f.name.replace(/\.mp4$/i,'')+'_fixed.mp4';m.innerHTML=`<span class="ok">✅ 直しました</span><a class="dl" href="${URL.createObjectURL(b)}" download="${esc2(name)}">⬇️ ${esc2(name)}（${(b.size/1048576).toFixed(1)}MB）</a>`;};
   if(el('ytC'))el('ytC').onclick=async()=>{const ok=await copyText(el('ytT').value);el('ytC').textContent=ok?'✅ コピーしました':'長押しで選んでコピーしてください';};}
 async function voiceTest(){const m=el('rpTestM');KEY=el('rpKey').value.trim()||KEY;if(!KEY){m.innerHTML='<span class="ng">APIキーを入れてください</span>';return;}
   m.textContent='考え中…';try{setupAudio();const r=await llm(sysPrompt(),`${dateLine()}\n声のテストとして、視聴者にひとことあいさつして（30文字以内）。次のJSONだけを返す：{"text":"セリフ","emotion":"normal"}`);
