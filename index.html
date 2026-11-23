@@ -32,12 +32,12 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 #app{height:100dvh;height:100vh;display:flex;flex-direction:column;align-items:center;padding:6px 8px;gap:5px;max-width:520px;margin:0 auto}
 @supports(height:100dvh){#app{height:100dvh}}
 #top{width:100%;display:flex;align-items:center;gap:5px;font-size:13px}
-#top .st{flex:1;display:flex;align-items:center;gap:8px;min-width:0}
-#top .it{display:inline-flex;align-items:baseline;gap:4px;height:24px;line-height:24px;white-space:nowrap}
-#top .it i{font-style:normal;font-size:12px;color:#cbb;line-height:24px}
+#top .st{flex:1;display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;padding-right:8px}
+#top .it{display:inline-flex;align-items:baseline;gap:5px;height:30px;line-height:30px;white-space:nowrap}
+#top .it i{font-style:normal;font-size:14px;color:#cbb;line-height:30px}
 #top .it b.fl{min-width:3.3em;color:#ffe08a}
 #top .it b.flash{animation:fl .6s}
-#top .it b{color:#fff;font-size:16px;line-height:24px;font-variant-numeric:tabular-nums;font-family:system-ui,-apple-system,"Roboto",sans-serif;display:inline-block;min-width:1.9em;text-align:left}
+#top .it b{color:#fff;font-size:21px;line-height:30px;font-variant-numeric:tabular-nums;font-family:system-ui,-apple-system,"Roboto",sans-serif;display:inline-block;min-width:1.9em;text-align:left}
 .ibtn{position:relative;background:#2a2230;color:#eee;border:1px solid #4a3d52;border-radius:8px;padding:5px 7px;font-size:15px;flex:none}
 .ibtn .vb{position:absolute;right:2px;bottom:2px;display:flex;align-items:flex-end;gap:1px;pointer-events:none}.ibtn .vb b{width:3px;background:#5d4a69;border-radius:1px}.ibtn .vb b:nth-child(1){height:4px}.ibtn .vb b:nth-child(2){height:7px}.ibtn .vb b:nth-child(3){height:10px}
 .ibtn .vb.l1 b:nth-child(-n+1),.ibtn .vb.l2 b:nth-child(-n+2),.ibtn .vb.l3 b{background:#f0c75a}
@@ -272,7 +272,7 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 <div id="app">
   <div id="top">
     <div class="st"><span class="it" id="itFloor"><i>階層</i><b id="tTurn" class="fl">B1F</b></span><span class="it"><i>撃破</i><b id="tKill">0</b></span><span class="it"><i>Lv</i><b id="tLv">1</b></span></div>
-    <button class="ibtn" id="bgmBtn">🎵</button><button class="ibtn" id="sfxBtn">🔊</button><button class="ibtn" id="vibBtn">🫨</button><button class="ibtn" id="menuBtn">☰</button>
+    <button class="ibtn" id="menuBtn">☰</button>
   </div>
   <div id="bars">
     <div class="bar hp" id="bHp"><div class="fill"></div><span></span></div>
@@ -1365,7 +1365,7 @@ if(!AU.on.bv)AU.on.bv=1;
 const BGM_VOL=[0,.55,.9,1.3],BGM_LB=['OFF','小','中','大'];
 const bgmLv=()=>AU.on.bgm?AU.on.bv:0;
 function setBgmVol(){if(AU.bgm)AU.bgm.gain.value=BGM_VOL[AU.on.bv||1];}
-function cycleBgm(){const n=(bgmLv()+1)%4;AU.on.bgm=n>0;if(n)AU.on.bv=n;saveAudio();setBgmVol();refreshAudioBtns();{const b=$('bgmBtn');b.classList.remove('pop');void b.offsetWidth;b.classList.add('pop');}if(AU.on.bgm&&inGame)bgmStart();}
+function cycleBgm(){const n=(bgmLv()+1)%4;AU.on.bgm=n>0;if(n)AU.on.bv=n;saveAudio();setBgmVol();refreshAudioBtns();{const b=$('bgmBtn');if(b){b.classList.remove('pop');void b.offsetWidth;b.classList.add('pop');}}if(AU.on.bgm&&inGame)bgmStart();}
 function vib(p){if(!AU.on.vib)return;try{navigator.vibrate&&navigator.vibrate(p);}catch(e){}}
 const mf=m=>440*Math.pow(2,(m-69)/12);
 function ensureAudio(){
@@ -1484,12 +1484,7 @@ function saveAudio(){try{localStorage.setItem(LS_AUDIO,JSON.stringify(AU.on));}c
 const VIB_IC=(()=>{try{const c=document.createElement('canvas');c.width=c.height=28;const x=c.getContext('2d');
   x.font='22px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';x.textBaseline='top';x.fillText('🫨',0,0);
   const d=x.getImageData(0,0,28,28).data;for(let i=0;i<d.length;i+=4)if(d[i+3]>40&&(Math.abs(d[i]-d[i+1])>30||Math.abs(d[i+1]-d[i+2])>30))return '🫨';}catch(e){}return '振動';})();
-function refreshAudioBtns(){{const v=$('vibBtn');v.textContent=VIB_IC;if(VIB_IC==='振動')v.style.fontSize='12px';}const b=$('bgmBtn'),s=$('sfxBtn');b.style.opacity=AU.on.bgm?1:.4;b.innerHTML='🎵'+(AU.on.bgm?`<i class="vb l${AU.on.bv}"><b></b><b></b><b></b></i>`:'');b.classList.toggle('offx',!AU.on.bgm);b.style.paddingRight='13px';s.textContent=AU.on.sfx?'🔊':'🔇';s.style.opacity=AU.on.sfx?1:.4;const v=$('vibBtn');v.style.opacity=AU.on.vib?1:.4;v.classList.toggle('offx',!AU.on.vib);}
-$('bgmBtn').onclick=cycleBgm;
-$('sfxBtn').onclick=()=>{AU.on.sfx=!AU.on.sfx;saveAudio();refreshAudioBtns();};
-$('vibBtn').onclick=()=>{AU.on.vib=!AU.on.vib;saveAudio();refreshAudioBtns();if(AU.on.vib)vib(30);showToast(AU.on.vib?'振動 ON':'振動 OFF');};
-$('bgmBtn').addEventListener('click',()=>showToast('BGM '+BGM_LB[bgmLv()]));
-$('sfxBtn').addEventListener('click',()=>showToast(AU.on.sfx?'効果音 ON':'効果音 OFF'));
+function refreshAudioBtns(){if(!$('bgmBtn'))return;/* 音の切り替えは設定画面だけ（KROPKI・LAPISとそろえる） */{const v=$('vibBtn');v.textContent=VIB_IC;if(VIB_IC==='振動')v.style.fontSize='12px';}const b=$('bgmBtn'),s=$('sfxBtn');b.style.opacity=AU.on.bgm?1:.4;b.innerHTML='🎵'+(AU.on.bgm?`<i class="vb l${AU.on.bv}"><b></b><b></b><b></b></i>`:'');b.classList.toggle('offx',!AU.on.bgm);b.style.paddingRight='13px';s.textContent=AU.on.sfx?'🔊':'🔇';s.style.opacity=AU.on.sfx?1:.4;const v=$('vibBtn');v.style.opacity=AU.on.vib?1:.4;v.classList.toggle('offx',!AU.on.vib);}
 function showToast(t){log(t);}
 document.addEventListener('visibilitychange',()=>{if(!AU.ctx)return;if(document.hidden)AU.ctx.suspend().catch(()=>{});else if(inGame)AU.ctx.resume().catch(()=>{});});
 refreshAudioBtns();
@@ -1980,8 +1975,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.44';
+const VERSION='0.4.45';
 const CHANGELOG=[
+  {v:'0.4.45',d:'2026-11-23',items:['🎵音の切り替えは⚙️設定にまとめました（ほかのゲームとそろえました）','階層・撃破・Lvの文字を大きくしました']},
   {v:'0.4.44',d:'2026-11-23',items:['⚙️ 設定の見た目をKROPKI・LAPISとそろえました（BGM・効果音・振動・記録の送信は、その場で切り替えるボタンに）','🗑️「データを消す」を「記録のリセット」と「すべて初期化」に分けました']},
   {v:'0.4.43',d:'2026-11-23',items:['📱ゲームポータルの全画面表示に対応しました']},
   {v:'0.4.42',d:'2026-11-22',items:['🔊ダメージ音を、歪みのない丸い音に変えました']},
