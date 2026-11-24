@@ -357,7 +357,7 @@ const SKILLS={
   thunder:{name:'雷撃',icon:'⚡',cd:12,desc:'攻撃力の高い敵3体にダメージ。倒しきれなくても1ターンしびれて動けない',scale:1},
   magnet:{name:'磁力',icon:'🧲',cd:14,desc:'盤面の💰を全て回収する'},
   freeze:{name:'凍結',icon:'❄️',cd:16,desc:'盤面の敵全員を2ターン 動けなくする'},
-  snipe:{name:'狙撃',icon:'🎯',cd:12,desc:'選んだ場所を中心に、菱形の範囲へダメージ（中心ほど大きい）',scale:1},
+  snipe:{name:'狙撃',icon:'🎯',cd:8,desc:'選んだ場所を中心に、菱形の範囲へダメージ（中心ほど大きい）',scale:1},
   crush:{name:'粉砕',icon:'🔨',cd:10,desc:'盤面の敵全員の装甲を0にし、二度と戻らなくする。このターン、敵全員が受けるダメージ1.5倍'},
   bless:{name:'祝福',icon:'🌟',cd:20,desc:'3ターンの間、チェーンが3つ長い扱いになる（効果の倍率アップ）'}
 };
@@ -1988,8 +1988,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.48';
+const VERSION='0.4.49';
 const CHANGELOG=[
+  {v:'0.4.49',d:'2026-11-24',items:['🎯狙撃がこまめに撃てるようになりました（再使用12→8ターン）']},
   {v:'0.4.48',d:'2026-11-23',items:['🎵 はじめて遊ぶときのBGMの音量を「中」にしました']},
   {v:'0.4.47',d:'2026-11-23',items:['⚙️設定の「送信内容について ›」が小さい画面で折り返さないようにしました']},
   {v:'0.4.46',d:'2026-11-23',items:['🎨盤面の色は「迷宮の景色」として🏆実績の画面に移しました']},
