@@ -738,7 +738,7 @@ function chainDmg(cells,roll=1){const n=cells.length;let m=chainMult(n);
   if(S.cls==='knight'&&S.maxArmor>0&&S.armor>=S.maxArmor)m*=1.5;
   
   return Math.max(1,Math.round((S.baseDmg+cells.filter(p=>tileAt(p).t==='sword').length*S.weaponDmg)*m*roll));}
-const MIXLOSS=.3;
+const MIXFLAT=1.2;function mixMu(n){return MIXFLAT/chainMult(n);}/* 錬金術師：混ぜたチェーンは長さによらず一律×1.2 */
 const ROLLS=[.5,1,1.25,1.5,2,3],GAMB_ALL=true;
 /* ギャンブラー：次の攻撃の倍率は前もって決まっていて、見えている */
 const gRoll=()=>{if(S.nextRoll==null)S.nextRoll=ROLLS[rnd(ROLLS.length)];return S.nextRoll;};
@@ -782,11 +782,11 @@ function commitChain(){
     else if(g==='potion'){const heal=Math.round(n*S.healPer*mult),h=Math.min(heal,S.maxHp-S.hp),_hl=h>0&&S.run&&(S.run.heal=1),cl=S.cls==='cleric',sell=Math.floor((heal-h)/(cl?3:4));S.hp+=h;if(cl&&n>=HOLY_N){let k=0;const now=performance.now();S.board.forEach((row,r)=>row.forEach((t,c)=>{if(isEnemy(t)&&UNDEAD(kindOf(t))&&!t.boss){t.frz=Math.max(t.frz||0,1);k++;RINGS.push({p:[r,c],t0:now,col:'#fff3b0'});}}));if(k)msgs.push(`✨ 聖なる光！アンデッド${k}体がひるんだ`);}if(sell){if(cl){gainXp(sell);flash('bXp');}else{addGold(sell);flash('bGd');}}msgs.push(`HP+${h}`+(sell?`（余り→${cl?'✨経験値':'💰'}+${sell}）`:''));flash('bHp');}
     else if(g==='coin'){const a=Math.round(n*S.goldPer*mult);addGold(a);msgs.push(`お金+${a}`);flash('bGd');}
     };
-    if(g==='mix'){const cnt={};cells.forEach(p=>{const t=tileAt(p).t;cnt[t]=(cnt[t]||0)+1;});const ty=Object.keys(cnt).length;if(ty>1){mult*=MIXLOSS;msgs.push('⚗️ 調合');}for(const k of ['shield','potion','coin'])if(cnt[k])eff(k,cnt[k]);}else eff(g,cells.length);
+    if(g==='mix'){const cnt={};cells.forEach(p=>{const t=tileAt(p).t;cnt[t]=(cnt[t]||0)+1;});const ty=Object.keys(cnt).length;if(ty>1){mult*=mixMu(cells.length);msgs.push('⚗️ 調合');}for(const k of ['shield','potion','coin'])if(cnt[k])eff(k,cnt[k]);}else eff(g,cells.length);
   }
   {const kd=S.kills-killsBefore;if(g==='atk'&&kd)sfx('kill',kd);else{sfx('clear',g);if(kd){sfx('kill',kd);vib([25,30,25]);}}}
   if(bonus){gainXp(bonus);flash('bXp');}
-  if(mult>1)msgs.unshift('✨'+bonusTxtOf(cells.length));
+  if(mult>1&&!mixed)msgs.unshift('✨'+bonusTxtOf(cells.length));
   celebrate(cells,types,S.kills-killsBefore,bonus?'✨'+bonusTxtOf(cells.length):'');
   achChain(cells.length,g,[...remove].map(i=>S.board[(i/N)|0][i%N]).filter(isEnemy),hp0,full0);
   removeAndFill(remove);flushDeath(msgs);
@@ -1222,7 +1222,7 @@ function updatePreview(){
   if(!chain.length){const t=enemyTotal();pv.innerHTML=`<div>次のターンの敵の攻撃：<b>${S.anom==='fog'?'？':t}</b>（防御${S.armor}で受け止め）${S.cls==='gambler'?`　🃏次 <b>×${gRoll()}</b>`:''}</div><span class="sub">${S.anom?`<span style="color:#c9a2ff">${ANOMS[S.anom].ic}${ANOMS[S.anom].n}：${ANOMS[S.anom].d}</span> ／ `:''}${S.bless>0?`<span style="color:#ffe08a">🌟祝福中：あと${S.bless}ターン チェーン+3扱い</span>`:'3つ以上なぞってつなごう ／ 長押しで説明'}</span>`;return;}
   const tiles=chain.map(tileAt);const g=groupOf(tiles[0].t);const n=chain.length;
   let main='',kills=new Set();
-  const bn=chainBonus(n);let mu=chainMult(n);
+  const bn=chainBonus(n);let mu=chainMult(n),mixPv=0;
   if(g==='atk'){const sw=tiles.filter(t=>t.t==='sword').length;const d=chainDmg(chain,S.cls==='gambler'?gRoll():1);const en=chain.filter(p=>isEnemy(tileAt(p)));
     const lastE=S.cls==='hunter'?lastEnemyOf(chain):null;
     en.forEach(p=>{const e=tileAt(p);if(wouldDie(e,dmgTo(e,p===lastE?Math.round(d*HUNT):d)))kills.add(p[0]*N+p[1]);});
@@ -1234,9 +1234,9 @@ function updatePreview(){
   else if(g==='potion'){const heal=Math.round(n*S.healPer*mu),h=Math.min(heal,S.maxHp-S.hp),cl=S.cls==='cleric',sell=Math.floor((heal-h)/(cl?3:4));main=`🧪 HP +${h}`+(sell?`（余り→${cl?'✨':'💰'}+${sell}）`:'');}
   else main=`💰 お金 +${Math.round(n*S.goldPer*mu)}`;
   return main;};
-  if(g==='mix'){const cnt={};tiles.forEach(t=>cnt[t.t]=(cnt[t.t]||0)+1);if(Object.keys(cnt).length>1)mu*=MIXLOSS;main='⚗️ '+['shield','potion','coin'].filter(k=>cnt[k]).map(k=>pv1(k,cnt[k])).join(' ');}else main=pv1(g,n);}
+  if(g==='mix'){const cnt={};tiles.forEach(t=>cnt[t.t]=(cnt[t.t]||0)+1);if(Object.keys(cnt).length>1){mu*=mixMu(n);mixPv=1;}main='⚗️ '+['shield','potion','coin'].filter(k=>cnt[k]).map(k=>pv1(k,cnt[k])).join(' ');}else main=pv1(g,n);}
   const after=enemyTotal(kills);
-  pv.innerHTML=`<div>${main}${n<3?' <span style="color:#f99">あと'+(3-n)+'</span>':''}</div><span class="sub">${mu>1?`<span style="color:#ffe08a">✨${bonusTxtOf(n)}</span>`:n>=3?'4つ以上で 効果アップ！':''} ／ 敵の攻撃：${after}</span>`;
+  pv.innerHTML=`<div>${main}${n<3?' <span style="color:#f99">あと'+(3-n)+'</span>':''}</div><span class="sub">${mixPv?`<span style="color:#c9b6ff">⚗️ 調合 ×${MIXFLAT}</span>`:mu>1?`<span style="color:#ffe08a">✨${bonusTxtOf(n)}</span>`:n>=3?'4つ以上で 効果アップ！':''} ／ 敵の攻撃：${after}</span>`;
 }
 
 /* ---------- input ---------- */
@@ -1988,8 +1988,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.49';
+const VERSION='0.4.50';
 const CHANGELOG=[
+  {v:'0.4.50',d:'2026-11-25',items:['⚗️錬金術師：混ぜてつないだときの効果を、長さによらず一律×1.2にしました（長くつなぎすぎると強すぎたため）']},
   {v:'0.4.49',d:'2026-11-24',items:['🎯狙撃がこまめに撃てるようになりました（再使用12→8ターン）']},
   {v:'0.4.48',d:'2026-11-23',items:['🎵 はじめて遊ぶときのBGMの音量を「中」にしました']},
   {v:'0.4.47',d:'2026-11-23',items:['⚙️設定の「送信内容について ›」が小さい画面で折り返さないようにしました']},
@@ -2218,7 +2219,7 @@ const CLASSES={
   dragoon:{ic:'🐉',n:'竜騎士',hidden:2,d:'竜の背で戦った、一撃に全てを懸ける騎士。',fx:'5つ以上のチェーンは倍率が大きく伸びる（4つ長い扱い）・4つ以下の攻撃は威力半分・初期HP46',cond:()=>false},
   gambler:{ic:'🃏',n:'ギャンブラー',hidden:2,d:'迷宮の宝も、命も、すべて賭けの種。',fx:'つないだ効果（攻撃・🛡️・🧪・💰すべて）が0.5〜3倍に揺れる。次の倍率は前もって見えているので、大きいときに大技を・初期HP34',cond:()=>false},
   knight:{ic:'🛡️',n:'騎士',hidden:2,retired:1,d:'重い鎧に身を包んだ、誇り高き守り手。',fx:'防御の上限8から始まる・防御が満タンのとき攻撃1.5倍・🧪の回復量1・初期HP50',cond:()=>false},
-  alchemist:{ic:'⚗️',n:'錬金術師',hidden:2,d:'あらゆるものを混ぜ合わせる、変わり者の学者。',fx:'🛡️🧪💰を混ぜてつなげる（それぞれの効果が出るが、混ぜると効果は約3分の1）・剣の攻撃力が低い（1・強化+1）・初期HP38',cond:()=>false}
+  alchemist:{ic:'⚗️',n:'錬金術師',hidden:2,d:'あらゆるものを混ぜ合わせる、変わり者の学者。',fx:'🛡️🧪💰を混ぜてつなげる（それぞれの効果が出る。混ぜると長くつないでも倍率は×1.2のまま）・剣の攻撃力が低い（1・強化+1）・初期HP38',cond:()=>false}
 };
 const MAIN_CLS=Object.keys(CLASSES).filter(k=>!CLASSES[k].hidden);
 const classOk=k=>{const c=CLASSES[k];if(!c||c.retired)return false;if(c.hidden)return !!UNL.got['h_'+k];return k==='warrior'||!!UNL.got['c_'+k];};
