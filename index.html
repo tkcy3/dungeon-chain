@@ -60,6 +60,18 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
 #preview{width:100%;height:42px;overflow:hidden;font-size:12.5px;white-space:nowrap;text-align:center;background:#1c161f;border-radius:8px;padding:3px 6px;display:flex;flex-direction:column;justify-content:center;line-height:1.35}
 #preview .sub{font-size:11.5px;color:#c9a}
 #wrap{position:relative}
+#gcard{position:absolute;inset:0;pointer-events:none;z-index:5}#gcard .gdim,#gcard .gfx{position:absolute;inset:0;opacity:0;transition:opacity .4s}#gcard .gfx{opacity:1;overflow:hidden}
+#gcard .gsp{position:absolute;left:50%;top:50%;width:10px;height:10px;border-radius:50%}
+#gcard .gc{container-type:inline-size;position:absolute;left:50%;top:50%;width:30%;aspect-ratio:.7;transform:translate(-50%,-50%) scale(0);transition:transform .22s cubic-bezier(.3,1.4,.6,1),opacity .25s;perspective:600px}
+#gcard .gc.in{transform:translate(-50%,-50%) scale(1)}#gcard .gc.out{opacity:0}
+#gcard .gci{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .33s cubic-bezier(.3,1.3,.6,1)}#gcard .gci.flip{transform:rotateY(180deg)}
+#gcard .gf{position:absolute;inset:0;border-radius:12px;backface-visibility:hidden;display:grid;place-items:center;border:3px solid #e8d7b8}
+#gcard .gb{background:#7a1f2b repeating-linear-gradient(45deg,#8b2633 0 8px,#6c1a25 8px 16px);font-size:40cqw}
+#gcard .gfr{transform:rotateY(180deg);background:#fbf5ea;font-weight:900;line-height:1;text-align:center;letter-spacing:-1px}#gcard .gfr small{display:block;font-size:max(12px,12cqw);margin-top:6px;letter-spacing:0;white-space:nowrap}
+#gcard .gc.shake{animation:gShake .65s ease-in-out}#gcard .gc.shake .gb{animation:gGlow .65s ease-in-out}#gcard .gc.pop{animation:gPop .35s ease-out forwards}#gcard .gc.sink{animation:gSink .6s ease-in forwards}#gcard .gc.crack{animation:gCrack .8s ease-in forwards}
+@keyframes gShake{0%,100%{transform:translate(-50%,-50%) scale(1) rotate(0)}25%{transform:translate(-52%,-50%) scale(1.05) rotate(-4deg)}50%{transform:translate(-48%,-50%) scale(1.08) rotate(5deg)}75%{transform:translate(-52%,-50%) scale(1.1) rotate(-5deg)}}
+@keyframes gGlow{50%{box-shadow:0 0 30px 10px rgba(255,207,74,.75)}}@keyframes gPop{0%{transform:translate(-50%,-50%) scale(1)}40%{transform:translate(-50%,-50%) scale(1.25)}100%{transform:translate(-50%,-50%) scale(1.08)}}
+@keyframes gSink{to{transform:translate(-50%,-38%) scale(.9) rotate(-6deg)}}@keyframes gCrack{to{transform:translate(-80%,40%) rotate(-25deg);opacity:0}}
 #tutSkip{position:absolute;bottom:-30px;right:0;z-index:3;background:rgba(22,18,24,.92);border:1px solid #5a4a63;color:#d7c9b8;border-radius:8px;padding:4px 10px;font-size:12px}
 #board{display:block;touch-action:none;border-radius:12px;background:#1a141c;box-shadow:0 0 0 2px #2c2330}
 #wrap.shake{animation:sh .35s}
@@ -742,9 +754,13 @@ function chainDmg(cells,roll=1){const n=cells.length;let m=chainMult(n);
   
   return Math.max(1,Math.round((S.baseDmg+cells.filter(p=>tileAt(p).t==='sword').length*S.weaponDmg)*m*roll));}
 const MIXK=.5;function mixMu(n){return MIXK;}/* 錬金術師：💰と🧪を混ぜてつなげる。混ぜると効果は半分（長さの倍率はそのまま） */
-const ROLLS=[.5,1,1.25,1.5,2,3],GAMB_ALL=true;
+/* ギャンブラー：倍率は離した瞬間に札をめくって決まる（伏せ札）。×1 40%・×2 30%・×0.5 20%・×3 8%・×0.1 2% */
+const ROLLW=[[1,40],[2,30],[.5,20],[3,8],[.1,2]],GAMB_ALL=true;
+function gPick(){let x=rnd(100);for(const [v,w] of ROLLW){if((x-=w)<0)return v;}return 1;}
+function gTake(){const r=S.pendRoll!=null?S.pendRoll:gPick();S.pendRoll=null;return r;}
+const gMsg=r=>`🃏 ×${r}`+(r>=3?' 大当たり！':r>=2?'！':r<=.1?' 大はずれ…':r<1?' はずれ…':'');
 /* ギャンブラー：次の攻撃の倍率は前もって決まっていて、見えている */
-const gRoll=()=>{if(S.nextRoll==null)S.nextRoll=ROLLS[rnd(ROLLS.length)];return S.nextRoll;};
+const gRoll=()=>1;/* 予告は伏せ札なので×1で見せる */
 /* 狙撃手：つないだ敵のうち、いちばん倒しにくい（残りHP＋装甲が多い）敵を狙い撃つ */
 const lastEnemyOf=cells=>{let b=null,bv=-1;for(const p of cells){const t=tileAt(p);if(isEnemy(t)&&t.hp+t.armor>bv){bv=t.hp+t.armor;b=p;}}return b;};
 const HUNT=3;
@@ -757,9 +773,9 @@ function commitChain(){
   const remove=new Set();const msgs=[];const killsBefore=S.kills;const mixed=g==='mix'&&new Set(types).size>1;const bonus=mixed?Math.floor(chainBonus(cells.length)/2):chainBonus(cells.length);let mult=chainMult(cells.length);
   if(g==='atk'){
     const swords=cells.filter(p=>tileAt(p).t==='sword').length;
-    let roll=S.cls==='gambler'?gRoll():1;if(S.cls==='gambler')S.nextRoll=ROLLS[rnd(ROLLS.length)];
+    let roll=S.cls==='gambler'?gTake():1;
     const dmg=chainDmg(cells,roll),lastE=S.cls==='hunter'?lastEnemyOf(cells):null;
-    if(roll!==1)msgs.push(`🃏 ×${roll}`+(roll>=2?' 大当たり！':roll<1?' はずれ…':''));
+    if(S.cls==='gambler')msgs.push(gMsg(roll));
     let killed=0,xp=0,hitN=0;const now=performance.now();
     for(const p of cells){const t=tileAt(p);
       if(t.t==='sword'){remove.add(p[0]*N+p[1]);continue;}
@@ -769,7 +785,7 @@ function commitChain(){
     msgs.push(hitN?`敵に${dmg}ダメージ${killed?`、${killed}体撃破`:''}`:`剣${swords}本を消費`);vampDrain(killed,msgs);
   }else{
     cells.forEach(p=>remove.add(p[0]*N+p[1]));
-    if(S.cls==='gambler'&&GAMB_ALL){const r=gRoll();mult*=r;S.nextRoll=ROLLS[rnd(ROLLS.length)];msgs.push(`🃏 ×${r}`);}
+    if(S.cls==='gambler'&&GAMB_ALL){const r=gTake();mult*=r;msgs.push(gMsg(r));}
     /* 盤面の敵（条件に合うもの）にまとめてダメージ：僧侶の聖なる🧪・重騎士の盾で殴る */
     const aoe=(d,f,label,col)=>{if(d<=0)return;let k=0,xp=0;const now=performance.now(),hits=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){const t=S.board[r][c];if(!isEnemy(t)||remove.has(r*N+c)||!f(t,r,c))continue;hits.push([r,c]);hitNum(r,c,d,col||'#ffd54a',d/t.maxHp);applyDmg(t,d);if(t.hp<=0){remove.add(r*N+c);k++;xp+=xpOf(t);}else t.hit=now;}
       if(hits.length){burst(hits,col||'#ffd54a',k?1.5:.8);hits.forEach(p=>RINGS.push({p,t0:now,col:col||'#ffd54a'}));if(k>=3)FLASH=now;}
@@ -1222,7 +1238,7 @@ function updatePreview(){
   if(AIM){if(!AIM.c){pv.innerHTML=`<div>🎯 <b>狙う場所をタップ</b></div><div class="sub">もう一度🎯を押すとやめる</div>`;return;}
     const u=SKD.snipe();let h=0,k=0;aimCells(AIM.c).forEach(([r,c,m])=>{const t=S.board[r][c];if(isEnemy(t)){h++;if(wouldDie(t,dmgTo(t,u*m)))k++;}});
     pv.innerHTML=`<div>🎯 敵${h}体に命中（撃破${k}）</div><div class="sub"><b>同じ場所をもう一度タップで発射</b>／別の場所で狙い直し</div>`;return;}
-  if(!chain.length){const t=enemyTotal();pv.innerHTML=`<div>次のターンの敵の攻撃：<b>${S.anom==='fog'?'？':t}</b>（防御${S.armor}で受け止め）${S.cls==='gambler'?`　🃏次 <b>×${gRoll()}</b>`:''}</div><span class="sub">${S.anom?`<span style="color:#c9a2ff">${ANOMS[S.anom].ic}${ANOMS[S.anom].n}：${ANOMS[S.anom].d}</span> ／ `:''}${S.bless>0?`<span style="color:#ffe08a">🌟祝福中：あと${S.bless}ターン チェーン+3扱い</span>`:'3つ以上なぞってつなごう ／ 長押しで説明'}</span>`;return;}
+  if(!chain.length){const t=enemyTotal();pv.innerHTML=`<div>次のターンの敵の攻撃：<b>${S.anom==='fog'?'？':t}</b>（防御${S.armor}で受け止め）${S.cls==='gambler'?`　🃏 <b>？</b>`:''}</div><span class="sub">${S.anom?`<span style="color:#c9a2ff">${ANOMS[S.anom].ic}${ANOMS[S.anom].n}：${ANOMS[S.anom].d}</span> ／ `:''}${S.bless>0?`<span style="color:#ffe08a">🌟祝福中：あと${S.bless}ターン チェーン+3扱い</span>`:'3つ以上なぞってつなごう ／ 長押しで説明'}</span>`;return;}
   const tiles=chain.map(tileAt);const g=groupOf(tiles[0].t);const n=chain.length;
   let main='',kills=new Set();
   const bn=chainBonus(n);let mu=chainMult(n),mixPv=0;
@@ -1239,7 +1255,7 @@ function updatePreview(){
   return main;};
   if(g==='mix'){const cnt={};tiles.forEach(t=>cnt[t.t]=(cnt[t.t]||0)+1);if(Object.keys(cnt).length>1){mu*=mixMu(n);mixPv=1;}main='⚗️ '+['shield','potion','coin'].filter(k=>cnt[k]).map(k=>pv1(k,cnt[k])).join(' ');}else main=pv1(g,n);}
   const after=enemyTotal(kills);
-  pv.innerHTML=`<div>${main}${n<3?' <span style="color:#f99">あと'+(3-n)+'</span>':''}</div><span class="sub">${mixPv?`<span style="color:#c9b6ff">⚗️ 調合 効果×${(Math.round(chainMult(n)*MIXK*10)/10)}</span>`:mu>1?`<span style="color:#ffe08a">✨${bonusTxtOf(n)}</span>`:n>=3?'4つ以上で 効果アップ！':''} ／ 敵の攻撃：${after}</span>`;
+  pv.innerHTML=`<div>${main}${n<3?' <span style="color:#f99">あと'+(3-n)+'</span>':''}</div><span class="sub">${S.cls==='gambler'?'🃏<b>×？</b>　':''}${mixPv?`<span style="color:#c9b6ff">⚗️ 調合 効果×${(Math.round(chainMult(n)*MIXK*10)/10)}</span>`:mu>1?`<span style="color:#ffe08a">✨${bonusTxtOf(n)}</span>`:n>=3?'4つ以上で 効果アップ！':''} ／ 敵の攻撃：${after}</span>`;
 }
 
 /* ---------- input ---------- */
@@ -1249,7 +1265,7 @@ function cellAt(e,strict){
   if(strict){const dx=x-c-.5,dy=y-r-.5;if(dx*dx+dy*dy>.43*.43)return null;}
   return [r,c];
 }
-function busy(){if(!S||dying)return true;if(S.pending.length&&!modalOpen)return true;for(const row of S.board)for(const t of row)if(t.ry!==undefined&&Math.abs(t.ry-S.board.indexOf(row))>0.001)return true;return false;}
+function busy(){if(!S||dying||REVEAL)return true;if(S.pending.length&&!modalOpen)return true;for(const row of S.board)for(const t of row)if(t.ry!==undefined&&Math.abs(t.ry-S.board.indexOf(row))>0.001)return true;return false;}
 let boardLP=null,boardTip=false;
 cv.addEventListener('pointerdown',e=>{
   if(!inGame||modalOpen||(TUT&&TUT.lock))return;const p=cellAt(e,false);if(!p)return;
@@ -1264,7 +1280,29 @@ cv.addEventListener('pointermove',e=>{
   else if(!chain.some(q=>same(q,p))&&adj(p,last)&&groupOf(tileAt(p).t)===groupOf(tileAt(chain[0]).t)){chain.push(p);clearTimeout(boardLP);sfx('link',chain.length);}
   updatePreview();
 });
-function endDrag(){clearTimeout(boardLP);if(boardTip){boardTip=false;hideTip();if(TUT&&TUT.tipSeen&&!TUT.lock)tutDone();}if(!dragging)return;dragging=false;if(tutRejectChain()){chain=[];updatePreview();return;}if(chain.length>=3)commitChain();else{chain=[];updatePreview();}}
+/* ギャンブラーの札めくり：離すと盤の中央で札が裏返り、倍率が出てから効果が出る。×3と×0.1の前だけ札がふるえる「ため」 */
+var REVEAL=false;
+function gambReveal(){const r=gPick();S.pendRoll=r;REVEAL=true;const w=$('wrap');let o=$('gcard');if(o)o.remove();
+  const L={1:['×1','#2a1d12',''],2:['×2','#1b7a3a','倍！'],0.5:['×0.5','#2763b8','半分…'],3:['×3','#b8860b','大当たり'],0.1:['×0.1','#c0261c','大はずれ']}[r];
+  o=document.createElement('div');o.id='gcard';o.innerHTML=`<div class="gdim"></div><div class="gfx"></div><div class="gc"><div class="gci"><div class="gf gb">🃏</div><div class="gf gfr" style="color:${L[1]};font-size:${L[0].length>2?25:36}cqw"><div>${L[0]}${L[2]?`<small>${L[2]}</small>`:''}</div></div></div></div>`;w.appendChild(o);
+  const c=o.querySelector('.gc'),ci=o.querySelector('.gci'),dim=o.querySelector('.gdim'),fx=o.querySelector('.gfx'),rare=r===3||r===.1;
+  const sp=(n,col)=>{for(let i=0;i<n;i++){const e=document.createElement('i');e.className='gsp';e.style.background=col;fx.appendChild(e);const a=Math.random()*6.28,d=60+Math.random()*110;e.animate([{transform:'translate(-50%,-50%)',opacity:1},{transform:`translate(${Math.cos(a)*d-5}px,${Math.sin(a)*d-5}px) scale(.3)`,opacity:0}],{duration:650+Math.random()*350,easing:'cubic-bezier(.2,.8,.4,1)',fill:'forwards'});}};
+  requestAnimationFrame(()=>c.classList.add('in'));sfx('gflip');
+  const tTease=rare?700:0;
+  if(rare)setTimeout(()=>{sfx('gtease');c.classList.add('shake');},240);
+  setTimeout(()=>{c.classList.remove('shake');ci.classList.add('flip');sfx('gflip');},240+tTease);
+  setTimeout(()=>{
+    if(r===1)sfx('g1');
+    else if(r===2){sfx('g2');c.classList.add('pop');sp(10,'#7be08f');}
+    else if(r===.5){sfx('g05');c.classList.add('sink');dim.style.background='rgba(20,40,90,.35)';dim.style.opacity=1;}
+    else if(r===3){sfx('g3');vib([30,40,60]);c.classList.add('pop');dim.style.background='radial-gradient(circle,rgba(255,220,120,.85),rgba(255,180,40,0) 70%)';dim.animate([{opacity:.9},{opacity:0}],{duration:900,fill:'forwards'});sp(30,'#ffcf4a');sp(12,'#fff6c8');}
+    else{sfx('g01');vib(200);cv.style.filter='grayscale(1) brightness(.6)';setTimeout(()=>c.classList.add('crack'),450);setTimeout(()=>{cv.style.filter='';},1300);}
+    REVEAL=false;commitChain();
+    setTimeout(()=>{c.classList.add('out');dim.style.opacity=0;},r===3?900:r===.1?1200:450);
+    setTimeout(()=>{if(o.parentNode)o.remove();},r===3||r===.1?1700:1000);
+  },240+tTease+330);
+}
+function endDrag(){clearTimeout(boardLP);if(boardTip){boardTip=false;hideTip();if(TUT&&TUT.tipSeen&&!TUT.lock)tutDone();}if(!dragging)return;dragging=false;if(tutRejectChain()){chain=[];updatePreview();return;}if(chain.length>=3){if(S.cls==='gambler'&&!TUT)gambReveal();else commitChain();}else{chain=[];updatePreview();}}
 cv.addEventListener('pointerup',endDrag);cv.addEventListener('pointercancel',endDrag);
 
 /* ---------- atmosphere: lantern light, dust, dripping water ---------- */
@@ -1458,6 +1496,10 @@ function busyTo(t){AU.busy=Math.max(AU.busy||0,t);}
 // ダメージ音は、ほかの効果音の山が過ぎてから鳴らす
 function hurtDelay(){if(!AU.ctx||!AU.on||!AU.on.sfx)return .22;return Math.min(1.1,Math.max(.22,(AU.busy||0)-AU.ctx.currentTime+.06));}
 const SFX={
+  gflip(){tone(900,T0(),.06,{gain:.05});},g1(){tone(660,T0(),.12,{type:'triangle',gain:.12});},g2(){const t=T0();tone(784,t,.12,{type:'triangle',gain:.13});tone(1175,t+.07,.18,{type:'triangle',gain:.12});},
+  g05(){tone(330,T0(),.25,{type:'triangle',gain:.14,slideTo:260});},gtease(){const t=T0();for(let i=0;i<7;i++)tone(500+i*60,t+i*.09,.07,{gain:.04});},
+  g3(){const t=T0();[523,659,784,1047,1319].forEach((f,i)=>tone(f,t+i*.07,.35,{type:'triangle',gain:.13}));tone(1568,t+.4,.6,{type:'triangle',gain:.1});},
+  g01(){const t=T0();[392,370,349,262].forEach((f,i)=>tone(f,t+i*.28,.32,{type:'sawtooth',gain:.07,slideTo:i===3?180:null}));},
   link(n){tone(mf(72+Math.min(n,12)*2),T0(),.07,{gain:.05});},
   clear(g){const t=T0();busyTo(t+.2);
     if(g==='atk'){withVar(()=>noise(t,.16,.2,2600,{type:'bandpass',q:1.4,sweepTo:700,attack:.01}));}
@@ -1991,8 +2033,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.53';
+const VERSION='0.4.54';
 const CHANGELOG=[
+  {v:'0.4.54',d:'2026-11-26',items:['🃏ギャンブラー：倍率は前もって見えず、つないで離した瞬間に札をめくって決まるようになりました。×0.1〜×3まで、出た倍率は札で大きく見せます']},
   {v:'0.4.53',d:'2026-11-26',items:['⚗️錬金術師のルールが変わったので、錬金術師の戦績（回数・最深・最長チェーン）をリセットしました']},
   {v:'0.4.52',d:'2026-11-26',items:['⚗️錬金術師：混ぜてつなげるのは💰と🧪だけになりました。混ぜたときは効果が半分になりますが、長くつなぐほど強くなります']},
   {v:'0.4.51',d:'2026-11-25',items:['✂️敵はHPが減ると、その分だけ攻撃も弱まるようにしました（ボスはそのまま）。倒しきれなくても削る意味があります']},
@@ -2223,7 +2266,7 @@ const CLASSES={
     kill:['zombie',20],floor:50,cond:()=>false},
   hunter:{ic:'🏹',n:'狙撃手',hidden:2,d:'群れの中の大物を、決して逃さない射手。',fx:'つないだ敵のうち、いちばん倒しにくい敵（残りHP＋装甲が最大）に3倍ダメージ（狙い撃ち）・最初から🎯狙撃を習得・初期HP50',cond:()=>false},
   dragoon:{ic:'🐉',n:'竜騎士',hidden:2,d:'竜の背で戦った、一撃に全てを懸ける騎士。',fx:'5つ以上のチェーンは倍率が大きく伸びる（4つ長い扱い）・4つ以下の攻撃は威力半分・初期HP46',cond:()=>false},
-  gambler:{ic:'🃏',n:'ギャンブラー',hidden:2,d:'迷宮の宝も、命も、すべて賭けの種。',fx:'つないだ効果（攻撃・🛡️・🧪・💰すべて）が0.5〜3倍に揺れる。次の倍率は前もって見えているので、大きいときに大技を・初期HP34',cond:()=>false},
+  gambler:{ic:'🃏',n:'ギャンブラー',hidden:2,d:'迷宮の宝も、命も、すべて賭けの種。',fx:'つないだ効果（攻撃・🛡️・🧪・💰すべて）が、離した瞬間にめくる札で×0.1〜×3に変わる（×2がよく出る・×3はまれ・×0.1はごくまれ）・初期HP34',cond:()=>false},
   knight:{ic:'🛡️',n:'騎士',hidden:2,retired:1,d:'重い鎧に身を包んだ、誇り高き守り手。',fx:'防御の上限8から始まる・防御が満タンのとき攻撃1.5倍・🧪の回復量1・初期HP50',cond:()=>false},
   alchemist:{ic:'⚗️',n:'錬金術師',hidden:2,d:'まことの金と 不老の薬を 追い求める学者。',fx:'💰と🧪を混ぜてつなげる（混ぜると効果は半分）・剣の攻撃力が低い（1・強化+1）・初期HP38',cond:()=>false}
 };
