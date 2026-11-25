@@ -1991,8 +1991,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.52';
+const VERSION='0.4.53';
 const CHANGELOG=[
+  {v:'0.4.53',d:'2026-11-26',items:['⚗️錬金術師のルールが変わったので、錬金術師の戦績（回数・最深・最長チェーン）をリセットしました']},
   {v:'0.4.52',d:'2026-11-26',items:['⚗️錬金術師：混ぜてつなげるのは💰と🧪だけになりました。混ぜたときは効果が半分になりますが、長くつなぐほど強くなります']},
   {v:'0.4.51',d:'2026-11-25',items:['✂️敵はHPが減ると、その分だけ攻撃も弱まるようにしました（ボスはそのまま）。倒しきれなくても削る意味があります']},
   {v:'0.4.50',d:'2026-11-25',items:['⚗️錬金術師：混ぜてつないだときの効果を、長さによらず一律×1.2にしました（長くつなぎすぎると強すぎたため）']},
@@ -2346,6 +2347,12 @@ function copyBtn(id,getText){const b=$(id);if(!b)return;const lab=b.innerHTML;b.
 /* ---------- run history & stats dashboard ---------- */
 const LS_RUNS='dchain_runs_v1';let RUNS=[];
 function runsLoad(){try{const r=JSON.parse(localStorage.getItem(LS_RUNS)||'[]');if(Array.isArray(r))RUNS=r;}catch(e){}}
+/* v0.4.53：錬金術師のルールを変えたので、錬金術師の記録（戦績の回・最深・最長チェーン）だけ一度消す。実績はそのまま */
+function alcReset(){try{if(localStorage.getItem('dchain_alc_reset_v1'))return;localStorage.setItem('dchain_alc_reset_v1','1');}catch(e){return;}
+  if(!RUNS.some(r=>r.c==='alchemist'))return;const rest=RUNS.filter(r=>r.c!=='alchemist'),alc=RUNS.filter(r=>r.c==='alchemist');RUNS=rest;runsSave();
+  if(best){best.chain=Math.max(0,...rest.map(r=>r.ch||0));const bf=bestFloor(),top=rest.reduce((m,r)=>!m||r.f>m.f||(r.f===m.f&&r.t>m.t)?r:m,null);
+    if(alc.some(r=>r.f>=bf)&&(!top||top.f<bf)){if(top)Object.assign(best,{floor:top.f,turn:top.t,kills:top.k,level:top.l});else best=null;}
+    try{if(best)localStorage.setItem(LS_BEST,JSON.stringify(best));else localStorage.removeItem(LS_BEST);}catch(e){}cloudWrite('best',best||'DEL');}}
 function runsSave(){try{localStorage.setItem(LS_RUNS,JSON.stringify(RUNS.slice(-300)));}catch(e){}}
 /* 冒険の記録を、作者のGoogleフォーム（→スプレッドシート）へ送る。設定でオフにできる */
 const SHARE_URL='https://docs.google.com/forms/d/e/1FAIpQLSfncydVDFEmGqlUP8mH0GAe7VuoDICT9k98s-NkCF9Cbj2CdQ/formResponse',SHARE_ENTRY='entry.1097035413',LS_SHARE='dchain_share_v1',LS_DEV='dchain_dev_v1';
@@ -2516,7 +2523,7 @@ document.addEventListener('contextmenu',e=>{if(!(e.target&&e.target.closest&&e.t
 try{SLOT=Math.min(NSLOT-1,Math.max(0,+localStorage.getItem(LS_SLOT)||0));}catch(e){}savedJson=slotJson(SLOT);
 try{const b=localStorage.getItem(LS_BEST);if(b)best=JSON.parse(b);}catch(e){}
 try{localStorage.removeItem('dchain_log_cur_v1');localStorage.removeItem('dchain_log_last_v1');}catch(e){}
-achLoad();unlLoad();runsLoad();achSeed();achLong();achSave();
+achLoad();unlLoad();runsLoad();alcReset();achSeed();achLong();achSave();
 baseMigrate();applyTheme();
 if(!UNL.retroH){UNL.retroH=1;for(let i=0;i<Math.min(ACH.st.clears||0,5);i++)clearReward(true);unlSave();}checkUnlocks();refreshTitle();setTimeout(titleAnim,100);setCloud('この端末のブラウザに保存');
 requestAnimationFrame(frame);
