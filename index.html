@@ -626,18 +626,21 @@ function makeBoss(s){
   if(s.curse){e.hp=Math.round(e.hp*(1+.12*s.curse));e.atk+=Math.floor(s.curse/3);}
   e.maxHp=e.hp;noteMet(k);s.bossUp=true;s.bossKind=k;s.bossTurn=s.turn;s.bossAnnounce=EK[k].icon+' '+EK[k].name+(m>1?'（強化）':'');return e;
 }
+/* 弱った敵は攻撃も弱い：ボス・中ボス以外は、減ったHPの割合だけ攻撃が下がる（切り上げ・最低1） */
+function wk(e,v){if(!v||e.boss||e.mini||!e.maxHp||e.hp>=e.maxHp)return v;return Math.max(1,Math.ceil(v*Math.max(0,e.hp)/e.maxHp));}
+function atkNow(e){return wk(e,e.atk);}
 function enemyAtk(e){
   if(e.fresh||e.frz>0)return {d:0,p:0};
   const k=bhOf(e),D=EK[kindOf(e)]||{};
   if(D.z)return {d:0,p:0};
-  if(D.pc)return {d:0,p:e.atk+(D.ag?0:auraN())};
+  if(D.pc)return {d:0,p:atkNow(e)+(D.ag?0:auraN())};
   if(k==='golem'&&e.rest)return {d:0,p:0};
   if(k==='bomb')return (e.cnt||0)<=1?{d:e.boom||0,p:0}:{d:0,p:0};
   if(k==='dragon')return {d:(e.ch||0)+1>=3?e.atk*3:e.atk,p:0};
   if(k==='abyss')return {d:(e.ch||0)+1>=3?Math.round(e.atk*2.5):e.atk,p:0};
   const ag=D.ag?0:auraN();
-  if(k==='spider')return {d:0,p:e.atk+ag};
-  return {d:e.atk+ag,p:0};
+  if(k==='spider')return {d:0,p:atkNow(e)+ag};
+  return {d:atkNow(e)+ag,p:0};
 }
 function guarded(e){const p=findTile(e);if(!p)return false;for(const q of neighbors(p[0],p[1])){const t=tileAt(q);if(t!==e&&isEnemy(t)&&(EK[kindOf(t)]||{}).gd)return true;}return false;}
 function auraN(){let n=0;for(let r=0;r<N;r++)for(let c=0;c<N;c++){const t=S.board[r][c];if(isEnemy(t)&&(EK[kindOf(t)]||{}).ag)n++;}return n;}
@@ -940,7 +943,7 @@ function showHelp(back){const M=[[3,1],[4,1.2],[5,1.4],[7,1.8],[10,2.6],[14,4.1]
     <div class="hcard"><div class="hleg"><div><span>⚔️</span>攻撃</div><div><span>🛡️</span>防御</div><div><span>🧪</span>回復</div><div><span>💰</span>お店</div></div></div>
     <div class="hcard"><h4>長いほど 強い</h4><div class="hbars">${M.map(([n,x])=>`<div><em>×${x}</em><b style="height:${x/4.1*62}px"></b>${n}</div>`).join('')}</div></div>
     <div class="hcard"><h4>敵の数字</h4><div class="hen"><div class="et">💀<i style="right:5px;top:3px;color:#7fc4ff">2</i><i style="left:6px;bottom:3px;color:#ffd54a">3</i><i style="right:6px;bottom:3px;color:#ff6b6b">8</i></div>
-      <ul><li><span style="color:#ffd54a">●</span> 攻撃</li><li><span style="color:#ff6b6b">●</span> HP</li><li><span style="color:#7fc4ff">●</span> 装甲</li></ul></div></div>
+      <ul><li><span style="color:#ffd54a">●</span> 攻撃</li><li><span style="color:#ff6b6b">●</span> HP</li><li><span style="color:#7fc4ff">●</span> 装甲</li><li>✂️ 削ると 攻撃も へる</li></ul></div></div>
     <div class="hcard"><div class="hico"><div><span>👆</span>長押しで説明</div><div><span>⬇️</span>2ターンで1階</div><div><span>👑</span>20階ごとにボス</div><div><span>💾</span>自動セーブ</div></div></div>
   </div>`);$('pgBack').onclick=back||closeModal;}
 
@@ -1329,7 +1332,7 @@ function draw(now){
       const fog=S.anom==='fog'&&!t.boss&&!t.mini;
       if(fog)label('?',x+cs-pad*2.2,y+cs-pad*2,'#aaa',fs,'right');
       else if(k==='bomb')label(String(t.cnt),x+pad*2.2,y+cs-pad*2,'#ff9a3a',fs*1.1,'left');
-      else label(String(t.atk),x+pad*2.2,y+cs-pad*2,k==='spider'?'#c58bff':'#ffd54a',fs,'left');
+      else{const an=atkNow(t),lw=an<t.atk;label(String(an),x+pad*2.2,y+cs-pad*2,lw?'#d9c9a0':k==='spider'?'#c58bff':'#ffd54a',lw?fs*.9:fs,'left');}
       if(!fog){const hs=String(Math.max(0,t.hp));label(hs,x+cs-pad*2.2,y+cs-pad*2,'#ff6b6b',hs.length>=3?fs*.8:fs,'right');}
       if(t.armor>0&&!fog)label(String(t.armor),x+cs-pad*2.2,y+pad*2+fs*.8,'#7fc4ff',fs,'right');
       if(t.mini)label('中',x+cs/2,y+pad*2+fs*.55,'#ff9ad9',fs*.7,'center');
@@ -1988,8 +1991,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.50';
+const VERSION='0.4.51';
 const CHANGELOG=[
+  {v:'0.4.51',d:'2026-11-25',items:['✂️敵はHPが減ると、その分だけ攻撃も弱まるようにしました（ボスはそのまま）。倒しきれなくても削る意味があります']},
   {v:'0.4.50',d:'2026-11-25',items:['⚗️錬金術師：混ぜてつないだときの効果を、長さによらず一律×1.2にしました（長くつなぎすぎると強すぎたため）']},
   {v:'0.4.49',d:'2026-11-24',items:['🎯狙撃がこまめに撃てるようになりました（再使用12→8ターン）']},
   {v:'0.4.48',d:'2026-11-23',items:['🎵 はじめて遊ぶときのBGMの音量を「中」にしました']},
@@ -2482,7 +2486,7 @@ function tileInfo(p){
       if(k==='bomb')st+=`💣 あと${t.cnt}ターンで爆発（${t.boom}ダメージ）<br>`;
       if(k==='abyss')st+=`🌀 波動まで あと${3-(t.ch||0)}ターン（${Math.round(t.atk*2.5)}ダメージ）<br>`;
       return tipHead(d.icon,(t.elite?'⭐強い':'')+d.name+(t.boss?'（ボス）':''))+
-      `HP <b style="color:#ff6b6b">${t.hp}</b>/${t.maxHp}　攻撃 <b style="color:#ffd54a">${k==='bomb'?'-':t.atk}</b>　装甲 <b style="color:#7fc4ff">${t.armor}</b><br>${d.desc}<br>${st}`+
+      `HP <b style="color:#ff6b6b">${t.hp}</b>/${t.maxHp}　攻撃 <b style="color:#ffd54a">${k==='bomb'?'-':atkNow(t)}</b>${k!=='bomb'&&atkNow(t)<t.atk?`<small style="color:#a99">（弱って ${t.atk}→${atkNow(t)}）</small>`:''}　装甲 <b style="color:#7fc4ff">${t.armor}</b><br>${d.desc}<br>${st}`+
       (t.elite?'⭐ 強化個体：HP・攻撃・装甲が高いが、経験値も多い<br>':'')+`倒すには合計<b>${t.hp+t.armor}</b>ダメージ${k==='ghost'?'（剣は半分しか効かない）':''}。経験値+${xpOf(t)}`;}
   }
   return '';
