@@ -690,7 +690,7 @@ function zmbAnimate(msgs,then){const L=zmbList();if(!L.length||window.BOTFAST||T
     if(i>=L.length){zmbDone(acc,msgs);ZANIM=false;then();return;}
     const e=L[i++],ev=zmbAct(e,acc);
     if(ev&&ev.to){ZLUNGE.push({from:ev.from,to:ev.to,t0:performance.now(),kill:ev.kill});sfx('zbite',!!ev.kill);if(ev.kill)vib(30);}
-    updateAll();setTimeout(step,ev&&ev.to?(ev.kill?560:440):240);};
+    updateAll();setTimeout(step,ev&&ev.to?(ev.kill?430:270)+Math.random()*(ev.kill?260:330):200+Math.random()*120);};
   setTimeout(step,380);return true;}
 function enemyPhase(msgs,skipZ){
   const all=()=>{const l=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){const e=S.board[r][c];if(isEnemy(e))l.push([e,r,c]);}return l;};
@@ -1554,7 +1554,11 @@ function busyTo(t){AU.busy=Math.max(AU.busy||0,t);}
 // ダメージ音は、ほかの効果音の山が過ぎてから鳴らす
 function hurtDelay(){if(!AU.ctx||!AU.on||!AU.on.sfx)return .22;return Math.min(1.1,Math.max(.22,(AU.busy||0)-AU.ctx.currentTime+.06));}
 const SFX={
-  zbite(k){const t=T0();withVar(()=>noise(t,.09,.22,1400,{type:'bandpass',q:2.2,sweepTo:600,attack:.004}));tone(k?150:200,t+.02,.12,{type:'square',gain:.06,slideTo:k?70:120});if(k)tone(90,t+.1,.25,{type:'triangle',gain:.12,slideTo:50});},
+  zbite(k){const t=T0();withVar(()=>{
+    tone(1500,t,.025,{type:'triangle',gain:.05,slideTo:900});tone(1300,t+.012,.02,{type:'triangle',gain:.035,slideTo:800});
+    tone(170,t+.018,.16,{type:'sine',gain:.26,slideTo:60});tone(340,t+.018,.07,{type:'triangle',gain:.07,slideTo:140});
+    noise(t+.018,.09,.2,700,{type:'lowpass',q:.7,sweepTo:250,attack:.003});noise(t+.03,.05,.07,2200,{type:'bandpass',q:3,sweepTo:1200,attack:.002});
+    if(k){tone(95,t+.06,.32,{type:'sine',gain:.24,slideTo:42});noise(t+.07,.22,.12,500,{type:'lowpass',q:.5,sweepTo:120,attack:.01});}});},
   gflip(){tone(900,T0(),.06,{gain:.05});},g1(){tone(660,T0(),.12,{type:'triangle',gain:.12});},g2(){const t=T0();tone(784,t,.12,{type:'triangle',gain:.13});tone(1175,t+.07,.18,{type:'triangle',gain:.12});},
   g05(){tone(330,T0(),.25,{type:'triangle',gain:.14,slideTo:260});},gtease(){const t=T0();for(let i=0;i<7;i++)tone(500+i*60,t+i*.09,.07,{gain:.04});},
   g3(){const t=T0();[523,659,784,1047,1319].forEach((f,i)=>tone(f,t+i*.07,.35,{type:'triangle',gain:.13}));tone(1568,t+.4,.6,{type:'triangle',gain:.1});},
@@ -2105,8 +2109,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.61';
+const VERSION='0.4.62';
 const CHANGELOG=[
+  {v:'0.4.62',d:'2026-11-27',items:['🧟ゾンビの噛みつく音を、歯が当たる音と鈍い噛み音に変えました。噛む間隔もばらつくようにしました']},
   {v:'0.4.61',d:'2026-11-27',items:['🧟ゾンビの攻撃を、あごがガブッと閉じる噛みつきの見た目にしました']},
   {v:'0.4.60',d:'2026-11-27',items:['🧟ゾンビになった敵は、チェーンのあと1体ずつ順番に殴りかかるようになりました。誰が誰を殴ったか見えます']},
   {v:'0.4.59',d:'2026-11-26',items:['🧟ゾンビ：攻撃して倒しきれなかった敵が、噛まれてゾンビになるようになりました。3ターンのあいだ、まわりの敵と殴り合ってから正気に戻ります。かわりに、ゾンビの剣は弱く、長くつないでも強くなりません']},
