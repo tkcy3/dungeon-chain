@@ -641,7 +641,7 @@ function makeBoss(s){
 function wk(e,v){if(!v||e.boss||e.mini||!e.maxHp||e.hp>=e.maxHp)return v;return Math.max(1,Math.ceil(v*Math.max(0,e.hp)/e.maxHp));}
 function atkNow(e){return wk(e,e.atk);}
 function enemyAtk(e){
-  if(e.fresh||e.frz>0)return {d:0,p:0};
+  if(e.fresh||e.frz>0||e.zmb>0)return {d:0,p:0};
   const k=bhOf(e),D=EK[kindOf(e)]||{};
   if(D.z)return {d:0,p:0};
   if(D.pc)return {d:0,p:atkNow(e)+(D.ag?0:auraN())};
@@ -661,11 +661,33 @@ function summon(k){
   if(!cells.length)return;const [r,c]=cells[rnd(cells.length)];const e=makeKind(k,S.turn);e.ry=r;S.board[r][c]=e;
 }
 function popAnnounce(msgs){if(S.bossAnnounce){msgs.push(`${S.bossAnnounce} が現れた！`);sfx('boss');delete S.bossAnnounce;}}
+/* ゾンビ：倒しきれず生き残った敵は噛まれてゾンビ（味方）になる。ZMB_Tターンのあいだ、まわり8マスの敵（ほかのゾンビ・ボスも）を
+   ランダムに殴り、こちらは攻撃しない。殴る強さは自分の最大HP×ZMB_K（3体に囲まれると たいていの敵は倒れるくらい）。
+   まわりに誰もいなければ、いちばん近い敵へ1マスよろよろ歩く。時間が来ると正気に戻って敵に戻る（削られたぶんは残る）。ボス・中ボスは噛まれない */
+const ZMB_T=3,ZMB_K=.35;
+function zmbBite(cells,msgs){if(S.cls!=='zombie')return;let n=0;const now=performance.now();
+  for(const p of cells){const t=tileAt(p);if(!isEnemy(t)||t.hp<=0||t.boss||t.mini||t.zmb>0)continue;t.zmb=ZMB_T;t.zatk=Math.max(1,Math.round(t.maxHp*ZMB_K));n++;RINGS.push({p,t0:now,col:'#7be07b'});}
+  if(n)msgs.push(`🧟 ${n}体がゾンビになった`);}
+function zmbWalk(e,r,c,rm){let best=null,bd=99;for(let R=0;R<N;R++)for(let C=0;C<N;C++){const t=S.board[R][C];if(!isEnemy(t)||t===e||rm.has(R*N+C))continue;const d=Math.max(Math.abs(R-r),Math.abs(C-c))+(t.zmb>0?.5:0);if(d<bd){bd=d;best=[R,C];}}
+  if(!best)return;const opts=neighbors(r,c).filter(q=>!isEnemy(tileAt(q)));if(!opts.length)return;
+  const dist=q=>Math.max(Math.abs(q[0]-best[0]),Math.abs(q[1]-best[1]));opts.sort((a,b)=>dist(a)-dist(b));const q=opts[0];if(dist(q)>=Math.max(Math.abs(r-best[0]),Math.abs(c-best[1])))return;
+  const o=tileAt(q);S.board[q[0]][q[1]]=e;S.board[r][c]=o;e.ry=q[0];o.ry=r;}
+function zmbPhase(msgs){if(!S.board.some(row=>row.some(t=>t.zmb>0)))return;const rm=new Set(),now=performance.now();let kk=0,xx=0,hits=0;
+  const L=[];for(const row of S.board)for(const t of row)if(t&&t.zmb>0)L.push(t);
+  for(const e of L){const pos=findTile(e);if(!pos)continue;const [r,c]=pos;if(rm.has(r*N+c)||!(e.zmb>0))continue;
+    const opts=neighbors(r,c).filter(q=>{const t=tileAt(q);return isEnemy(t)&&!rm.has(q[0]*N+q[1]);});
+    if(opts.length){const q=opts[rnd(opts.length)],t=tileAt(q),dd=dmgTo(t,e.zatk);hitNum(q[0],q[1],dd,'#7be07b',dd/Math.max(1,t.maxHp));applyDmg(t,dd);hits++;
+      if(t.hp<=0){rm.add(q[0]*N+q[1]);kk++;xx+=xpOf(t);}else t.hit=now;}
+    else zmbWalk(e,r,c,rm);
+    e.zmb--;if(e.zmb<=0){delete e.zmb;delete e.zatk;}}
+  if(rm.size){burst([...rm].map(k=>[Math.floor(k/N),k%N]),'#7be07b',.8);removeAndFill(rm);}
+  if(kk){S.kills+=kk;anomKills(kk);msgs.push(`🧟 同士討ちで${kk}体 倒れた`);}if(xx)gainXp(xx);}
 function enemyPhase(msgs){
   const all=()=>{const l=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){const e=S.board[r][c];if(isEnemy(e))l.push([e,r,c]);}return l;};
+  zmbPhase(msgs);
   let total=0,pierce=0;const exploded=new Set();S._topA=0;S._topK='';
   for(const [e,r,c] of all()){
-    if(e.fresh||e.frz>0)continue;
+    if(e.fresh||e.frz>0||e.zmb>0)continue;
     const a=enemyAtk(e),k=bhOf(e),D=EK[kindOf(e)]||{};total+=a.d;pierce+=a.p;if(a.d+a.p>(S._topA||0)){S._topA=a.d+a.p;S._topK=kindOf(e);}
     if(D.st&&S.gold>0){const g=Math.min(S.gold,1+Math.floor(e.atk/2));S.gold-=g;msgs.push(`${D.icon} 💰を${g}盗まれた`);}
     if(D.sb&&S.armor>0){S.armor--;msgs.push(`${D.icon} 防御を1削られた`);}
@@ -683,13 +705,13 @@ function enemyPhase(msgs){
   if(exploded.size){sfx('boom');S._boom=true;removeAndFill(exploded);}
   const live=all();
   for(const [e,r,c] of live){
-    if(e.fresh||e.frz>0)continue;const k=bhOf(e);
+    if(e.fresh||e.frz>0||e.zmb>0)continue;const k=bhOf(e);
     if(k==='kraken'&&!e.brk)e.armor=Math.min(10,e.armor+1);
     if(k==='abyss'){if(!e.brk)e.armor=Math.min(10,e.armor+1);e.sm=(e.sm||0)+1;if(e.sm>=2){e.sm=0;const pool=['skel','zombie','spider','ghost','golem','shaman'];summon(pool[rnd(pool.length)]);msgs.push('👁️ 手下を呼び出した！');}}
     if(k==='vampire'){e.hp=Math.min(e.maxHp,e.hp+2);e.sm=(e.sm||0)+1;if(e.sm>=3){e.sm=0;summon('bat');msgs.push('🧛 コウモリを呼んだ！');}}
   }
   for(const [e,r,c] of live){
-    if(e.fresh||e.frz>0||S.board[r][c]!==e)continue;const D=EK[kindOf(e)]||{};e.age=(e.age||0)+1;
+    if(e.fresh||e.frz>0||e.zmb>0||S.board[r][c]!==e)continue;const D=EK[kindOf(e)]||{};e.age=(e.age||0)+1;
     if(D.rg)e.hp=Math.min(e.maxHp,e.hp+D.rg);
     if(D.hl)for(const q of neighbors(r,c)){const t=tileAt(q);if(isEnemy(t))t.hp=Math.min(t.maxHp,t.hp+D.hl);}
     if(D.au&&!e.brk)e.armor=Math.min(D.au+(e.mini?4:0),e.armor+1);
@@ -701,7 +723,7 @@ function enemyPhase(msgs){
   }
   if(S.anom==='rust'&&S.armor>0)S.armor--;
   for(const [e] of live){
-    if(bhOf(e)!=='bat'||e.fresh||e.frz>0||!findTile(e))continue;
+    if(bhOf(e)!=='bat'||e.fresh||e.frz>0||e.zmb>0||!findTile(e))continue;
     const pos=findTile(e);if(!pos)continue;
     const opts=neighbors(pos[0],pos[1]).filter(q=>!isEnemy(tileAt(q)));if(!opts.length)continue;
     const q=opts[rnd(opts.length)],o=tileAt(q);S.board[q[0]][q[1]]=e;S.board[pos[0]][pos[1]]=o;e.ry=q[0];o.ry=pos[0];
@@ -762,6 +784,7 @@ function dragApply(cells,remove,msgs){const br=dragBurn(cells);if(!br.length)ret
   burst(br.map(b=>b.p),'#ff7a2a',1);msgs.push(`🔥 燃える線 ${br.length}体${bk?`（${bk}体撃破）`:''}`);return [bk,bx];}
 function chainDmg(cells,roll=1){const n=cells.length;let m=chainMult(n);
   if(S.cls==='knight'&&S.maxArmor>0&&S.armor>=S.maxArmor)m*=1.5;
+  if(S.cls==='zombie')m=1;/* ゾンビの剣はチェーンの倍率がかからない（噛むだけで、倒すための力は伸びない） */
   
   return Math.max(1,Math.round((S.baseDmg+cells.filter(p=>tileAt(p).t==='sword').length*S.weaponDmg)*m*roll));}
 const MIXK=.5;function mixMu(n){return MIXK;}/* 錬金術師：💰と🧪を混ぜてつなげる。混ぜると効果は半分（長さの倍率はそのまま） */
@@ -793,6 +816,7 @@ function commitChain(){
       hitN++;if(p===lastE){const hd=dmgTo(t,Math.round(dmg*HUNT));hitNum(p[0],p[1],hd,'#ff5a5a',hd/t.maxHp+.2);RETS.push({p,t0:performance.now()});}applyDmg(t,dmgTo(t,p===lastE?Math.round(dmg*HUNT):dmg));if(p===lastE)msgs.push(`🏹 狙い撃ち ${Math.round(dmg*HUNT)}`);
       if(t.hp<=0){remove.add(p[0]*N+p[1]);killed++;xp+=xpOf(t);}else t.hit=now;}
     {const [bk,bx]=dragApply(cells,remove,msgs);killed+=bk;xp+=bx;}
+    zmbBite(cells,msgs);
     S.kills+=killed;if(xp)gainXp(xp);anomKills(killed);
     msgs.push(hitN?`敵に${dmg}ダメージ${killed?`、${killed}体撃破`:''}`:`剣${swords}本を消費`);vampDrain(killed,msgs);
   }else{
@@ -1258,8 +1282,8 @@ function updatePreview(){
     const lastE=S.cls==='hunter'?lastEnemyOf(chain):null;
     en.forEach(p=>{const e=tileAt(p);if(wouldDie(e,dmgTo(e,p===lastE?Math.round(d*HUNT):d)))kills.add(p[0]*N+p[1]);});
     const brn=dragBurn(chain);brn.forEach(b=>{if(wouldDie(b.e,b.dd))kills.add(b.p[0]*N+b.p[1]);});
-    const dgT=brn.length?`<span style="color:#ff8a3a">🔥となり${brn.length}体</span> `:'';
-    main=dgT+(en.length?`⚔️ 敵${en.length}体に <b>${d}</b> ダメージ`+(lastE?`（🏹いちばん倒しにくい敵に${Math.round(d*HUNT)}）`:'')+`（撃破${kills.size}${S.cls==='gambler'?'?':''}）`+(S.cls==='vampire'&&kills.size?` 🩸+${Math.min(kills.size*drainOf(),S.maxHp-S.hp)}`:''):`⚔️ 剣${sw}本（敵をつなぐと${d}ダメージ）`);}
+    const dgT=brn.length?`<span style="color:#ff8a3a">🔥となり${brn.length}体</span> `:'';const zN=S.cls==='zombie'?en.filter(p=>{const e=tileAt(p);return !kills.has(p[0]*N+p[1])&&!e.boss&&!e.mini;}).length:0;const zT=zN?`<span style="color:#7be07b">🧟ゾンビ化${zN}体</span> `:'';
+    main=dgT+zT+(en.length?`⚔️ 敵${en.length}体に <b>${d}</b> ダメージ`+(lastE?`（🏹いちばん倒しにくい敵に${Math.round(d*HUNT)}）`:'')+`（撃破${kills.size}${S.cls==='gambler'?'?':''}）`+(S.cls==='vampire'&&kills.size?` 🩸+${Math.min(kills.size*drainOf(),S.maxHp-S.hp)}`:''):`⚔️ 剣${sw}本（敵をつなぐと${d}ダメージ）`);}
   else{const pv1=(g,n)=>{let main='';
   if(g==='shield'&&S.cls==='zombie'){main=`🧟 HP +${Math.min(Math.round(n*mu),S.maxHp-S.hp)}`;}
   else if(g==='potion'&&S.cls==='vampire'){main=`🧪→💰 +${Math.round(n*mu)}`;}
@@ -1286,13 +1310,13 @@ cv.addEventListener('pointerdown',e=>{
   if(!inGame||modalOpen||(TUT&&TUT.lock))return;const p=cellAt(e,false);if(!p)return;
   if(AIM){if(busy())return;if(AIM.c&&same(AIM.c,p)){const i=AIM.i;useSkill(i,p);}else{AIM.c=p;sfx('link',3);updatePreview();}e.preventDefault();return;}
   if(busy()){clearTimeout(boardLP);const x1=e.clientX,y1=e.clientY;boardLP=setTimeout(()=>{boardTip=true;showTip(tileInfo(p),x1,y1);},LP_MS);return;}
-  ensureAudio();dragging=true;chain=[p];sfx('link',1);try{cv.setPointerCapture(e.pointerId);}catch(_){}updatePreview();e.preventDefault();
+  if(tileAt(p).zmb>0){clearTimeout(boardLP);boardTip=true;showTip(tileInfo(p),e.clientX,e.clientY);return;}ensureAudio();dragging=true;chain=[p];sfx('link',1);try{cv.setPointerCapture(e.pointerId);}catch(_){}updatePreview();e.preventDefault();
   clearTimeout(boardLP);const x0=e.clientX,y0=e.clientY;boardLP=setTimeout(()=>{if(dragging&&chain.length===1&&same(chain[0],p)){dragging=false;chain=[];updatePreview();boardTip=true;showTip(tileInfo(p),x0,y0);if(TUT&&TSTEPS[TUT.i].wait==='tip'&&isEnemy(tileAt(p)))TUT.tipSeen=true;}},LP_MS);
 });
 cv.addEventListener('pointermove',e=>{
   if(!dragging)return;const p=cellAt(e,true);if(!p)return;const last=chain[chain.length-1];if(same(p,last))return;
   if(chain.length>1&&same(p,chain[chain.length-2])){chain.pop();sfx('link',chain.length);}
-  else if(!chain.some(q=>same(q,p))&&adj(p,last)&&groupOf(tileAt(p).t)===groupOf(tileAt(chain[0]).t)){chain.push(p);clearTimeout(boardLP);sfx('link',chain.length);}
+  else if(!chain.some(q=>same(q,p))&&adj(p,last)&&!(tileAt(p).zmb>0)&&groupOf(tileAt(p).t)===groupOf(tileAt(chain[0]).t)){chain.push(p);clearTimeout(boardLP);sfx('link',chain.length);}
   updatePreview();
 });
 /* ギャンブラーの札めくり：離すと盤の中央で札が裏返り、倍率が出てから効果が出る。×3と×0.1の前だけ札がふるえる「ため」 */
@@ -1382,10 +1406,11 @@ function draw(now){
       const fs=cs*.24;ctx.textBaseline='alphabetic';
       const k=bhOf(t);
       if(t.frz>0){rr(x+pad,y+pad,cs-pad*2,cs-pad*2,cs*.16);ctx.fillStyle='rgba(120,190,255,.35)';ctx.fill();}
+      if(t.zmb>0){rr(x+pad,y+pad,cs-pad*2,cs-pad*2,cs*.16);ctx.fillStyle='rgba(90,200,90,.38)';ctx.fill();}
       const fog=S.anom==='fog'&&!t.boss&&!t.mini;
       if(fog)label('?',x+cs-pad*2.2,y+cs-pad*2,'#aaa',fs,'right');
       else if(k==='bomb')label(String(t.cnt),x+pad*2.2,y+cs-pad*2,'#ff9a3a',fs*1.1,'left');
-      else{const an=atkNow(t),lw=an<t.atk;label(String(an),x+pad*2.2,y+cs-pad*2,lw?'#d9c9a0':k==='spider'?'#c58bff':'#ffd54a',lw?fs*.9:fs,'left');}
+      else if(t.zmb>0)label(String(t.zatk),x+pad*2.2,y+cs-pad*2,'#9cf09c',fs,'left');else{const an=atkNow(t),lw=an<t.atk;label(String(an),x+pad*2.2,y+cs-pad*2,lw?'#d9c9a0':k==='spider'?'#c58bff':'#ffd54a',lw?fs*.9:fs,'left');}
       if(!fog){const hs=String(Math.max(0,t.hp));label(hs,x+cs-pad*2.2,y+cs-pad*2,'#ff6b6b',hs.length>=3?fs*.8:fs,'right');}
       if(t.armor>0&&!fog)label(String(t.armor),x+cs-pad*2.2,y+pad*2+fs*.8,'#7fc4ff',fs,'right');
       if(t.mini)label('中',x+cs/2,y+pad*2+fs*.55,'#ff9ad9',fs*.7,'center');
@@ -1394,6 +1419,7 @@ function draw(now){
       if(t.elite)label('⭐',x+cs/2,y+pad*2+fs*.55,'#fff',fs*.6,'center');
       const bx=x+pad*2.2,by=y+pad*2+fs*.7;
       if(t.fresh)label('new',bx,by-fs*.1,'#ccc',fs*.6,'left');
+      else if(t.zmb>0)label('🧟'+t.zmb,bx,by,'#9cf09c',fs*.75,'left');
       else if(t.frz>0)label(t.zap?'⚡':'❄'+t.frz,bx,by,t.zap?'#ffe94a':'#bfe3ff',fs*.75,'left');
       else if(k==='golem'&&t.rest)label('💤',bx,by,'#fff',fs*.75,'left');
       else if(k==='dragon')label('🔥'+(3-(t.ch||0)),bx,by,'#ffb36b',fs*.75,'left');
@@ -2052,8 +2078,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.58';
+const VERSION='0.4.59';
 const CHANGELOG=[
+  {v:'0.4.59',d:'2026-11-26',items:['🧟ゾンビ：攻撃して倒しきれなかった敵が、噛まれてゾンビになるようになりました。3ターンのあいだ、まわりの敵と殴り合ってから正気に戻ります。かわりに、ゾンビの剣は弱く、長くつないでも強くなりません']},
   {v:'0.4.58',d:'2026-11-26',items:['職業の紹介文を書き直しました']},
   {v:'0.4.57',d:'2026-11-26',items:['🐉竜騎士：⚔️だけでなく🛡️🧪💰のチェーンでも、5つ以上なら線が燃えるようになりました。焼ける範囲は斜めも入れた線のまわり8マスです（威力は控えめ）']},
   {v:'0.4.56',d:'2026-11-26',items:['🐉竜騎士：5つ以上の攻撃は線がメラメラ燃えて、線のとなりの敵にも同じダメージを与えるようになりました（「4つ長い扱い」と「4つ以下は半分」はなくなりました）']},
@@ -2285,7 +2312,7 @@ const CLASSES={
   heavy:{ic:'🏰',n:'重騎士',d:'城壁のような鎧をまとった、動かぬ守り手。',fx:'🛡️をつなげば、そのまわりの敵を盾で殴りつける。🛡️1枚で防御2、最大8の鉄壁。剣は苦手。❤️50',stage:'s0'},
   vampire:{ic:'🧛',n:'ヴァンパイア',hidden:1,d:'血の渇きに導かれ、地の底へ還る夜の貴族。',fx:'敵を倒すたび血を吸って回復。レベルが上がるほど多く吸える。🧪は飲めず💰に変わる。❤️46',
     kill:['vampire',1],floor:50,cond:()=>false},
-  zombie:{ic:'🧟',n:'ゾンビ',hidden:1,d:'何度倒れても、なぜか起き上がってくる者。',fx:'倒れても二度、HP満タンでよみがえる。鎧は着られず、🛡️は傷をふさいで回復。🧪は1しか効かない。❤️52',
+  zombie:{ic:'🧟',n:'ゾンビ',hidden:1,d:'何度倒れても、なぜか起き上がってくる者。',fx:'噛まれて生き残った敵はゾンビになり、3ターン まわりの敵と殴り合う。剣は弱く、長くつないでも伸びない。倒れても二度よみがえり、🛡️で傷をふさぐ。❤️52',
     kill:['zombie',20],floor:50,cond:()=>false},
   hunter:{ic:'🏹',n:'狙撃手',hidden:2,d:'群れの中の大物を、決して逃さない射手。',fx:'つないだ中でいちばん手強い敵を、3倍の一撃で撃ち抜く。最初から🎯狙撃を使える。❤️50',cond:()=>false},
   dragoon:{ic:'🐉',n:'竜騎士',hidden:2,d:'竜の背で戦った、一撃に全てを懸ける騎士。',fx:'5つ以上つなげば、どのチェーンでも線が燃え上がる。線のまわり8マスの敵を炎が焼き払う。❤️46',cond:()=>false},
@@ -2311,7 +2338,7 @@ function applyClass(s,k){
   if(k==='cleric'){s.healPer=3;s.maxHp=34;s.hp=34;}
   if(k==='heavy'){s.maxArmor=8;s.armorPer=2;s.baseUp=3;s.wpnUp=1;s.maxHp=50;s.hp=50;}
   if(k==='vampire'){s.healPer=0;s.maxHp=46;s.hp=46;}
-  if(k==='zombie'){s.healPer=1;s.maxHp=52;s.hp=52;s.maxArmor=0;s.armor=0;s.revive=2;}
+  if(k==='zombie'){s.healPer=1;s.maxHp=52;s.hp=52;s.maxArmor=0;s.armor=0;s.revive=2;s.weaponDmg=1;}
   if(k==='hunter'){s.maxHp=50;s.hp=50;s.skills=[{id:'snipe',cd:cdOf('snipe'),cur:0}];}
   if(k==='dragoon'){s.maxHp=46;s.hp=46;}
   if(k==='gambler'){s.maxHp=34;s.hp=34;}
@@ -2554,6 +2581,7 @@ function tileInfo(p){
     case 'skull':{
       const k=kindOf(t),d=EK[k];let st='';
       if(t.fresh)st+='出てきたばかり（次のターンから行動）<br>';
+      if(t.zmb>0)st+=`🧟 ゾンビになって暴れている（${t.zatk}ずつ まわりの敵を殴る・あと${t.zmb}ターンで正気に戻る）<br>`;
       if(t.frz>0)st+=`❄ 凍結中（あと${t.frz}ターン動けない）<br>`;
       if(k==='golem')st+=t.rest?'💤 次のターンは休み<br>':'次のターンは攻撃してくる<br>';
       if(k==='dragon')st+=`🔥 ブレスまで あと${3-(t.ch||0)}ターン（${t.atk*3}ダメージ）<br>`;
