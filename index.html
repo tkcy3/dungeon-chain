@@ -1525,12 +1525,12 @@ function chomp(t,P,big){const c=AU.ctx;if(!c)return;if(!AU.curve){const n=2048,c
   w.curve=AU.curve;os.type='sawtooth';os.frequency.setValueAtTime(p1*SVAR,t);os.frequency.exponentialRampToValueAtTime(p2*SVAR,t+D);pre.gain.value=dr;
   b1.type='bandpass';b1.Q.value=3.5;b1.frequency.setValueAtTime(F1,t);b1.frequency.exponentialRampToValueAtTime(F1*.4,t+D);
   b2.type='bandpass';b2.Q.value=5;b2.frequency.setValueAtTime(F2,t);b2.frequency.exponentialRampToValueAtTime(F2*.45,t+D);
-  const v=big?1.25:1;env.gain.setValueAtTime(.0001,t);env.gain.exponentialRampToValueAtTime(.55*v,t+.006);env.gain.setValueAtTime(.55*v,t+D*.45);env.gain.exponentialRampToValueAtTime(.12*v,t+D*.85);env.gain.exponentialRampToValueAtTime(.0001,t+D);
+  const v=(big?1.25:1)*CHOMP_V;env.gain.setValueAtTime(.0001,t);env.gain.exponentialRampToValueAtTime(.55*v,t+.006);env.gain.setValueAtTime(.55*v,t+D*.45);env.gain.exponentialRampToValueAtTime(.12*v,t+D*.85);env.gain.exponentialRampToValueAtTime(.0001,t+D);
   os.connect(pre);pre.connect(w);w.connect(b1);w.connect(b2);b1.connect(env);b2.connect(env);env.connect(AU.sfx);os.start(t);os.stop(t+D+.02);
   noise(t,.022,.32*v,2200,{type:'lowpass'});
-  tone(150,t+D*.8,.13,{type:'sine',gain:.32*v,slideTo:52});tone(2100,t+D*.82,.018,{type:'triangle',gain:.05,slideTo:1300});
-  if(big){tone(85,t+D*.85,.3,{type:'sine',gain:.3,slideTo:38});noise(t+D*.85,.18,.12,420,{type:'lowpass',attack:.008});}}
-var CHOMP=[120,70,700,1100,.16,5];
+  tone(150,t+D*.8,.13,{type:'sine',gain:.32*v,slideTo:52});tone(2100,t+D*.82,.018,{type:'triangle',gain:.05*CHOMP_V,slideTo:1300});
+  if(big){tone(85,t+D*.85,.3,{type:'sine',gain:.3*CHOMP_V,slideTo:38});noise(t+D*.85,.18,.12*CHOMP_V,420,{type:'lowpass',attack:.008});}}
+var CHOMP=[120,70,700,1100,.16,5],CHOMP_V=.42;
 function withVar(fn){SVAR=1+(Math.random()*.1-.05);try{fn();}finally{SVAR=1;}}
 /* --- BGM: original 8-bar loop in A minor --- */
 let STEP=60/70/2;AU.tr=0;
@@ -2119,8 +2119,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.66';
+const VERSION='0.4.67';
 const CHANGELOG=[
+  {v:'0.4.67',d:'2026-11-27',items:['🧟噛む音の大きさを、ほかの効果音に合わせて小さくしました']},
   {v:'0.4.66',d:'2026-11-27',items:['🧟正気に戻った敵が、そのターンにいきなり攻撃してこないようにしました。戻ったあと、こちらの番で倒せます']},
   {v:'0.4.65',d:'2026-11-27',items:['🧟ゾンビ：復活をなくし、かわりに初期HPを76にしました。剣はふつうに長くつなぐほど強くなりますが、鍛えても伸びにくくなっています']},
   {v:'0.4.64',d:'2026-11-27',items:['🧟ゾンビの噛む音を、低く重い「ガブッ」にしました']},
