@@ -747,12 +747,19 @@ const CB=[1,1,2,3,4];
 function chainBonus(n){const t=bonusTier(n);return t<0?0:CB[t];}
 function chainMult(n){const k=Math.max(0,n-3)+(S&&S.bless>0&&n>=3?3:0);return 1+.15*k+.012*k*k+(n>=4&&S&&S.anom==='wind'?.15:0);}
 const fmtM=m=>(Math.round(m*10)/10).toFixed(1);
-/* 竜騎士：5つ以上の攻撃チェーンは線が燃えて、線のとなり（上下左右）の敵にも同じダメージ（DRAG_BURN倍） */
-const DRAG_BURN=1;
-function dragOn(cells){return S.cls==='dragoon'&&cells.length>=5&&groupOf(tileAt(cells[0]).t)==='atk';}
-function dragBurn(cells,d){if(!dragOn(cells)||DRAG_BURN<=0)return [];const inC=new Set(cells.map(p=>p[0]*N+p[1])),seen=new Set(),out=[];
-  for(const p of cells)for(const [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]){const r=p[0]+dr,c=p[1]+dc,k=r*N+c;if(r<0||c<0||r>=N||c>=N||inC.has(k)||seen.has(k))continue;seen.add(k);const e=S.board[r][c];if(isEnemy(e))out.push({p:[r,c],e,dd:dmgTo(e,Math.max(1,Math.round(d*DRAG_BURN)))});}
+/* 竜騎士：5つ以上つなぐと（どのチェーンでも）線が燃えて、線のまわり8マスの敵を焼く。
+   焼く威力＝つないだ数だけ剣をつないだときの攻撃×DRAG_BURN */
+const DRAG_BURN=.1,DRAG_ANY=true,DRAG_DIAG=true;
+function dragOn(cells){return S.cls==='dragoon'&&cells.length>=5&&(DRAG_ANY||groupOf(tileAt(cells[0]).t)==='atk');}
+function dragD(cells){const n=cells.length;return Math.max(1,Math.round((S.baseDmg+n*S.weaponDmg)*chainMult(n)*DRAG_BURN));}
+function dragBurn(cells){if(!dragOn(cells)||DRAG_BURN<=0)return [];const d=dragD(cells),inC=new Set(cells.map(p=>p[0]*N+p[1])),seen=new Set(),out=[];
+  const DIR=DRAG_DIAG?[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]]:[[-1,0],[1,0],[0,-1],[0,1]];
+  for(const p of cells)for(const [dr,dc] of DIR){const r=p[0]+dr,c=p[1]+dc,k=r*N+c;if(r<0||c<0||r>=N||c>=N||inC.has(k)||seen.has(k))continue;seen.add(k);const e=S.board[r][c];if(isEnemy(e))out.push({p:[r,c],e,dd:dmgTo(e,d)});}
   return out;}
+/* 焼いた結果を盤に反映。倒した数と経験値を返す */
+function dragApply(cells,remove,msgs){const br=dragBurn(cells);if(!br.length)return [0,0];const now=performance.now();let bk=0,bx=0;
+  for(const b of br){hitNum(b.p[0],b.p[1],b.dd,'#ff8a3a',b.dd/b.e.maxHp);applyDmg(b.e,b.dd);RINGS.push({p:b.p,t0:now,col:'#ff7a2a'});if(b.e.hp<=0){remove.add(b.p[0]*N+b.p[1]);bk++;bx+=xpOf(b.e);}else b.e.hit=now;}
+  burst(br.map(b=>b.p),'#ff7a2a',1);msgs.push(`🔥 燃える線 ${br.length}体${bk?`（${bk}体撃破）`:''}`);return [bk,bx];}
 function chainDmg(cells,roll=1){const n=cells.length;let m=chainMult(n);
   if(S.cls==='knight'&&S.maxArmor>0&&S.armor>=S.maxArmor)m*=1.5;
   
@@ -785,11 +792,12 @@ function commitChain(){
       if(t.t==='sword'){remove.add(p[0]*N+p[1]);continue;}
       hitN++;if(p===lastE){const hd=dmgTo(t,Math.round(dmg*HUNT));hitNum(p[0],p[1],hd,'#ff5a5a',hd/t.maxHp+.2);RETS.push({p,t0:performance.now()});}applyDmg(t,dmgTo(t,p===lastE?Math.round(dmg*HUNT):dmg));if(p===lastE)msgs.push(`🏹 狙い撃ち ${Math.round(dmg*HUNT)}`);
       if(t.hp<=0){remove.add(p[0]*N+p[1]);killed++;xp+=xpOf(t);}else t.hit=now;}
-    const br=dragBurn(cells,dmg);if(br.length){let bk=0;for(const b of br){hitNum(b.p[0],b.p[1],b.dd,'#ff8a3a',b.dd/b.e.maxHp);applyDmg(b.e,b.dd);RINGS.push({p:b.p,t0:now,col:'#ff7a2a'});if(b.e.hp<=0){remove.add(b.p[0]*N+b.p[1]);killed++;bk++;xp+=xpOf(b.e);}else b.e.hit=now;}burst(br.map(b=>b.p),'#ff7a2a',1);msgs.push(`🔥 燃える線 ${br.length}体${bk?`（${bk}体撃破）`:''}`);}
+    {const [bk,bx]=dragApply(cells,remove,msgs);killed+=bk;xp+=bx;}
     S.kills+=killed;if(xp)gainXp(xp);anomKills(killed);
     msgs.push(hitN?`敵に${dmg}ダメージ${killed?`、${killed}体撃破`:''}`:`剣${swords}本を消費`);vampDrain(killed,msgs);
   }else{
     cells.forEach(p=>remove.add(p[0]*N+p[1]));
+    {const [bk,bx]=dragApply(cells,remove,msgs);if(bk){S.kills+=bk;anomKills(bk);}if(bx)gainXp(bx);}
     if(S.cls==='gambler'&&GAMB_ALL){const r=gTake();mult*=r;msgs.push(gMsg(r));}
     /* 盤面の敵（条件に合うもの）にまとめてダメージ：僧侶の聖なる🧪・重騎士の盾で殴る */
     const aoe=(d,f,label,col)=>{if(d<=0)return;let k=0,xp=0;const now=performance.now(),hits=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){const t=S.board[r][c];if(!isEnemy(t)||remove.has(r*N+c)||!f(t,r,c))continue;hits.push([r,c]);hitNum(r,c,d,col||'#ffd54a',d/t.maxHp);applyDmg(t,d);if(t.hp<=0){remove.add(r*N+c);k++;xp+=xpOf(t);}else t.hit=now;}
@@ -1249,7 +1257,7 @@ function updatePreview(){
   if(g==='atk'){const sw=tiles.filter(t=>t.t==='sword').length;const d=chainDmg(chain,S.cls==='gambler'?gRoll():1);const en=chain.filter(p=>isEnemy(tileAt(p)));
     const lastE=S.cls==='hunter'?lastEnemyOf(chain):null;
     en.forEach(p=>{const e=tileAt(p);if(wouldDie(e,dmgTo(e,p===lastE?Math.round(d*HUNT):d)))kills.add(p[0]*N+p[1]);});
-    const brn=dragBurn(chain,d);brn.forEach(b=>{if(wouldDie(b.e,b.dd))kills.add(b.p[0]*N+b.p[1]);});
+    const brn=dragBurn(chain);brn.forEach(b=>{if(wouldDie(b.e,b.dd))kills.add(b.p[0]*N+b.p[1]);});
     const dgT=brn.length?`<span style="color:#ff8a3a">🔥となり${brn.length}体</span> `:'';
     main=dgT+(en.length?`⚔️ 敵${en.length}体に <b>${d}</b> ダメージ`+(lastE?`（🏹いちばん倒しにくい敵に${Math.round(d*HUNT)}）`:'')+`（撃破${kills.size}${S.cls==='gambler'?'?':''}）`+(S.cls==='vampire'&&kills.size?` 🩸+${Math.min(kills.size*drainOf(),S.maxHp-S.hp)}`:''):`⚔️ 剣${sw}本（敵をつなぐと${d}ダメージ）`);}
   else{const pv1=(g,n)=>{let main='';
@@ -1261,6 +1269,7 @@ function updatePreview(){
   return main;};
   if(g==='mix'){const cnt={};tiles.forEach(t=>cnt[t.t]=(cnt[t.t]||0)+1);if(Object.keys(cnt).length>1){mu*=mixMu(n);mixPv=1;}main='⚗️ '+['shield','potion','coin'].filter(k=>cnt[k]).map(k=>pv1(k,cnt[k])).join(' ');}else main=pv1(g,n);}
   const after=enemyTotal(kills);
+  if(g!=='atk'&&S.cls==='dragoon'){const b=dragBurn(chain);if(b.length){b.forEach(x=>{if(wouldDie(x.e,x.dd))kills.add(x.p[0]*N+x.p[1]);});main=`<span style="color:#ff8a3a">🔥となり${b.length}体</span> `+main;}}
   pv.innerHTML=`<div>${main}${n<3?' <span style="color:#f99">あと'+(3-n)+'</span>':''}</div><span class="sub">${S.cls==='gambler'?'🃏<b>×？</b>　':''}${mixPv?`<span style="color:#c9b6ff">⚗️ 調合 効果×${(Math.round(chainMult(n)*MIXK*10)/10)}</span>`:mu>1?`<span style="color:#ffe08a">✨${bonusTxtOf(n)}</span>`:n>=3?'4つ以上で 効果アップ！':''} ／ 敵の攻撃：${after}</span>`;
 }
 
@@ -1412,7 +1421,7 @@ function draw(now){
     ctx.lineCap='round';ctx.lineJoin='round';
     if(fire){const w=1+.18*Math.sin(now/70)+.1*Math.sin(now/37);ctx.strokeStyle='rgba(255,70,10,.45)';ctx.lineWidth=cs*.26*w;ctx.stroke();ctx.strokeStyle='rgba(255,150,30,.8)';ctx.lineWidth=cs*.14*w;ctx.stroke();ctx.strokeStyle='rgba(255,240,170,.95)';ctx.lineWidth=cs*.05;ctx.stroke();
       for(let i=0;i<chain.length;i++){const p=chain[i],X=p[1]*cs+cs/2,Y=p[0]*cs+cs/2;for(let j=0;j<2;j++){const ph=((now/600)+i*.37+j*.5)%1,ox=Math.sin(i*7.1+j*3.3+now/300)*cs*.12;ctx.globalAlpha=1-ph;ctx.fillStyle=ph<.5?'#ffd25a':'#ff6a1a';ctx.beginPath();ctx.arc(X+ox,Y-ph*cs*.45,cs*.05*(1-ph*.6),0,6.3);ctx.fill();}}ctx.globalAlpha=1;
-      const d=chainDmg(chain,1);for(const b of dragBurn(chain,d)){const x=b.p[1]*cs,y=b.p[0]*cs,a=.5+.25*Math.sin(now/90);ctx.strokeStyle=`rgba(255,120,30,${a})`;ctx.lineWidth=cs*.06;ctx.strokeRect(x+cs*.08,y+cs*.08,cs*.84,cs*.84);}}
+      for(const b of dragBurn(chain)){const x=b.p[1]*cs,y=b.p[0]*cs,a=.5+.25*Math.sin(now/90);ctx.strokeStyle=`rgba(255,120,30,${a})`;ctx.lineWidth=cs*.06;ctx.strokeRect(x+cs*.08,y+cs*.08,cs*.84,cs*.84);}}
     else{ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=cs*.1;ctx.stroke();}}
 }
 
@@ -2043,8 +2052,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.56';
+const VERSION='0.4.57';
 const CHANGELOG=[
+  {v:'0.4.57',d:'2026-11-26',items:['🐉竜騎士：⚔️だけでなく🛡️🧪💰のチェーンでも、5つ以上なら線が燃えるようになりました。焼ける範囲は斜めも入れた線のまわり8マスです（威力は控えめ）']},
   {v:'0.4.56',d:'2026-11-26',items:['🐉竜騎士：5つ以上の攻撃は線がメラメラ燃えて、線のとなりの敵にも同じダメージを与えるようになりました（「4つ長い扱い」と「4つ以下は半分」はなくなりました）']},
   {v:'0.4.55',d:'2026-11-26',items:['タイトルの📥読み込みと、メニューの💾書き出しをなくしました']},
   {v:'0.4.54',d:'2026-11-26',items:['🃏ギャンブラー：倍率は前もって見えず、つないで離した瞬間に札をめくって決まるようになりました。×0.1〜×3まで、出た倍率は札で大きく見せます']},
@@ -2277,7 +2287,7 @@ const CLASSES={
   zombie:{ic:'🧟',n:'ゾンビ',hidden:1,d:'何度倒れても、なぜか起き上がってくる者。',fx:'防具は使えない（🛡️は傷をふさいでHP回復）・🧪の回復量1・冒険中に二度まで、HP満タンで蘇る・初期HP52',
     kill:['zombie',20],floor:50,cond:()=>false},
   hunter:{ic:'🏹',n:'狙撃手',hidden:2,d:'群れの中の大物を、決して逃さない射手。',fx:'つないだ敵のうち、いちばん倒しにくい敵（残りHP＋装甲が最大）に3倍ダメージ（狙い撃ち）・最初から🎯狙撃を習得・初期HP50',cond:()=>false},
-  dragoon:{ic:'🐉',n:'竜騎士',hidden:2,d:'竜の背で戦った、一撃に全てを懸ける騎士。',fx:'5つ以上の攻撃は線が燃えて、線のとなり（上下左右）の敵にも同じダメージ・初期HP46',cond:()=>false},
+  dragoon:{ic:'🐉',n:'竜騎士',hidden:2,d:'竜の背で戦った、一撃に全てを懸ける騎士。',fx:'5つ以上つなぐと、どのチェーンでも線が燃えて、線のまわり8マスの敵を焼く（威力は控えめ）・初期HP46',cond:()=>false},
   gambler:{ic:'🃏',n:'ギャンブラー',hidden:2,d:'迷宮の宝も、命も、すべて賭けの種。',fx:'つないだ効果（攻撃・🛡️・🧪・💰すべて）が、離した瞬間にめくる札で×0.1〜×3に変わる（×2がよく出る・×3はまれ・×0.1はごくまれ）・初期HP34',cond:()=>false},
   knight:{ic:'🛡️',n:'騎士',hidden:2,retired:1,d:'重い鎧に身を包んだ、誇り高き守り手。',fx:'防御の上限8から始まる・防御が満タンのとき攻撃1.5倍・🧪の回復量1・初期HP50',cond:()=>false},
   alchemist:{ic:'⚗️',n:'錬金術師',hidden:2,d:'まことの金と 不老の薬を 追い求める学者。',fx:'💰と🧪を混ぜてつなげる（混ぜると効果は半分）・剣の攻撃力が低い（1・強化+1）・初期HP38',cond:()=>false}
