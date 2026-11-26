@@ -672,19 +672,29 @@ function zmbWalk(e,r,c,rm){let best=null,bd=99;for(let R=0;R<N;R++)for(let C=0;C
   if(!best)return;const opts=neighbors(r,c).filter(q=>!isEnemy(tileAt(q)));if(!opts.length)return;
   const dist=q=>Math.max(Math.abs(q[0]-best[0]),Math.abs(q[1]-best[1]));opts.sort((a,b)=>dist(a)-dist(b));const q=opts[0];if(dist(q)>=Math.max(Math.abs(r-best[0]),Math.abs(c-best[1])))return;
   const o=tileAt(q);S.board[q[0]][q[1]]=e;S.board[r][c]=o;e.ry=q[0];o.ry=r;}
-function zmbPhase(msgs){if(!S.board.some(row=>row.some(t=>t.zmb>0)))return;const rm=new Set(),now=performance.now();let kk=0,xx=0,hits=0;
-  const L=[];for(const row of S.board)for(const t of row)if(t&&t.zmb>0)L.push(t);
-  for(const e of L){const pos=findTile(e);if(!pos)continue;const [r,c]=pos;if(rm.has(r*N+c)||!(e.zmb>0))continue;
-    const opts=neighbors(r,c).filter(q=>{const t=tileAt(q);return isEnemy(t)&&!rm.has(q[0]*N+q[1]);});
-    if(opts.length){const q=opts[rnd(opts.length)],t=tileAt(q),dd=dmgTo(t,e.zatk);hitNum(q[0],q[1],dd,'#7be07b',dd/Math.max(1,t.maxHp));applyDmg(t,dd);hits++;
-      if(t.hp<=0){rm.add(q[0]*N+q[1]);kk++;xx+=xpOf(t);}else t.hit=now;}
-    else zmbWalk(e,r,c,rm);
-    e.zmb--;if(e.zmb<=0){delete e.zmb;delete e.zatk;}}
-  if(rm.size){burst([...rm].map(k=>[Math.floor(k/N),k%N]),'#7be07b',.8);removeAndFill(rm);}
-  if(kk){S.kills+=kk;anomKills(kk);msgs.push(`🧟 同士討ちで${kk}体 倒れた`);}if(xx)gainXp(xx);}
-function enemyPhase(msgs){
+/* ゾンビ1体の行動：まわり8マスの誰かを殴る（いなければ近づく）。倒した相手はその場で消して落とす。戻り値は見せるための情報 */
+function zmbAct(e,acc){const pos=findTile(e);if(!pos||!(e.zmb>0))return null;const [r,c]=pos,now=performance.now();let ev={from:pos,to:null};
+  const opts=neighbors(r,c).filter(q=>isEnemy(tileAt(q))&&q.toString()!==pos.toString());
+  if(opts.length){const q=opts[rnd(opts.length)],t=tileAt(q),dd=dmgTo(t,e.zatk);hitNum(q[0],q[1],dd,'#7be07b',dd/Math.max(1,t.maxHp));applyDmg(t,dd);ev.to=q;
+    if(t.hp<=0){acc.k++;acc.x+=xpOf(t);if(t.zmb>0)delete t.zmb;removeAndFill(new Set([q[0]*N+q[1]]));burst([q],'#7be07b',1);ev.kill=true;}else t.hit=now;}
+  else zmbWalk(e,r,c,new Set());
+  e.zmb--;if(e.zmb<=0){delete e.zmb;delete e.zatk;}return ev;}
+function zmbList(){const L=[];for(const row of S.board)for(const t of row)if(t&&t.zmb>0)L.push(t);return L;}
+function zmbDone(acc,msgs){if(acc.k){S.kills+=acc.k;anomKills(acc.k);msgs.push(`🧟 同士討ちで${acc.k}体 倒れた`);}if(acc.x)gainXp(acc.x);}
+function zmbPhase(msgs){const acc={k:0,x:0};for(const e of zmbList())zmbAct(e,acc);zmbDone(acc,msgs);}
+/* 画面で見せるとき：ゾンビ化した敵が1体ずつ順番に殴る。終わったら then() で残りのターン処理へ */
+var ZANIM=false,ZLUNGE=[];
+function zmbAnimate(msgs,then){const L=zmbList();if(!L.length||window.BOTFAST||TUT)return false;ZANIM=true;const acc={k:0,x:0};let i=0;
+  const step=()=>{if(!inGame||!S){ZANIM=false;return;}
+    while(i<L.length&&!(L[i].zmb>0&&findTile(L[i])))i++;
+    if(i>=L.length){zmbDone(acc,msgs);ZANIM=false;then();return;}
+    const e=L[i++],ev=zmbAct(e,acc);
+    if(ev&&ev.to){ZLUNGE.push({from:ev.from,to:ev.to,t0:performance.now(),kill:ev.kill});sfx('zbite',!!ev.kill);if(ev.kill)vib(30);}
+    updateAll();setTimeout(step,ev&&ev.to?(ev.kill?560:440):240);};
+  setTimeout(step,380);return true;}
+function enemyPhase(msgs,skipZ){
   const all=()=>{const l=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){const e=S.board[r][c];if(isEnemy(e))l.push([e,r,c]);}return l;};
-  zmbPhase(msgs);
+  if(!skipZ)zmbPhase(msgs);
   let total=0,pierce=0;const exploded=new Set();S._topA=0;S._topK='';
   for(const [e,r,c] of all()){
     if(e.fresh||e.frz>0||e.zmb>0)continue;
@@ -846,7 +856,8 @@ function commitChain(){
   celebrate(cells,types,S.kills-killsBefore,bonus?'✨'+bonusTxtOf(cells.length):'');
   achChain(cells.length,g,[...remove].map(i=>S.board[(i/N)|0][i%N]).filter(isEnemy),hp0,full0);
   removeAndFill(remove);flushDeath(msgs);
-  enemyPhase(msgs);popAnnounce(msgs);
+  const rest=z=>{
+  enemyPhase(msgs,z);popAnnounce(msgs);
   S.turn++;S.skills.forEach(s=>{if(s.cur>0)s.cur--;});if(S.bless>0)S.bless--;S.crack=0;
   checkBoss(msgs);advanceFloor(msgs);achAfterTurn(hp0,S._boom);S._boom=false;
   log(msgs.join(' ／ '));
@@ -855,6 +866,8 @@ function commitChain(){
     showBanner('🧟 力尽きた……','よみがえった！',S.revive?`あと${S.revive}回 蘇れる`:'もう蘇れない','#9be37a');sfx('revive');vib([80,60,160]);flash('bHp');}
   if(S.hp<=0){S.hp=0;updateAll();dying=true;setTimeout(()=>{dying=false;if(inGame)gameOver();},Math.max(popLeft()+150,HURT_AT-performance.now()+450));return;}
   ensureMove();saveGame();updateAll();showNextPending();tutAfterCommit();
+  };
+  if(!zmbAnimate(msgs,()=>rest(true)))rest(false);
 }
 
 /* ---------- skills ---------- */
@@ -1304,7 +1317,7 @@ function cellAt(e,strict){
   if(strict){const dx=x-c-.5,dy=y-r-.5;if(dx*dx+dy*dy>.43*.43)return null;}
   return [r,c];
 }
-function busy(){if(!S||dying||REVEAL)return true;if(S.pending.length&&!modalOpen)return true;for(const row of S.board)for(const t of row)if(t.ry!==undefined&&Math.abs(t.ry-S.board.indexOf(row))>0.001)return true;return false;}
+function busy(){if(!S||dying||REVEAL||ZANIM)return true;if(S.pending.length&&!modalOpen)return true;for(const row of S.board)for(const t of row)if(t.ry!==undefined&&Math.abs(t.ry-S.board.indexOf(row))>0.001)return true;return false;}
 let boardLP=null,boardTip=false;
 cv.addEventListener('pointerdown',e=>{
   if(!inGame||modalOpen||(TUT&&TUT.lock))return;const p=cellAt(e,false);if(!p)return;
@@ -1541,6 +1554,7 @@ function busyTo(t){AU.busy=Math.max(AU.busy||0,t);}
 // ダメージ音は、ほかの効果音の山が過ぎてから鳴らす
 function hurtDelay(){if(!AU.ctx||!AU.on||!AU.on.sfx)return .22;return Math.min(1.1,Math.max(.22,(AU.busy||0)-AU.ctx.currentTime+.06));}
 const SFX={
+  zbite(k){const t=T0();withVar(()=>noise(t,.09,.22,1400,{type:'bandpass',q:2.2,sweepTo:600,attack:.004}));tone(k?150:200,t+.02,.12,{type:'square',gain:.06,slideTo:k?70:120});if(k)tone(90,t+.1,.25,{type:'triangle',gain:.12,slideTo:50});},
   gflip(){tone(900,T0(),.06,{gain:.05});},g1(){tone(660,T0(),.12,{type:'triangle',gain:.12});},g2(){const t=T0();tone(784,t,.12,{type:'triangle',gain:.13});tone(1175,t+.07,.18,{type:'triangle',gain:.12});},
   g05(){tone(330,T0(),.25,{type:'triangle',gain:.14,slideTo:260});},gtease(){const t=T0();for(let i=0;i<7;i++)tone(500+i*60,t+i*.09,.07,{gain:.04});},
   g3(){const t=T0();[523,659,784,1047,1319].forEach((f,i)=>tone(f,t+i*.07,.35,{type:'triangle',gain:.13}));tone(1568,t+.4,.6,{type:'triangle',gain:.1});},
@@ -1794,6 +1808,12 @@ function drawSkillFx(now,cs){
     ctx.beginPath();let px=x+(Math.random()-.5)*cs,py=-cs*.2;ctx.moveTo(px,py);const seg=6;
     for(let i=1;i<=seg;i++){const ty=py+(y-py)*i/seg,tx=i===seg?x:x+(Math.random()-.5)*cs*.9*(1-i/seg)+(px-x)*(1-i/seg);ctx.lineTo(tx,ty);}
     ctx.stroke();ctx.restore();}
+  ZLUNGE=ZLUNGE.filter(z=>now-z.t0<420);
+  for(const z of ZLUNGE){const e=(now-z.t0)/420,x0=z.from[1]*cs+cs/2,y0=z.from[0]*cs+cs/2,x1=z.to[1]*cs+cs/2,y1=z.to[0]*cs+cs/2,k=Math.min(1,e*2.2),hx=x0+(x1-x0)*k*.8,hy=y0+(y1-y0)*k*.8;
+    ctx.save();ctx.globalAlpha=1-Math.max(0,e-.5)*2;ctx.lineCap='round';ctx.strokeStyle='rgba(60,170,60,.55)';ctx.lineWidth=cs*.22;ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(hx,hy);ctx.stroke();
+    ctx.strokeStyle='#b8ffb0';ctx.lineWidth=cs*.07;ctx.stroke();
+    if(e>.35){const a=Math.atan2(y1-y0,x1-x0),R=cs*(.28+.1*Math.sin(e*9));ctx.strokeStyle=z.kill?'#fff':'#9cf09c';ctx.lineWidth=cs*.06;for(const o of [-.5,0,.5]){ctx.beginPath();ctx.moveTo(x1+Math.cos(a+Math.PI/2)*R*o-Math.cos(a)*R*.5,y1+Math.sin(a+Math.PI/2)*R*o-Math.sin(a)*R*.5);ctx.lineTo(x1+Math.cos(a+Math.PI/2)*R*o+Math.cos(a)*R*.5,y1+Math.sin(a+Math.PI/2)*R*o+Math.sin(a)*R*.5);ctx.stroke();}}
+    ctx.restore();}
   RINGS=RINGS.filter(r=>now-r.t0<500);
   for(const r of RINGS){const e=Math.max(0,(now-r.t0)/500),x=r.p[1]*cs+cs/2,y=r.p[0]*cs+cs/2;
     ctx.save();ctx.globalAlpha=1-e;ctx.strokeStyle=r.col;ctx.lineWidth=cs*.06;ctx.beginPath();ctx.arc(x,y,cs*(.15+.45*e),0,Math.PI*2);ctx.stroke();ctx.restore();}
@@ -2078,8 +2098,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.59';
+const VERSION='0.4.60';
 const CHANGELOG=[
+  {v:'0.4.60',d:'2026-11-27',items:['🧟ゾンビになった敵は、チェーンのあと1体ずつ順番に殴りかかるようになりました。誰が誰を殴ったか見えます']},
   {v:'0.4.59',d:'2026-11-26',items:['🧟ゾンビ：攻撃して倒しきれなかった敵が、噛まれてゾンビになるようになりました。3ターンのあいだ、まわりの敵と殴り合ってから正気に戻ります。かわりに、ゾンビの剣は弱く、長くつないでも強くなりません']},
   {v:'0.4.58',d:'2026-11-26',items:['職業の紹介文を書き直しました']},
   {v:'0.4.57',d:'2026-11-26',items:['🐉竜騎士：⚔️だけでなく🛡️🧪💰のチェーンでも、5つ以上なら線が燃えるようになりました。焼ける範囲は斜めも入れた線のまわり8マスです（威力は控えめ）']},
