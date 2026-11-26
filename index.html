@@ -678,7 +678,10 @@ function zmbAct(e,acc){const pos=findTile(e);if(!pos||!(e.zmb>0))return null;con
   if(opts.length){const q=opts[rnd(opts.length)],t=tileAt(q),dd=dmgTo(t,e.zatk);hitNum(q[0],q[1],dd,'#7be07b',dd/Math.max(1,t.maxHp));applyDmg(t,dd);ev.to=q;
     if(t.hp<=0){acc.k++;acc.x+=xpOf(t);if(t.zmb>0)delete t.zmb;removeAndFill(new Set([q[0]*N+q[1]]));burst([q],'#7be07b',1);ev.kill=true;}else t.hit=now;}
   else zmbWalk(e,r,c,new Set());
-  e.zmb--;if(e.zmb<=0){delete e.zmb;delete e.zatk;}return ev;}
+  return ev;}
+/* 敵の攻撃が済んでから残りターンを減らす。正気に戻るのはこのとき＝戻った敵は、次のこちらの番に倒せる（いきなり殴られない） */
+function zmbTick(msgs){let n=0;const now=performance.now();for(let r=0;r<N;r++)for(let c=0;c<N;c++){const e=S.board[r][c];if(!(e&&e.zmb>0))continue;e.zmb--;if(e.zmb<=0){delete e.zmb;delete e.zatk;n++;RINGS.push({p:[r,c],t0:now,col:'#ff8a7a'});}}
+  if(n)msgs.push(`🧟 ${n}体が正気に戻った`);}
 function zmbList(){const L=[];for(const row of S.board)for(const t of row)if(t&&t.zmb>0)L.push(t);return L;}
 function zmbDone(acc,msgs){if(acc.k){S.kills+=acc.k;anomKills(acc.k);msgs.push(`🧟 同士討ちで${acc.k}体 倒れた`);}if(acc.x)gainXp(acc.x);}
 function zmbPhase(msgs){const acc={k:0,x:0};for(const e of zmbList())zmbAct(e,acc);zmbDone(acc,msgs);}
@@ -856,7 +859,7 @@ function commitChain(){
   achChain(cells.length,g,[...remove].map(i=>S.board[(i/N)|0][i%N]).filter(isEnemy),hp0,full0);
   removeAndFill(remove);flushDeath(msgs);
   const rest=z=>{
-  enemyPhase(msgs,z);popAnnounce(msgs);
+  enemyPhase(msgs,z);zmbTick(msgs);popAnnounce(msgs);
   S.turn++;S.skills.forEach(s=>{if(s.cur>0)s.cur--;});if(S.bless>0)S.bless--;S.crack=0;
   checkBoss(msgs);advanceFloor(msgs);achAfterTurn(hp0,S._boom);S._boom=false;
   log(msgs.join(' ／ '));
@@ -2116,8 +2119,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.65';
+const VERSION='0.4.66';
 const CHANGELOG=[
+  {v:'0.4.66',d:'2026-11-27',items:['🧟正気に戻った敵が、そのターンにいきなり攻撃してこないようにしました。戻ったあと、こちらの番で倒せます']},
   {v:'0.4.65',d:'2026-11-27',items:['🧟ゾンビ：復活をなくし、かわりに初期HPを76にしました。剣はふつうに長くつなぐほど強くなりますが、鍛えても伸びにくくなっています']},
   {v:'0.4.64',d:'2026-11-27',items:['🧟ゾンビの噛む音を、低く重い「ガブッ」にしました']},
   {v:'0.4.63',d:'2026-11-27',items:['🧟ゾンビの噛む音を「ガブッ」に作り直しました']},
@@ -2625,7 +2629,7 @@ function tileInfo(p){
     case 'skull':{
       const k=kindOf(t),d=EK[k];let st='';
       if(t.fresh)st+='出てきたばかり（次のターンから行動）<br>';
-      if(t.zmb>0)st+=`🧟 ゾンビになって暴れている（${t.zatk}ずつ まわりの敵を殴る・あと${t.zmb}ターンで正気に戻る）<br>`;
+      if(t.zmb>0)st+=`🧟 ゾンビになって暴れている（${t.zatk}ずつ まわりの敵を殴る・あと${t.zmb}回殴ったら正気に戻る）<br>`;
       if(t.frz>0)st+=`❄ 凍結中（あと${t.frz}ターン動けない）<br>`;
       if(k==='golem')st+=t.rest?'💤 次のターンは休み<br>':'次のターンは攻撃してくる<br>';
       if(k==='dragon')st+=`🔥 ブレスまで あと${3-(t.ch||0)}ターン（${t.atk*3}ダメージ）<br>`;
