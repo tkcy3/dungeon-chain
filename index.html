@@ -1809,10 +1809,17 @@ function drawSkillFx(now,cs){
     for(let i=1;i<=seg;i++){const ty=py+(y-py)*i/seg,tx=i===seg?x:x+(Math.random()-.5)*cs*.9*(1-i/seg)+(px-x)*(1-i/seg);ctx.lineTo(tx,ty);}
     ctx.stroke();ctx.restore();}
   ZLUNGE=ZLUNGE.filter(z=>now-z.t0<420);
-  for(const z of ZLUNGE){const e=(now-z.t0)/420,x0=z.from[1]*cs+cs/2,y0=z.from[0]*cs+cs/2,x1=z.to[1]*cs+cs/2,y1=z.to[0]*cs+cs/2,k=Math.min(1,e*2.2),hx=x0+(x1-x0)*k*.8,hy=y0+(y1-y0)*k*.8;
-    ctx.save();ctx.globalAlpha=1-Math.max(0,e-.5)*2;ctx.lineCap='round';ctx.strokeStyle='rgba(60,170,60,.55)';ctx.lineWidth=cs*.22;ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(hx,hy);ctx.stroke();
-    ctx.strokeStyle='#b8ffb0';ctx.lineWidth=cs*.07;ctx.stroke();
-    if(e>.35){const a=Math.atan2(y1-y0,x1-x0),R=cs*(.28+.1*Math.sin(e*9));ctx.strokeStyle=z.kill?'#fff':'#9cf09c';ctx.lineWidth=cs*.06;for(const o of [-.5,0,.5]){ctx.beginPath();ctx.moveTo(x1+Math.cos(a+Math.PI/2)*R*o-Math.cos(a)*R*.5,y1+Math.sin(a+Math.PI/2)*R*o-Math.sin(a)*R*.5);ctx.lineTo(x1+Math.cos(a+Math.PI/2)*R*o+Math.cos(a)*R*.5,y1+Math.sin(a+Math.PI/2)*R*o+Math.sin(a)*R*.5);ctx.stroke();}}
+  for(const z of ZLUNGE){const e=(now-z.t0)/420,x0=z.from[1]*cs+cs/2,y0=z.from[0]*cs+cs/2,x=z.to[1]*cs+cs/2,y=z.to[0]*cs+cs/2;
+    /* 噛む側：緑にふくらむ輪で「誰が」を見せる */
+    ctx.save();ctx.globalAlpha=Math.max(0,1-e*1.6);ctx.strokeStyle='#7be07b';ctx.lineWidth=cs*.06;ctx.beginPath();ctx.arc(x0,y0,cs*(.3+.15*e),0,Math.PI*2);ctx.stroke();ctx.restore();
+    /* 噛まれる側：上下のあごが開いてから、ガブッと閉じる */
+    const k=e<.25?e/.25:1,open=e<.25?.42-.12*k:Math.max(0,.3-(e-.25)/.12*.3),W=cs*.62,T=5,th=cs*.17,fade=e<.7?1:Math.max(0,1-(e-.7)/.3);
+    ctx.save();ctx.globalAlpha=fade;ctx.translate(x,y);
+    for(const sgn of [-1,1]){const by=sgn*(open*cs+th*.15);
+      ctx.fillStyle=z.kill?'#ffffff':'#e8ffe4';ctx.strokeStyle='#2f7a2f';ctx.lineWidth=cs*.025;ctx.beginPath();ctx.moveTo(-W/2,by+sgn*th*.35);
+      for(let t=0;t<T;t++){const xa=-W/2+W*t/T,xb=xa+W/T/2,xc=xa+W/T;ctx.lineTo(xa,by);ctx.lineTo(xb,by-sgn*th);ctx.lineTo(xc,by);}
+      ctx.lineTo(W/2,by+sgn*th*.35);ctx.closePath();ctx.fill();ctx.stroke();}
+    if(e>.3&&e<.55){ctx.globalAlpha=(.55-e)/.25*.6;ctx.fillStyle=z.kill?'#ffffff':'#9cf09c';ctx.beginPath();ctx.arc(0,0,cs*.45,0,Math.PI*2);ctx.fill();}
     ctx.restore();}
   RINGS=RINGS.filter(r=>now-r.t0<500);
   for(const r of RINGS){const e=Math.max(0,(now-r.t0)/500),x=r.p[1]*cs+cs/2,y=r.p[0]*cs+cs/2;
@@ -2098,8 +2105,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.60';
+const VERSION='0.4.61';
 const CHANGELOG=[
+  {v:'0.4.61',d:'2026-11-27',items:['🧟ゾンビの攻撃を、あごがガブッと閉じる噛みつきの見た目にしました']},
   {v:'0.4.60',d:'2026-11-27',items:['🧟ゾンビになった敵は、チェーンのあと1体ずつ順番に殴りかかるようになりました。誰が誰を殴ったか見えます']},
   {v:'0.4.59',d:'2026-11-26',items:['🧟ゾンビ：攻撃して倒しきれなかった敵が、噛まれてゾンビになるようになりました。3ターンのあいだ、まわりの敵と殴り合ってから正気に戻ります。かわりに、ゾンビの剣は弱く、長くつないでも強くなりません']},
   {v:'0.4.58',d:'2026-11-26',items:['職業の紹介文を書き直しました']},
