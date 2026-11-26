@@ -333,7 +333,6 @@ html,body{height:100%;background:#0b0a0c radial-gradient(ellipse 120% 70% at 50%
     <div class="tsub">
       <button id="btnAch"><span>🏆</span>実績</button>
       <button id="btnSet"><span>⚙️</span>設定</button>
-      <button id="btnImport"><span>📥</span>読み込み</button>
     </div>
     <div id="a2hChip" class="hidden"><button id="a2hGo"><span>📲</span><b>ホーム画面に追加<small>全画面ですぐ遊べる</small></b><i>›</i></button><button id="a2hX" aria-label="閉じる">✕</button></div>
     <div id="cloud">セーブ: 確認中…</div>
@@ -967,14 +966,13 @@ function showMenu(){
   if(TUT){openModal(`${pgHead('🎓 チュートリアル','✕ 閉じる','u4')}<button class="prow" id="u1"><span class="ri">⏭️</span><span class="rt">${TUT.fromNew?'飛ばして冒険へ':'チュートリアルを終わる'}</span></button><button class="prow" id="u2"><span class="ri">❓</span><span class="rt">遊び方</span></button><button class="prow" id="u3"><span class="ri">🏠</span><span class="rt">タイトルへ</span></button>`);
     $('u1').onclick=tutSkip;$('u2').onclick=()=>showHelp(showMenu);$('u3').onclick=()=>{closeModal();endTutorial();showTitle();};$('u4').onclick=closeModal;return;}
   const rec=!firstRun();
-  openModal(`${pgHead('☰ メニュー','✕ 閉じる','m5')}<div class="tgrid" style="--c:3">
+  openModal(`${pgHead('☰ メニュー','✕ 閉じる','m5')}<div class="tgrid" style="--c:${rec?2:3}">
     <button class="tile big" id="m1"><span class="ti">❓</span><small>遊び方</small></button>
     <button class="tile big" id="m8"><span class="ti">⚙️</span><small>設定</small></button>
     <button class="tile big" id="m3"><span class="ti">🏠</span><small>タイトルへ</small></button>
-    ${rec?'<button class="tile big" id="m7"><span class="ti">📜</span><small>記録</small></button>':''}
-    <button class="tile big" id="m2"><span class="ti">💾</span><small>書き出し</small></button></div>
+    ${rec?'<button class="tile big" id="m7"><span class="ti">📜</span><small>記録</small></button>':''}</div>
     <button class="prow danger" id="m4" style="margin-top:22px"><span class="ri">🏳️</span><span class="rt">あきらめる</span></button>`);
-  $('m1').onclick=()=>showHelp(showMenu);$('m2').onclick=showExport;if(rec)$('m7').onclick=()=>showRecords(showMenu);$('m8').onclick=()=>showSettings(showMenu);
+  $('m1').onclick=()=>showHelp(showMenu);if(rec)$('m7').onclick=()=>showRecords(showMenu);$('m8').onclick=()=>showSettings(showMenu);
   $('m3').onclick=()=>{shareProgress();saveGame();closeModal();showTitle();};
   $('m4').onclick=()=>{openModal(`<div class="big" style="text-align:center">🏳️</div><h2>あきらめる？</h2><p style="text-align:center">この冒険のセーブは消えます。</p><button class="opt" id="n" style="text-align:center">続ける</button><button class="opt" id="y" style="text-align:center;border-color:#8a3a3a;color:#ffc4c4">あきらめる</button>`);
     $('y').onclick=()=>{closeModal();GIVEUP=true;gameOver();};$('n').onclick=showMenu;};
@@ -1175,7 +1173,7 @@ $('tutSkip').onclick=e=>{e.stopPropagation();tutSkip();};
 $('btnSet').onclick=()=>showSettings(null);
 $('ver').onclick=()=>showChangelog(null);
 
-$('btnImport').onclick=showImport;
+
 /* ホーム画面に追加：Chromeならワンタップでインストール、それ以外は手順を絵で */
 var A2H=null,INST=false;
 /* すでにアプリとして入っているか（Chrome）。入っているとインストール案内が出ないため */
@@ -2033,8 +2031,9 @@ function resetAudioCfg(){AU.on={bgm:true,sfx:true,vib:true,bv:1};setBgmVol();sav
 function resetEverything(){resetAch();resetBest();resetSaveData();resetTutFlag();resetAudioCfg();UNL={got:{},met:{},kills:{},unseen:[],retroH:1};unlSave();applyTheme();}
 let settingsBack=null;
 /* ---------- version & changelog ---------- */
-const VERSION='0.4.54';
+const VERSION='0.4.55';
 const CHANGELOG=[
+  {v:'0.4.55',d:'2026-11-26',items:['タイトルの📥読み込みと、メニューの💾書き出しをなくしました']},
   {v:'0.4.54',d:'2026-11-26',items:['🃏ギャンブラー：倍率は前もって見えず、つないで離した瞬間に札をめくって決まるようになりました。×0.1〜×3まで、出た倍率は札で大きく見せます']},
   {v:'0.4.53',d:'2026-11-26',items:['⚗️錬金術師のルールが変わったので、錬金術師の戦績（回数・最深・最長チェーン）をリセットしました']},
   {v:'0.4.52',d:'2026-11-26',items:['⚗️錬金術師：混ぜてつなげるのは💰と🧪だけになりました。混ぜたときは効果が半分になりますが、長くつなぐほど強くなります']},
